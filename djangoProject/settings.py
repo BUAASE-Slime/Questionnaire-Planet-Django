@@ -20,7 +20,6 @@ pymysql.install_as_MySQLdb()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
@@ -31,7 +30,6 @@ SECRET_KEY = 'django-insecure-171w4v=lzo@ya3b9i@m+n@r0_2^g-l$_kb!i1x!db^5+p@#$i9
 DEBUG = True
 
 ALLOWED_HOSTS = Secrets.Host.allowedHost
-
 
 # Application definition
 
@@ -63,7 +61,7 @@ MIDDLEWARE = [
 ]
 
 # 允许全部来源
-CORS_ORIGIN_ALLOW_ALL  = True  # 如果为True，将不使用白名单，并且将接受所有来源。默认为False。
+CORS_ORIGIN_ALLOW_ALL = True  # 如果为True，将不使用白名单，并且将接受所有来源。默认为False。
 
 # 白名单
 # CORS_ORIGIN_WHITELIST  =  [
@@ -99,7 +97,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'djangoProject.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
@@ -110,7 +107,7 @@ WSGI_APPLICATION = 'djangoProject.wsgi.application'
 #     }
 # }
 
-DATABASES = {   # 配置 mysql 数据库
+DATABASES = {  # 配置 mysql 数据库
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': Secrets.DataBase.db,
@@ -139,7 +136,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.2/topics/i18n/
 
@@ -152,7 +148,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.2/howto/static-files/
@@ -170,9 +165,9 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = Secrets.Email.emailHost
 EMAIL_PORT = Secrets.Email.emailPort
 EMAIL_HOST_USER = Secrets.Email.emailAddr
-EMAIL_HOST_PASSWORD = Secrets.Email.emailPasswd    # 邮箱 SMTP 授权码
+EMAIL_HOST_PASSWORD = Secrets.Email.emailPasswd  # 邮箱 SMTP 授权码
 
-CONFIRM_DAYS = 3    # confirm valid days
+CONFIRM_DAYS = 3  # confirm valid days
 
 # File path root
 
