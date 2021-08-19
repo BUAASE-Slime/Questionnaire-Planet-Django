@@ -32,6 +32,6 @@ class ConfirmString(models.Model):
 
     class Meta:
         db_table = 'tb_confirmCode'
-        ordering = ["-c_time"]
-        verbose_name = "确认码"
+        ordering = ['-c_time']
+        verbose_name = '确认码'
         verbose_name_plural = verbose_name
