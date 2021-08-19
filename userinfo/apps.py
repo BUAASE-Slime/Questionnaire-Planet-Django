@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class UserinfoConfig(AppConfig):
-    name = 'userInfo'
+    name = 'userinfo'

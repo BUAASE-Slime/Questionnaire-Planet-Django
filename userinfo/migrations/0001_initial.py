@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('code', models.CharField(max_length=256)),
                 ('c_time', models.DateTimeField(auto_now_add=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='userInfo.User')),
+                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, to='userinfo.User')),
             ],
             options={
                 'verbose_name': '确认码',

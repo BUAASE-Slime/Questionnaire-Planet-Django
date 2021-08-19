@@ -46,7 +46,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
 
-    'userInfo',
+    'corsheaders',
+
+    'userinfo',
 ]
 
 MIDDLEWARE = [
@@ -57,7 +59,24 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+# 允许全部来源
+CORS_ORIGIN_ALLOW_ALL  = True  # 如果为True，将不使用白名单，并且将接受所有来源。默认为False。
+
+# 白名单
+# CORS_ORIGIN_WHITELIST  =  [
+#     "https://example.com",
+#     "https://sub.example.com",
+#     "http：// localhost：8080",
+#     "http://127.0.0.1:9000"
+# ]
+#
+# # 白名单也可使用正则
+# CORS_ORIGIN_REGEX_WHITELIST  =  [
+#     r"^https://\w+\.example\.com$",
+# ]
 
 ROOT_URLCONF = 'djangoProject.urls'
 

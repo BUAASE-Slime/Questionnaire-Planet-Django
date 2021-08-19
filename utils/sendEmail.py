@@ -1,5 +1,5 @@
 from django.conf import settings
-from userInfo.models import *
+from userinfo.models import *
 
 from utils.toHash import *
 
@@ -8,7 +8,7 @@ import datetime
 
 def make_confirm_string(user):  # generate confirm_code for user (username+c_time)
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    code = hash_code(user.username, now)
+    code = hash_code(user.USERNAME, now)
     ConfirmString.objects.create(code=code, user=user,)
     return code
 
