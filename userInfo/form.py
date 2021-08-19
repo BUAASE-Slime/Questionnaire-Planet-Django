@@ -1,7 +1,5 @@
 from django import forms
 
-from userInfo.models import User
-
 
 class LoginForm(forms.Form):
     username = forms.CharField(label='用户名', max_length=128)
