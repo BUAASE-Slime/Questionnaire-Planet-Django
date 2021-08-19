@@ -15,8 +15,8 @@ class Secrets:
         db = 'pt'
 
     class Host:  # 修改为django允许运行的网址
-        allowedHost = ['localhost', '127.0.0.1']
+        allowedHost = ['localhost', '127.0.0.1', 'zewan.cc']
 
     class RootUrl:
         webFront = 'http://127.0.0.1:8080'
-        webBack = 'http://127.0.0.1:8000'
+        webBack = 'https://zewan.cc'
