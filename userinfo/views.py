@@ -7,29 +7,25 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
-from rest_framework.views import APIView
 
-from userInfo.form import *
-from userInfo.models import ConfirmString
+from userinfo.form import *
+from userinfo.models import ConfirmString
 from utils.responseCode import *
 from utils.sendEmail import make_confirm_string, send_email_confirm
 from utils.toHash import hash_code
-
-from rest_framework import viewsets
-
-from userInfo.models import User
+from userinfo.models import User
 
 utc = pytz.UTC
 
 
 # Create your views here.
 
-class Params:
-    username = openapi.Parameter('username', openapi.TYPE_STRING, description='用户名', type=openapi.TYPE_STRING)
-    password = openapi.Parameter('password', openapi.TYPE_STRING, description='密码', type=openapi.TYPE_STRING)
-    password1 = openapi.Parameter('password1', openapi.TYPE_STRING, description='密码', type=openapi.TYPE_STRING)
-    password2 = openapi.Parameter('password2', openapi.TYPE_STRING, description='确认密码', type=openapi.TYPE_STRING)
-    email = openapi.Parameter('email', openapi.TYPE_STRING, description='邮箱地址', type=openapi.TYPE_STRING)
+class _Params:
+    USERNAME = openapi.Parameter('username', openapi.TYPE_STRING, description='用户名', type=openapi.TYPE_STRING)
+    PASSWORD = openapi.Parameter('password', openapi.TYPE_STRING, description='密码', type=openapi.TYPE_STRING)
+    PASSWORD1 = openapi.Parameter('password1', openapi.TYPE_STRING, description='密码', type=openapi.TYPE_STRING)
+    PASSWORD2 = openapi.Parameter('password2', openapi.TYPE_STRING, description='确认密码', type=openapi.TYPE_STRING)
+    EMAIL = openapi.Parameter('email', openapi.TYPE_STRING, description='邮箱地址', type=openapi.TYPE_STRING)
 
 
 @csrf_exempt
@@ -42,8 +38,8 @@ class Params:
                      #         'password': openapi.Schema(type=openapi.TYPE_STRING)
                      #     }
                      # ),
-                     responses={200: '登录成功', 401: '用户重复登录', 402: '用户名不存在', 403: '密码错误', 404: '用户未经过邮箱确认', 405: '表单错误'},
-                     manual_parameters=[Params.username, Params.password]
+                     responses={200: '登录成功', 401: '用户重复登录', 402: '用户名不存在', 403: '密码错误', 404: '用户未经过邮箱确认', 405: '表单格式错误，即用户名或密码不符合规则'},
+                     manual_parameters=[_Params.USERNAME, _Params.PASSWORD]
                      )
 @api_view(['POST'])
 def login(request):
@@ -61,7 +57,7 @@ def login(request):
         except:
             return JsonResponse({'status_code': 402})
 
-        if user.password == password:
+        if user.PASSWORD == password:
             request.session['is_login'] = True
             request.session['username'] = username
 
@@ -79,7 +75,7 @@ def login(request):
 @csrf_exempt
 @swagger_auto_schema(method='post',
                      responses={200: '注册成功', 401: '用户名已存在', 402: '邮箱已注册或不可用', 403: '密码不符合规则，至少同时包含字母和数字，且长度为 8-18', 404: '两次输入的密码不同', 405: '邮件验证码发送失败', 406: '表单格式错误'},
-                     manual_parameters=[Params.username, Params.email, Params.password1, Params.password2]
+                     manual_parameters=[_Params.USERNAME, _Params.EMAIL, _Params.PASSWORD1, _Params.PASSWORD2]
                      )
 @api_view(['POST'])
 def register(request):
@@ -173,9 +169,9 @@ def unverified_email(request):
 
     try:
         code = ConfirmString.objects.get(user_id=this_user.id).code
-        send_email_confirm(this_user.email, code)
+        send_email_confirm(this_user.EMAIL, code)
     except:
         this_user.delete()
         return JsonResponse({'status_code': VerifyStatus.SEND_EMAIL_ERROR})
 
-    return JsonResponse({'status_code': SUCCESS, 'email': this_user.email, 'username': this_user.username})
+    return JsonResponse({'status_code': SUCCESS, 'email': this_user.EMAIL, 'username': this_user.USERNAME})
