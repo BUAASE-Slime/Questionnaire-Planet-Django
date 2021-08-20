@@ -19,6 +19,24 @@ def all_submittion_count(request):
     else:
         return JsonResponse({'status_code': 0, 'count': 0,})
 
+@csrf_exempt
+def delete_survey(request):
+    response = {'status_code': 1, 'msg': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('survey_id')
+            try:
+                survey = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': -1, 'msg': '问卷不存在'}
+                return JsonResponse(response)
+            survey.is_deleted = True
+            # 是否真的删掉呢
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'msg': '请求错误'}
+        return JsonResponse(response)
 
 
 @csrf_exempt
@@ -78,3 +96,21 @@ def get_survey_details(request):
         response = {'status_code': -2, 'msg': '请求错误'}
         return JsonResponse(response)
 
+@csrf_exempt
+def delete_question(request):
+    response = {'status_code': 1, 'msg': 'success'}
+    if request.method == 'POST':
+        question_form = QuestionIdForm(request.POST)
+        if question_form.is_valid():
+            id = question_form.cleaned_data.get('question_id')
+            try:
+                question = Question.objects.get(question_id=id)
+            except:
+                response = {'status_code': -1, 'msg': '题目不存在'}
+                return JsonResponse(response)
+            question.delete()
+            # 是否真的删掉呢
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'msg': '请求错误'}
+        return JsonResponse(response)
