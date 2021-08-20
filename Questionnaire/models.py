@@ -17,6 +17,7 @@ class Survey(models.Model):
 
     is_released = models.BooleanField(default=False,verbose_name="是否已发行")
     is_deleted = models.BooleanField(default=False,verbose_name="是否已删除")
+    is_collected = models.BooleanField(default=False,verbose_name="是否被收藏")
     # is_encrypted_pin = models.BooleanField(default=False)
 
     username = models.CharField(max_length=128, unique=True,verbose_name="用户名")
@@ -51,6 +52,8 @@ class Question(models.Model):
 class Option(models.Model):
 
     id = models.AutoField(primary_key=True,verbose_name="选项编号")
+    order = models.PositiveIntegerField(default=1,verbose_name="选项位置")
+    #从1递增
     content = models.CharField(max_length=128,verbose_name="内容")
     question_id  = models.ForeignKey(Question, on_delete=models.CASCADE,verbose_name="问题编号")
 
