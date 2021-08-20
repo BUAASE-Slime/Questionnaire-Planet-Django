@@ -19,4 +19,4 @@ class Secrets:
 
     class RootUrl:
         webFront = 'http://127.0.0.1:8080'
-        webBack = 'https://zewan.cc'
+        webBack = 'https://zewan.cc/api/qs'
