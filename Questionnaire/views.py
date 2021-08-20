@@ -18,4 +18,3 @@ def all_submittion_count(request):
         return JsonResponse({'status_code': 1, 'count': count})
     else:
         return JsonResponse({'status_code': 0, 'count': 0,})
-

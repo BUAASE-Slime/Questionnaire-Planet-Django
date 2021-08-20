@@ -33,7 +33,7 @@ class Survey(models.Model):
 
 class Question(models.Model):
 
-    id = models.AutoField(primary_key=True,verbose_name="问题id")
+    question_id = models.AutoField(primary_key=True,verbose_name="问题id")
     title = models.CharField(max_length=64,verbose_name="标题")
     direction = models.CharField(max_length=256,blank=True,verbose_name="说明")
     is_must_answer = models.BooleanField(default=False,verbose_name="是必答题")
@@ -51,21 +51,21 @@ class Question(models.Model):
 
 class Option(models.Model):
 
-    id = models.AutoField(primary_key=True,verbose_name="选项编号")
+    option_id = models.AutoField(primary_key=True,verbose_name="选项编号")
     order = models.PositiveIntegerField(default=1,verbose_name="选项位置")
     #从1递增
     content = models.CharField(max_length=128,verbose_name="内容")
     question_id  = models.ForeignKey(Question, on_delete=models.CASCADE,verbose_name="问题编号")
 
 class Submit(models.Model):
-    id = models.AutoField(primary_key=True,verbose_name="提交编号")
+    submit_id = models.AutoField(primary_key=True,verbose_name="提交编号")
     survey_id = models.ForeignKey(Survey,on_delete=models.CASCADE,verbose_name="问卷编号")
     submit_time = models.DateTimeField(auto_now_add=True,verbose_name="提交时间")
     user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
 
 class Answer(models.Model):
 
-    id = models.AutoField(primary_key=True,verbose_name="回答编号")
+    answer_id = models.AutoField(primary_key=True,verbose_name="回答编号")
     question_id = models.ForeignKey(Question, on_delete=models.CASCADE,verbose_name="问题编号")
     submit_id = models.ForeignKey(Submit, on_delete=models.CASCADE,verbose_name="提交编号")
     user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
