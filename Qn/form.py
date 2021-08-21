@@ -1,5 +1,8 @@
 from django import forms
 
+class UserNameForm(forms.Form):
+    username = forms.CharField(label="用户名", max_length=128, widget=forms.TextInput(attrs={'class': 'form-control'}))
+
 class SurveyIdForm(forms.Form):
     qn_id = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control'}))
 

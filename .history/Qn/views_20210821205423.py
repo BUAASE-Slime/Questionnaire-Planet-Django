@@ -5,9 +5,9 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.openapi import *
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
-from drf_yasg import openapi
+
 from django.shortcuts import render
-import datetime
+
 
 # Create your views here.
 from .form import *
@@ -17,10 +17,11 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
+import re
+
 from Qn.models import Survey
 
 utc = pytz.UTC
-
 
 polygon_view_get_desc = '根据所选参数,获取问卷列表,默认按创建时间倒序'
 polygon_view_get_parm = [
@@ -116,27 +117,6 @@ def get_list(request):
 
 
 
-class _Params:
-    USERNAME = openapi.Parameter('username', openapi.TYPE_STRING, description='用户名', type=openapi.TYPE_STRING)
-    QN_ID = openapi.Parameter('qn_id', openapi.TYPE_NUMBER,description="问卷id",type=openapi.TYPE_NUMBER)
-
-@csrf_exempt
-def empty_the_recycle_bin(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        username_form = UserNameForm(request.POST)
-        if username_form.is_valid():
-            username = username_form.cleaned_data.get('username')
-            qn_list = Survey.objects.filter(username=username,is_deleted=True)
-            for qn in qn_list:
-                qn.delete()
-            return JsonResponse(response)
-        else:
-            response = {'status_code': -1, 'message': 'invalid form'}
-            return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': '请求错误'}
-        return JsonResponse(response)
 
 @csrf_exempt
 def all_submittion_count(request):
@@ -150,16 +130,24 @@ def all_submittion_count(request):
         return JsonResponse({'status_code': 0, 'count': 0,'message':"请求错误"})
 
 @csrf_exempt
+@swagger_auto_schema(method='post',
+                     tags=['问卷添加与删除相关'],
+                     operation_summary='放入回收站',
+                     responses={1: '放入回收站成功', -1: '问卷不存在', 0: '问卷已放入回收站，不要重复操作', -2: '请求错误'},
+                     manual_parameters=[_Params.QN_ID]
+                     )
+@api_view(['POST'])
 def delete_survey_not_real(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
+        print(survey_form)
         if survey_form.is_valid():
             id = survey_form.cleaned_data.get('qn_id')
             try:
                 survey = Survey.objects.get(survey_id=id)
             except:
-                response = {'status_code': -1, 'message': '问卷不存在'}
+                response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
             if survey.is_deleted == True:
                 response = {'status_code': 0, 'message': '问卷已放入回收站'}
@@ -167,6 +155,9 @@ def delete_survey_not_real(request):
             survey.is_deleted = True
             survey.is_released = False
             survey.save()
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
             return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': '请求错误'}
