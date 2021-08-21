@@ -20,7 +20,7 @@ class Survey(models.Model):
     is_collected = models.BooleanField(default=False,verbose_name="是否被收藏")
     # is_encrypted_pin = models.BooleanField(default=False)
 
-    username = models.CharField(max_length=128, unique=True,verbose_name="用户名")
+    username = models.CharField(max_length=128, verbose_name="用户名")
 
     SURVEY_TYPE_CHOICES = [
         (0,'普通问卷'),

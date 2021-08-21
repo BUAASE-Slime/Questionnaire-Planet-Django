@@ -161,6 +161,7 @@ def delete_option(request):
         return JsonResponse(response)
 
 # username title subtitle type
+@csrf_exempt
 def create_qn(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
@@ -171,15 +172,22 @@ def create_qn(request):
             subtitle = new_qn_form.cleaned_data.get('subtitle')
             type = new_qn_form.cleaned_data.get('type')
 
-            survey = Survey()
             try:
-                survey.username = username
-                survey.title = title
-                survey.type = type
-                survey.subtitle = subtitle
-                survey.question_num = 0
-                survey.recycling_num = 0
+                user = User.objects.get(username=username)
 
+            except:
+                response = {'status_code': 2, 'message': '用户不存在'}
+                return JsonResponse(response)
+            # survey.username = username
+            # survey.title = title
+            # survey.type = int(type)
+            # survey.subtitle = subtitle
+            # survey.question_num = 0
+            # survey.recycling_num = 0
+
+            try:
+                survey = Survey(username=username, title=title, type=type, subtitle=subtitle, question_num=0,
+                                recycling_num=0)
                 survey.save()
             except:
                 response = {'status_code': -3, 'message': '后端炸了'}
@@ -196,7 +204,7 @@ def create_qn(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
-
+@csrf_exempt
 def create_option(question,content):
     option = Option()
     option.content = content
@@ -206,6 +214,7 @@ def create_option(question,content):
     option.save()
 
 #  title direction is_must_answer type qn_id options:只传option的title字符串使用特殊字符例如 ^%之类的隔开便于传输
+@csrf_exempt
 def create_question(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
@@ -236,3 +245,5 @@ def create_question(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
+
+
