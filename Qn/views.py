@@ -16,13 +16,13 @@ polygon_view_get_parm = [
     Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号', type=TYPE_INTEGER, required=False),
     Parameter(name='is_deleted', in_=IN_QUERY, description='是否删除', type=TYPE_BOOLEAN, required=False),
     Parameter(name='title_key', in_=IN_QUERY, description='标题关键词', type=TYPE_STRING, required=False),
-    Parameter(name='username', in_=IN_QUERY, description='发起人用户名', type=TYPE_STRING, required=False),
+    Parameter(name='username', in_=IN_QUERY, description='发起人用户名', type=TYPE_STRING, required=True),
     Parameter(name='is_released', in_=IN_QUERY, description='是否发布', type=TYPE_BOOLEAN, required=False),
     Parameter(name='is_collected', in_=IN_QUERY, description='是否收藏,', type=TYPE_BOOLEAN, required=False),
     Parameter(name='order_item', in_=IN_QUERY, description='排序项,created_time-创建时间,release_time-发布时间,recycling_num-回收量', type=TYPE_STRING, required=False),
     Parameter(name='order_type', in_=IN_QUERY, description='排序类型,desc-倒序,asc-正序', type=TYPE_STRING, required=False),
 ]
-polygon_view_get_resp = {200: '查询成功', 401: '查询失败'}
+polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失败', 403:'用户名不匹配,没有查询权限'}
 
 
 @csrf_exempt
@@ -35,8 +35,11 @@ polygon_view_get_resp = {200: '查询成功', 401: '查询失败'}
                      )
 @api_view(['GET'])
 def get_list(request):
-    if request.method == 'GET':
+    # 检验是否登录
+    if request.session.get('is_login', None):  # login repeatedly not allowed
+        return JsonResponse({'status_code': 401})
 
+    if request.method == 'GET':
         survey_id = request.GET.get('survey_id')
         is_deleted = bool(request.GET.get('is_deleted'))
         title_key = request.GET.get('title_key')
@@ -50,6 +53,10 @@ def get_list(request):
         if order_type is None:
             order_type = "desc"
 
+        # 用户名是否匹配
+        if username != request.session.get('username'):
+            return JsonResponse({'status_code': 403})
+
         if survey_id is not None:
             try:
                 survey = Survey.objects.get(survey_id=survey_id)
@@ -60,7 +67,7 @@ def get_list(request):
                              "created_time": survey.created_time, "release_time": survey.release_time}
                 return JsonResponse(json_item)
             except:
-                return JsonResponse({'status_code': 401})
+                return JsonResponse({'status_code': 402})
 
         survey_list = Survey.objects.all()
         if is_deleted:
