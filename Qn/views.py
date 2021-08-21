@@ -25,28 +25,29 @@ polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失�
 
 
 @csrf_exempt
-@swagger_auto_schema(method='get',
+@swagger_auto_schema(method='post',
                      tags=['问卷相关'],
                      operation_summary='查询问卷列表',
                      operation_description=polygon_view_get_desc,
                      manual_parameters=polygon_view_get_parm,
                      responses=polygon_view_get_resp
                      )
-@api_view(['GET'])
+@api_view(['POST'])
 def get_list(request):
     # 检验是否登录
-    if request.session.get('is_login', None):  # login repeatedly not allowed
+    if not request.session.get('is_login', None):
         return JsonResponse({'status_code': 401})
 
-    if request.method == 'GET':
-        survey_id = request.GET.get('survey_id')
-        is_deleted = bool(request.GET.get('is_deleted'))
-        title_key = request.GET.get('title_key')
-        username = request.GET.get('username')
-        is_released = bool(request.GET.get('is_released'))
-        is_collected = bool(request.GET.get('is_collected'))
-        order_item = request.GET.get('order_item')
-        order_type = request.GET.get('order_type')
+    if request.method == 'POST':
+        survey_id = request.POST.get('survey_id')
+        is_deleted = bool(request.POST.get('is_deleted'))
+        title_key = request.POST.get('title_key')
+        username = request.POST.get('username')
+        is_released = request.POST.get('is_released')
+        is_collected = bool(request.POST.get('is_collected'))
+        order_item = request.POST.get('order_item')
+        order_type = request.POST.get('order_type')
+        print(is_released, order_item, order_type, title_key, username, is_collected)
         if order_item is None:
             order_item = "created_time"
         if order_type is None:
@@ -56,6 +57,8 @@ def get_list(request):
         if username != request.session.get('username'):
             return JsonResponse({'status_code': 403})
 
+        json_list = []
+
         if survey_id is not None:
             try:
                 survey = Survey.objects.get(survey_id=survey_id)
@@ -64,7 +67,7 @@ def get_list(request):
                              "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                              "recycling_num": survey.recycling_num, "username": survey.username,
                              "created_time": survey.created_time, "release_time": survey.release_time}
-                return JsonResponse(json_item)
+                json_list.append(json_item)
             except:
                 return JsonResponse({'status_code': 402})
 
@@ -75,8 +78,11 @@ def get_list(request):
             survey_list = survey_list.filter(title__contains=title_key)
         if username:
             survey_list = survey_list.filter(username=username)
-        if is_released:
+        if is_released == 1:
             survey_list = survey_list.filter(is_released=is_released)
+        if is_released == 0:
+            print(1)
+            survey_list = survey_list.filter(is_released != is_released)
         if is_collected:
             survey_list = survey_list.filter(is_collected=is_collected)
         if order_type == 'desc':
@@ -84,7 +90,6 @@ def get_list(request):
         else:
             survey_list = survey_list.order_by(order_item)
 
-        json_list = []
         for survey in survey_list:
             json_item = {"survey_id": survey.survey_id, "title": survey.title,
                          "subtitle": survey.subtitle, "is_released": survey.is_released,
@@ -92,4 +97,7 @@ def get_list(request):
                          "recycling_num": survey.recycling_num, "username": survey.username,
                          "created_time": survey.created_time, "release_time": survey.release_time}
             json_list.append(json_item)
-        return JsonResponse(list(json_list), safe=False, json_dumps_params={'ensure_ascii': False})
+
+        if json_list:
+            return JsonResponse(list(json_list), safe=False, json_dumps_params={'ensure_ascii': False})
+        return JsonResponse({'status_code': 404})
