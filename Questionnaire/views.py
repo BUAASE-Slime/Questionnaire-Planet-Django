@@ -25,7 +25,7 @@ def delete_survey_not_real(request):
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
-            id = survey_form.cleaned_data.get('survey_id')
+            id = survey_form.cleaned_data.get('qn_id')
             try:
                 survey = Survey.objects.get(survey_id=id)
             except:
@@ -44,7 +44,7 @@ def delete_survey_real(request):
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
-            id = survey_form.cleaned_data.get('survey_id')
+            id = survey_form.cleaned_data.get('qn_id')
             try:
                 survey = Survey.objects.get(survey_id=id)
             except:
@@ -64,7 +64,7 @@ def get_survey_details(request):
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
-            id = survey_form.cleaned_data.get('survey_id')
+            id = survey_form.cleaned_data.get('qn_id')
             try:
                 survey = Survey.objects.get(survey_id=id)
             except:
@@ -90,7 +90,7 @@ def get_survey_details(request):
                 temp['direction'] = item.direction
                 temp['is_must_answer'] = item.is_must_answer
                 temp['type'] = item.type
-                temp['survey_id'] = id
+                temp['qn_id'] = id
                 temp['sequence'] = item.sequence
                 temp['option'] = []
                 if temp['type'] < 2:
