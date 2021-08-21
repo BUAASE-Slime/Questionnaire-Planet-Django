@@ -46,4 +46,5 @@ urlpatterns = [
 
     path('api/qs/admin/', admin.site.urls),
     path('api/qs/user/', include(('userinfo.urls', 'userinfo'))),
+    path('api/qs/Questionnaire/',include(('Questionnaire.urls', 'Questionnaire')))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
