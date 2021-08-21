@@ -2,7 +2,6 @@ import pytz
 from django.http import JsonResponse
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
-from django_filters.rest_framework import BooleanFilter
 from drf_yasg.openapi import *
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
