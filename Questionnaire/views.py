@@ -209,6 +209,7 @@ def create_option(question,content):
     option = Option()
     option.content = content
     question.option_num += 1
+    option.question_id = question
     question.save()
     option.order = question.option_num
     option.save()
@@ -221,20 +222,24 @@ def create_question(request):
         new_question_form = CreateNewQuestionForm(request.POST)
         if new_question_form.is_valid():
             question = Question()
-            question.title = new_question_form.cleaned_data.get('title')
-            question.direction = new_question_form.cleaned_data.get('direction')
-            question.is_must_answer = new_question_form.cleaned_data.get('is_must_answer')
-            question.type = new_question_form.cleaned_data.get('type')
-            question.survey_id = new_question_form.cleaned_data.get('qn_id')
-            option_str = new_question_form.cleaned_data.get('options')
+            try:
+                question.title = new_question_form.cleaned_data.get('title')
+                question.direction = new_question_form.cleaned_data.get('direction')
+                question.is_must_answer = new_question_form.cleaned_data.get('is_must_answer')
+                question.type = new_question_form.cleaned_data.get('type')
+                survey_id = new_question_form.cleaned_data.get('qn_id')
+                question.survey_id = Survey.objects.get(survey_id=survey_id)
 
+                option_str = new_question_form.cleaned_data.get('options')
+            except:
+                response = {'status_code': -3, 'message': '后端炸了'}
+                return JsonResponse(response)
             KEY = "^_^_^"
-
             option_list = option_str.split(KEY)
             for item in option_list:
                 create_option(question,item)
             question.save()
-            response['option_num'] = option_list.count()
+            response['option_num'] = len(option_list)
 
             return JsonResponse(response)
 
