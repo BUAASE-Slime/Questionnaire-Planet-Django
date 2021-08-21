@@ -9,6 +9,6 @@ urlpatterns = [
     path('delete/question/',delete_question),
     path('delete/option/',delete_option),
 
-
+    path('get/qn_detail/',get_survey_details),
 
 ]
