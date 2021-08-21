@@ -9,4 +9,5 @@ urlpatterns = [
     path('logout', logout),
     path('confirm/', user_confirm),
     path('unverified_email', unverified_email),
+
 ]
