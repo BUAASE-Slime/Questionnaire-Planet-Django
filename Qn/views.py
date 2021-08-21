@@ -1,3 +1,6 @@
+from itertools import groupby
+from operator import itemgetter
+
 import pytz
 from django.http import JsonResponse
 # Create your views here.
@@ -7,7 +10,7 @@ from drf_yasg.openapi import *
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
-from Qn.models import Survey
+from Qn.models import *
 
 utc = pytz.UTC
 
@@ -19,10 +22,11 @@ polygon_view_get_parm = [
     Parameter(name='username', in_=IN_QUERY, description='发起人用户名', type=TYPE_STRING, required=True),
     Parameter(name='is_released', in_=IN_QUERY, description='是否发布', type=TYPE_BOOLEAN, required=False),
     Parameter(name='is_collected', in_=IN_QUERY, description='是否收藏,', type=TYPE_BOOLEAN, required=False),
-    Parameter(name='order_item', in_=IN_QUERY, description='排序项,created_time-创建时间,release_time-发布时间,recycling_num-回收量', type=TYPE_STRING, required=False),
+    Parameter(name='order_item', in_=IN_QUERY, description='排序项,created_time-创建时间,release_time-发布时间,recycling_num-回收量',
+              type=TYPE_STRING, required=False),
     Parameter(name='order_type', in_=IN_QUERY, description='排序类型,desc-倒序,asc-正序', type=TYPE_STRING, required=False),
 ]
-polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失败', 403:'用户名不匹配,没有查询权限'}
+polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失败', 403: '用户名不匹配,没有查询权限'}
 
 
 @csrf_exempt
@@ -36,7 +40,7 @@ polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失�
 @api_view(['GET'])
 def get_list(request):
     # 检验是否登录
-    if request.session.get('is_login', None):  # login repeatedly not allowed
+    if not request.session.get('is_login'):
         return JsonResponse({'status_code': 401})
 
     if request.method == 'GET':
@@ -92,5 +96,41 @@ def get_list(request):
                          "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                          "recycling_num": survey.recycling_num, "username": survey.username,
                          "created_time": survey.created_time, "release_time": survey.release_time}
+            json_list.append(json_item)
+        return JsonResponse(list(json_list), safe=False, json_dumps_params={'ensure_ascii': False})
+
+
+@csrf_exempt
+@swagger_auto_schema(method='get',
+                     tags=['问卷相关'],
+                     operation_summary='统计问卷回收量',
+                     operation_description="返回每日的问卷回收量",
+                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
+                                                type=TYPE_INTEGER, required=True),],
+                     responses=polygon_view_get_resp
+                     )
+@api_view(['GET'])
+def get_recycling_num(request):
+    # 检验是否登录
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 401})
+
+    if request.method == 'GET':
+        survey_id = request.GET.get('survey_id')
+        try:
+            survey = Survey.objects.get(survey_id=survey_id)
+        except:
+            return JsonResponse({'status_code': 402})
+
+        if survey.username != request.session.get('username'):
+            return JsonResponse({'status_code': 403})
+        submit_list = survey.submit_set.all()
+        submit_list = submit_list.order_by('submit_time')
+        json_list = []
+        for date, items in groupby(submit_list, key=itemgetter('submit_time')):
+            number = 0
+            for i in items:
+                number = number + 1
+            json_item = {"date": date, "number": number}
             json_list.append(json_item)
         return JsonResponse(list(json_list), safe=False, json_dumps_params={'ensure_ascii': False})
