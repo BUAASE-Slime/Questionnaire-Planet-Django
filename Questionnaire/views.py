@@ -31,9 +31,12 @@ def delete_survey_not_real(request):
             except:
                 response = {'status_code': -1, 'message': '问卷不存在'}
                 return JsonResponse(response)
+            if survey.is_deleted == True:
+                response = {'status_code': 0, 'message': '问卷已放入回收站'}
+                return JsonResponse(response)
             survey.is_deleted = True
+            survey.is_released = False
             survey.save()
-            # 是否真的删掉呢
             return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': '请求错误'}
