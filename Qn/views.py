@@ -149,7 +149,7 @@ def all_submittion_count(request):
         try:
             count = int(Submit.objects.all().count())
         except :
-            return JsonResponse({'status_code': 1,'message':"后端炸了"})
+            return JsonResponse({'status_code': -1,'message':"后端炸了"})
         return JsonResponse({'status_code': 1, 'count': count,'message':"success"})
     else:
         return JsonResponse({'status_code': 0, 'count': 0,'message':"请求错误"})
@@ -195,7 +195,6 @@ def delete_survey_real(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
-
 @csrf_exempt
 def get_survey_details(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -210,7 +209,7 @@ def get_survey_details(request):
                 return JsonResponse(response)
 
             response['title'] = survey.title
-            response['subtitle'] = survey.subtitle
+            response['description'] = survey.description
             response['type'] = survey.type
             response['question_num'] = survey.question_num
             response['created_time'] = survey.created_time
@@ -226,18 +225,19 @@ def get_survey_details(request):
                 temp['question_id'] = item.question_id
                 temp['title'] = item.title
                 temp['direction'] = item.direction
-                temp['is_must_answer'] = item.is_must_answer
+                temp['must'] = item.is_must_answer
                 temp['type'] = item.type
                 temp['qn_id'] = id
                 temp['sequence'] = item.sequence
+                temp['id'] = item.sequence# 按照前端的题目顺序
                 temp['option'] = []
-                if temp['type'] < 2:
+                if temp['type'] in ['radio', 'checkbox']:
                 # 单选题或者多选题有选项
                     option_list = Option.objects.filter(question_id=item.question_id)
                     for option_item in option_list:
                         option_dict = {}
                         option_dict['option_id'] = option_item.option_id
-                        option_dict['content'] = option_item.content
+                        option_dict['title'] = option_item.content
                         temp['option'].append(option_dict)
                     temp['answer']  = ''
                 else:# TODO 填空题或者其他
@@ -294,7 +294,7 @@ def delete_option(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
-# username title subtitle type
+# username title description type
 @csrf_exempt
 def create_qn(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -303,7 +303,7 @@ def create_qn(request):
         if new_qn_form.is_valid():
             username = new_qn_form.cleaned_data.get('username')
             title = new_qn_form.cleaned_data.get('title')
-            subtitle = new_qn_form.cleaned_data.get('subtitle')
+            description = new_qn_form.cleaned_data.get('description')
             type = new_qn_form.cleaned_data.get('type')
 
             try:
@@ -320,7 +320,7 @@ def create_qn(request):
             # survey.recycling_num = 0
 
             try:
-                survey = Survey(username=username, title=title, type=type, subtitle=subtitle, question_num=0,
+                survey = Survey(username=username, title=title, type=type, description=description, question_num=0,
                                 recycling_num=0)
                 survey.save()
             except:
@@ -351,6 +351,7 @@ def create_option(question,content):
 #  title direction is_must_answer type qn_id options:只传option的title字符串使用特殊字符例如 ^%之类的隔开便于传输
 @csrf_exempt
 def create_question(request):
+    #TODO 完善json。dump
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         new_question_form = CreateNewQuestionForm(request.POST)
@@ -359,11 +360,13 @@ def create_question(request):
             try:
                 question.title = new_question_form.cleaned_data.get('title')
                 question.direction = new_question_form.cleaned_data.get('direction')
-                question.is_must_answer = new_question_form.cleaned_data.get('is_must_answer')
+                question.is_must_answer = new_question_form.cleaned_data.get('must')
                 question.type = new_question_form.cleaned_data.get('type')
                 survey_id = new_question_form.cleaned_data.get('qn_id')
                 question.survey_id = Survey.objects.get(survey_id=survey_id)
-
+                question.raw = new_question_form.cleaned_data.get('raw')
+                question.score = new_question_form.cleaned_data.get('score')
+                
                 option_str = new_question_form.cleaned_data.get('options')
             except:
                 response = {'status_code': -3, 'message': '后端炸了'}
