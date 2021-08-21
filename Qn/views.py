@@ -10,6 +10,7 @@ from drf_yasg.openapi import *
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
+from Qn.form import CollectForm
 from Qn.models import *
 
 utc = pytz.UTC
@@ -202,7 +203,7 @@ def get_answer(request):
                      operation_description="收藏问卷",
                      manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
                                                   type=TYPE_INTEGER, required=True)],
-                     responses={200: '收藏成功', 401: '未登录', 402: '收藏失败', 403: '用户名不匹配,没有查询权限'}
+                     responses={200: '收藏成功', 401: '未登录', 402: '收藏失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
                      )
 @api_view(['post'])
 def collect(request):
@@ -210,8 +211,9 @@ def collect(request):
     if not request.session.get('is_login'):
         return JsonResponse({'status_code': 401})
 
-    if request.method == 'POST':
-        survey_id = request.GET.get('survey_id')
+    collect_form = CollectForm(request.POST)
+    if collect_form.is_valid():
+        survey_id = collect_form.cleaned_data.get('survey_id')
         try:
             survey = Survey.objects.get(survey_id=survey_id)
         except:
@@ -224,9 +226,11 @@ def collect(request):
         try:
             survey.is_collected = True
             survey.save()
-            return JsonResponse({'status_code': 403})
+            return JsonResponse({'status_code': 200})
         except:
             return JsonResponse({'status_code': 402})
+    else:
+        return JsonResponse({'status_code': 404})
 
 
 @csrf_exempt
@@ -236,7 +240,7 @@ def collect(request):
                      operation_description="取消收藏",
                      manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
                                                   type=TYPE_INTEGER, required=True)],
-                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限'}
+                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限',  404: '表单格式不正确'}
                      )
 @api_view(['post'])
 def not_collect(request):
@@ -244,8 +248,9 @@ def not_collect(request):
     if not request.session.get('is_login'):
         return JsonResponse({'status_code': 401})
 
-    if request.method == 'POST':
-        survey_id = request.GET.get('survey_id')
+    collect_form = CollectForm(request.POST)
+    if collect_form.is_valid():
+        survey_id = collect_form.cleaned_data.get('survey_id')
         try:
             survey = Survey.objects.get(survey_id=survey_id)
         except:
@@ -258,6 +263,8 @@ def not_collect(request):
         try:
             survey.is_collected = False
             survey.save()
-            return JsonResponse({'status_code': 403})
+            return JsonResponse({'status_code': 200})
         except:
             return JsonResponse({'status_code': 402})
+    else:
+        return JsonResponse({'status_code': 404})
