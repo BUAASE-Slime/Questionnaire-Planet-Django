@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False, verbose_name='提交编号')),
                 ('submit_time', models.DateTimeField(auto_now_add=True, verbose_name='提交时间')),
-                ('survey_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Questionnaire.Survey', verbose_name='问卷编号')),
+                ('survey_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Qn.Survey', verbose_name='问卷编号')),
                 ('user_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='userinfo.User', verbose_name='用户编号')),
             ],
         ),
@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ('is_must_answer', models.BooleanField(default=False, verbose_name='是必答题')),
                 ('sequence', models.IntegerField(default=0, verbose_name='题目顺序')),
                 ('type', models.IntegerField(choices=[(0, '单选'), (1, '多选'), (2, '填空'), (3, '评分')], default=0, verbose_name='题型')),
-                ('survey_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Questionnaire.Survey', verbose_name='所属问卷id')),
+                ('survey_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Qn.Survey', verbose_name='所属问卷id')),
             ],
         ),
         migrations.CreateModel(
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False, verbose_name='选项编号')),
                 ('content', models.CharField(max_length=128, verbose_name='内容')),
-                ('question_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Questionnaire.Question', verbose_name='问题编号')),
+                ('question_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Qn.Question', verbose_name='问题编号')),
             ],
         ),
         migrations.CreateModel(
@@ -66,8 +66,8 @@ class Migration(migrations.Migration):
                 ('id', models.AutoField(primary_key=True, serialize=False, verbose_name='回答编号')),
                 ('answer', models.CharField(max_length=128, verbose_name='答案')),
                 ('type', models.IntegerField(choices=[(0, '单选'), (1, '多选'), (2, '填空'), (3, '评分')], default=0, verbose_name='题目类型')),
-                ('question_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Questionnaire.Question', verbose_name='问题编号')),
-                ('submit_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Questionnaire.Submit', verbose_name='提交编号')),
+                ('question_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Qn.Question', verbose_name='问题编号')),
+                ('submit_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='Qn.Submit', verbose_name='提交编号')),
                 ('user_id', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='userinfo.User', verbose_name='用户编号')),
             ],
         ),
