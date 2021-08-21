@@ -115,3 +115,21 @@ def delete_question(request):
     else:
         response = {'status_code': -2, 'msg': '请求错误'}
         return JsonResponse(response)
+
+@csrf_exempt
+def delete_option(request):
+    response = {'status_code': 1, 'msg': 'success'}
+    if request.method == 'POST':
+        option_form = OptionIdForm(request.POST)
+        if option_form.is_valid():
+            id = option_form.cleaned_data.get('option_id')
+            try:
+                option = Option.objects.get(option_id=id)
+            except:
+                response = {'status_code': -1, 'msg': '选项不存在'}
+                return JsonResponse(response)
+            option.delete()
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'msg': '请求错误'}
+        return JsonResponse(response)
