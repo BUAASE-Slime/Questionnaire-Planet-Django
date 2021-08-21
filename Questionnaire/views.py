@@ -14,10 +14,10 @@ def all_submittion_count(request):
         try:
             count = int(Submit.objects.all().count())
         except :
-            return JsonResponse({'status_code': 1,})
-        return JsonResponse({'status_code': 1, 'count': count})
+            return JsonResponse({'status_code': 1,'message':"后端炸了"})
+        return JsonResponse({'status_code': 1, 'count': count,'message':"success"})
     else:
-        return JsonResponse({'status_code': 0, 'count': 0,})
+        return JsonResponse({'status_code': 0, 'count': 0,'message':"请求错误"})
 
 @csrf_exempt
 def delete_survey(request):
