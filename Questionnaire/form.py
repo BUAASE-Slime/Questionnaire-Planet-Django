@@ -18,7 +18,7 @@ class CreateNewQnForm(forms.Form):
 
 # username title direction is_must_answer type qn_id options
 class CreateNewQuestionForm(forms.Form):
-    username = forms.CharField(label="用户名", max_length=128, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    # username = forms.CharField(label="用户名", max_length=128, widget=forms.TextInput(attrs={'class': 'form-control'}))
     title = forms.CharField(label="标题", max_length=128, widget=forms.TextInput(attrs={'class': 'form-control'}))
     direction = forms.CharField(label="副标题", max_length=256, widget=forms.TextInput(attrs={'class': 'form-control'}))
     is_must_answer = forms.BooleanField(label="是否是必答")
