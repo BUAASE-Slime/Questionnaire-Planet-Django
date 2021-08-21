@@ -12,8 +12,8 @@ class Survey(models.Model):
     recycling_num = models.PositiveIntegerField(default=0,verbose_name="回收数目")
 
     created_time = models.DateTimeField(auto_now=True,verbose_name="创建时间")
-    release_time = models.DateTimeField(blank=True,verbose_name="发布时间")
-    finished_time = models.DateTimeField(blank=True,verbose_name="结束时间")
+    release_time = models.DateTimeField(blank=True,verbose_name="发布时间",null=True)
+    finished_time = models.DateTimeField(blank=True,verbose_name="结束时间",null=True)
 
     is_released = models.BooleanField(default=False,verbose_name="是否已发行")
     is_deleted = models.BooleanField(default=False,verbose_name="是否已删除")
@@ -62,7 +62,8 @@ class Submit(models.Model):
     submit_id = models.AutoField(primary_key=True,verbose_name="提交编号")
     survey_id = models.ForeignKey(Survey,on_delete=models.CASCADE,verbose_name="问卷编号")
     submit_time = models.DateTimeField(auto_now_add=True,verbose_name="提交时间")
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
+    # user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
+    username = models.CharField(max_length=128,blank=True,verbose_name="用户名")
 
 class Answer(models.Model):
 
