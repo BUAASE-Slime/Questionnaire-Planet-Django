@@ -1,5 +1,4 @@
 from django.conf import settings
-from userinfo.models import *
 
 from utils.toHash import *
 

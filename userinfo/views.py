@@ -8,10 +8,11 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
-from userinfo.form import *
 from userinfo.models import ConfirmString
 from utils.sendEmail import make_confirm_string, send_email_confirm
 from userinfo.models import User
+
+from .form import *
 
 utc = pytz.UTC
 

@@ -5,7 +5,7 @@ from userinfo.models import *
 class Survey(models.Model):
     survey_id = models.AutoField(primary_key=True,verbose_name="id")
     title = models.CharField(max_length=50,verbose_name="标题")
-    subtitle = models.CharField(max_length=256,verbose_name="副标题",blank=True)
+    description = models.CharField(max_length=256,verbose_name="简介",blank=True)
     # password = models.CharField(max_length=64,blank=True,)
 
     question_num = models.PositiveIntegerField(default=0,verbose_name="题目数目") # 非负整数
@@ -34,7 +34,7 @@ class Survey(models.Model):
 class Question(models.Model):
 
     question_id = models.AutoField(primary_key=True,verbose_name="问题id")
-    title = models.CharField(max_length=64,verbose_name="标题")
+    title = models.CharField(max_length=64,verbose_name="标题",blank=True,default='')
     direction = models.CharField(max_length=256,blank=True,verbose_name="说明")
     is_must_answer = models.BooleanField(default=False,verbose_name="是必答题")
 
@@ -42,14 +42,16 @@ class Question(models.Model):
     sequence = models.IntegerField(default=0,verbose_name="题目顺序")
     option_num = models.PositiveIntegerField(default=0,verbose_name="选项数目")
 
+    score = models.PositiveIntegerField(default=0,verbose_name="得分")
+    raw = models.PositiveIntegerField(default=1, verbose_name="行数")
     TYPE_CHOICES = [
         (0, '单选'),
         (1, '多选'),
         (2, '填空'),
         (3, '评分'),
     ]
-    type = models.IntegerField(choices=TYPE_CHOICES,default=0,verbose_name="题型")
-
+    # type = models.IntegerField(choices=TYPE_CHOICES,default=0,verbose_name="题型")
+    type = models.CharField(max_length=256,verbose_name="类型",default='')
 class Option(models.Model):
 
     option_id = models.AutoField(primary_key=True,verbose_name="选项编号")
@@ -78,6 +80,7 @@ class Answer(models.Model):
         (2, '填空'),
         (3, '评分'),
     ]
-    type = models.IntegerField(choices=TYPE_CHOICES, default=0,verbose_name="题目类型")
+    # type = models.IntegerField(choices=TYPE_CHOICES, default=0,verbose_name="题目类型")
+    type = models.CharField(max_length=256, verbose_name="类型",default='')
 
 
