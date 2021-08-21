@@ -17,6 +17,7 @@ class Survey(models.Model):
 
     is_released = models.BooleanField(default=False,verbose_name="是否已发行")
     is_deleted = models.BooleanField(default=False,verbose_name="是否已删除")
+    is_collected = models.BooleanField(default=False, verbose_name="是否已收藏")
     # is_encrypted_pin = models.BooleanField(default=False)
 
     username = models.CharField(max_length=128, unique=True,verbose_name="用户名")
