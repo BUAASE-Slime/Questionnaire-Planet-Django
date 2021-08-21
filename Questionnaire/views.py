@@ -195,3 +195,21 @@ def create_qn(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
+
+
+def create_option(question,content):
+    option = Option()
+    option.content = content
+    question.option_num += 1
+    question.save()
+    option.order = question.option_num
+    option.save()
+
+# username title direction is_must_answer type qn_id options:只传option的title字符串使用特殊字符例如 ^%之类的隔开便于传输
+def create_question(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        pass
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
