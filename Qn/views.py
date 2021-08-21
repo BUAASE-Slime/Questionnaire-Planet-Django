@@ -27,7 +27,7 @@ polygon_view_get_parm = [
               type=TYPE_STRING, required=False),
     Parameter(name='order_type', in_=IN_QUERY, description='排序类型,desc-倒序,asc-正序', type=TYPE_STRING, required=False),
 ]
-polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失败', 403: '用户名不匹配,没有查询权限'}
+polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失败', 403: '用户名不匹配,没有查询权限', 404: '表单不匹配'}
 
 
 @csrf_exempt
@@ -102,7 +102,7 @@ def get_list(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='get',
+@swagger_auto_schema(method='post',
                      tags=['问卷相关'],
                      operation_summary='统计问卷回收量',
                      operation_description="返回每日的问卷回收量",
@@ -110,31 +110,46 @@ def get_list(request):
                                                   type=TYPE_INTEGER, required=True), ],
                      responses=polygon_view_get_resp
                      )
-@api_view(['GET'])
+@api_view(['POST'])
 def get_recycling_num(request):
     # 检验是否登录
     if not request.session.get('is_login'):
         return JsonResponse({'status_code': 401})
 
-    if request.method == 'GET':
-        survey_id = request.GET.get('survey_id')
+    collect_form = CollectForm(request.POST)
+    if collect_form.is_valid():
+        survey_id = collect_form.cleaned_data.get('survey_id')
         try:
             survey = Survey.objects.get(survey_id=survey_id)
         except:
             return JsonResponse({'status_code': 402})
 
+        # 检查用户名是否匹配
         if survey.username != request.session.get('username'):
             return JsonResponse({'status_code': 403})
-        submit_list = survey.submit_set.all()
+
+        submit_list = Submit.objects.filter(survey_id_id=survey_id)
         submit_list = submit_list.order_by('submit_time')
         json_list = []
-        for date, items in groupby(submit_list, key=itemgetter('submit_time')):
-            number = 0
-            for i in items:
-                number = number + 1
-            json_item = {"date": date, "number": number}
-            json_list.append(json_item)
-        return JsonResponse(list(json_list), safe=False, json_dumps_params={'ensure_ascii': False})
+        for submit in submit_list:
+            submit.submit_time = submit.submit_time.strftime("%d")
+        date = submit_list[0].submit_time
+        num = 0
+        for submit in submit_list:
+            if submit.submit_time == date:
+                num = num + 1
+            else:
+                json_item = {"date":date,"number":num}
+                json_list.append(json_item)
+                date = submit.submit_time
+                num = 1
+
+        json_item = {"date": date, "number": num}
+        json_list.append(json_item)
+        data = {'data': json_list}
+        return JsonResponse(data, safe=False)
+    else:
+        return JsonResponse({'status_code': 404})
 
 
 @csrf_exempt
@@ -240,7 +255,7 @@ def collect(request):
                      operation_description="取消收藏",
                      manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
                                                   type=TYPE_INTEGER, required=True)],
-                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限',  404: '表单格式不正确'}
+                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
                      )
 @api_view(['post'])
 def not_collect(request):
