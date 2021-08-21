@@ -139,7 +139,7 @@ def get_recycling_num(request):
 @csrf_exempt
 @swagger_auto_schema(method='get',
                      tags=['问卷相关'],
-                     operation_summary='返回答卷',
+                     operation_summary='查询全部答卷',
                      operation_description="返回用户的所有答案",
                      manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
                                                   type=TYPE_INTEGER, required=True),
@@ -193,3 +193,71 @@ def get_answer(request):
 
         result['answers'] = result_answers
         return JsonResponse(result)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='post',
+                     tags=['问卷相关'],
+                     operation_summary='问卷收藏',
+                     operation_description="收藏问卷",
+                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
+                                                  type=TYPE_INTEGER, required=True)],
+                     responses={200: '收藏成功', 401: '未登录', 402: '收藏失败', 403: '用户名不匹配,没有查询权限'}
+                     )
+@api_view(['post'])
+def collect(request):
+    # 检查登录情况
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 401})
+
+    if request.method == 'POST':
+        survey_id = request.GET.get('survey_id')
+        try:
+            survey = Survey.objects.get(survey_id=survey_id)
+        except:
+            return JsonResponse({'status_code': 402})
+
+        # 检查用户名是否匹配
+        if survey.username != request.session.get('username'):
+            return JsonResponse({'status_code': 403})
+
+        try:
+            survey.is_collected = True
+            survey.save()
+            return JsonResponse({'status_code': 403})
+        except:
+            return JsonResponse({'status_code': 402})
+
+
+@csrf_exempt
+@swagger_auto_schema(method='post',
+                     tags=['问卷相关'],
+                     operation_summary='取消收藏',
+                     operation_description="取消收藏",
+                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
+                                                  type=TYPE_INTEGER, required=True)],
+                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限'}
+                     )
+@api_view(['post'])
+def not_collect(request):
+    # 检查登录情况
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 401})
+
+    if request.method == 'POST':
+        survey_id = request.GET.get('survey_id')
+        try:
+            survey = Survey.objects.get(survey_id=survey_id)
+        except:
+            return JsonResponse({'status_code': 402})
+
+        # 检查用户名是否匹配
+        if survey.username != request.session.get('username'):
+            return JsonResponse({'status_code': 403})
+
+        try:
+            survey.is_collected = False
+            survey.save()
+            return JsonResponse({'status_code': 403})
+        except:
+            return JsonResponse({'status_code': 402})
