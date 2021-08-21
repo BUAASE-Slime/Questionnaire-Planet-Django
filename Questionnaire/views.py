@@ -21,7 +21,7 @@ def all_submittion_count(request):
 
 @csrf_exempt
 def delete_survey_not_real(request):
-    response = {'status_code': 1, 'msg': 'success'}
+    response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
@@ -29,18 +29,18 @@ def delete_survey_not_real(request):
             try:
                 survey = Survey.objects.get(survey_id=id)
             except:
-                response = {'status_code': -1, 'msg': '问卷不存在'}
+                response = {'status_code': -1, 'message': '问卷不存在'}
                 return JsonResponse(response)
             survey.is_deleted = True
             survey.save()
             # 是否真的删掉呢
             return JsonResponse(response)
     else:
-        response = {'status_code': -2, 'msg': '请求错误'}
+        response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 @csrf_exempt
 def delete_survey_real(request):
-    response = {'status_code': 1, 'msg': 'success'}
+    response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
@@ -48,19 +48,19 @@ def delete_survey_real(request):
             try:
                 survey = Survey.objects.get(survey_id=id)
             except:
-                response = {'status_code': -1, 'msg': '问卷不存在'}
+                response = {'status_code': -1, 'message': '问卷不存在'}
                 return JsonResponse(response)
             survey.delete()
             # 是否真的删掉呢
             return JsonResponse(response)
     else:
-        response = {'status_code': -2, 'msg': '请求错误'}
+        response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
 
 @csrf_exempt
 def get_survey_details(request):
-    response = {'status_code': 1, 'msg': 'success'}
+    response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
@@ -68,7 +68,7 @@ def get_survey_details(request):
             try:
                 survey = Survey.objects.get(survey_id=id)
             except:
-                response = {'status_code': -2, 'msg': '问卷不存在'}
+                response = {'status_code': -2, 'message': '问卷不存在'}
                 return JsonResponse(response)
 
             response['title'] = survey.title
@@ -113,15 +113,15 @@ def get_survey_details(request):
 
 
         else:
-            response = {'status_code': -1, 'msg': '问卷id不为整数'}
+            response = {'status_code': -1, 'message': '问卷id不为整数'}
             return JsonResponse(response)
     else:
-        response = {'status_code': -2, 'msg': '请求错误'}
+        response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
 @csrf_exempt
 def delete_question(request):
-    response = {'status_code': 1, 'msg': 'success'}
+    response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         question_form = QuestionIdForm(request.POST)
         if question_form.is_valid():
@@ -129,18 +129,18 @@ def delete_question(request):
             try:
                 question = Question.objects.get(question_id=id)
             except:
-                response = {'status_code': -1, 'msg': '题目不存在'}
+                response = {'status_code': -1, 'message': '题目不存在'}
                 return JsonResponse(response)
             question.delete()
             # 是否真的删掉呢
             return JsonResponse(response)
     else:
-        response = {'status_code': -2, 'msg': '请求错误'}
+        response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
 @csrf_exempt
 def delete_option(request):
-    response = {'status_code': 1, 'msg': 'success'}
+    response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         option_form = OptionIdForm(request.POST)
         if option_form.is_valid():
@@ -148,10 +148,10 @@ def delete_option(request):
             try:
                 option = Option.objects.get(option_id=id)
             except:
-                response = {'status_code': -1, 'msg': '选项不存在'}
+                response = {'status_code': -1, 'message': '选项不存在'}
                 return JsonResponse(response)
             option.delete()
             return JsonResponse(response)
     else:
-        response = {'status_code': -2, 'msg': '请求错误'}
+        response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
