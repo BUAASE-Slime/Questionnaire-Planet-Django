@@ -7,7 +7,7 @@ from drf_yasg.openapi import *
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
-from Questionnaire.models import Survey
+from Qn.models import Survey
 
 utc = pytz.UTC
 
