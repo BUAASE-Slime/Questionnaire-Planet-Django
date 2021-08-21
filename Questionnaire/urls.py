@@ -14,5 +14,7 @@ urlpatterns = [
     path('get/qn_detail/',get_survey_details),
 
     path('create/qn/',create_qn),
+    path('create/question/',create_question),
+
 
 ]
