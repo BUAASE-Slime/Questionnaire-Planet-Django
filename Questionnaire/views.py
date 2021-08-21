@@ -1,4 +1,5 @@
 from django.shortcuts import render
+import datetime
 
 # Create your views here.
 from .form import *
@@ -157,4 +158,40 @@ def delete_option(request):
             return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+# username title subtitle type
+def create_qn(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        new_qn_form = CreateNewQnForm(request.POST)
+        if new_qn_form.is_valid():
+            username = new_qn_form.cleaned_data.get('username')
+            title = new_qn_form.cleaned_data.get('title')
+            subtitle = new_qn_form.cleaned_data.get('subtitle')
+            type = new_qn_form.cleaned_data.get('type')
+
+            survey = Survey()
+            try:
+                survey.username = username
+                survey.title = title
+                survey.type = type
+                survey.subtitle = subtitle
+                survey.question_num = 0;survey.recycling_num = 0
+                survey.release_time = datetime.datetime.now()
+                survey.finished_time = datetime.datetime.now()
+                survey.save()
+            except:
+                response = {'status_code': -3, 'message': '后端炸了'}
+                return JsonResponse(response)
+
+            response['qn_id'] = survey.survey_id
+            return JsonResponse(response)
+
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
