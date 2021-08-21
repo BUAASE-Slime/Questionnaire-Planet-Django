@@ -54,6 +54,9 @@ def login(request):
             request.session['is_login'] = True
             request.session['username'] = username
 
+            print(username)
+            print(request.session['username'])
+
             if not user.has_confirmed:
                 return JsonResponse({'status_code': 404})
 
@@ -128,10 +131,14 @@ def register(request):
                      )
 @api_view(['GET'])
 def logout(request):
-    if not request.session.get('is_login'):
-        request.session.flush()
-        return JsonResponse({'status_code': 200})
-    return JsonResponse({'status_code': 401})
+    if not request.session.get('is_login', None):
+        return JsonResponse({'status_code': 401})
+
+    print(request.session.get('is_login'))
+
+    request.session.flush()
+    return JsonResponse({'status_code': 200})
+
 
 
 @csrf_exempt
