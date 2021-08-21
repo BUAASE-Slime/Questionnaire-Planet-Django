@@ -32,6 +32,7 @@ def delete_survey(request):
                 response = {'status_code': -1, 'msg': '问卷不存在'}
                 return JsonResponse(response)
             survey.is_deleted = True
+            survey.save()
             # 是否真的删掉呢
             return JsonResponse(response)
     else:
