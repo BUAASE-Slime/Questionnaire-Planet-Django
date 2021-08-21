@@ -72,7 +72,7 @@ def get_survey_details(request):
                 temp['direction'] = item.direction
                 temp['is_must_answer'] = item.is_must_answer
                 temp['type'] = item.type
-                temp['survey_id'] = item.survey_id
+                temp['survey_id'] = id
                 temp['sequence'] = item.sequence
                 temp['option'] = []
                 if temp['type'] < 2:
@@ -84,7 +84,11 @@ def get_survey_details(request):
                         option_dict['content'] = option_item.content
                         temp['option'].append(option_dict)
                     temp['answer']  = ''
+                else:# TODO 填空题或者其他
+                    pass
+
                 questions.append(temp)
+                print(questions)
             response['questions'] = questions
 
             return JsonResponse(response)
