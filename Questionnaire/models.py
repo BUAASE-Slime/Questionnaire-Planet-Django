@@ -40,6 +40,7 @@ class Question(models.Model):
 
     survey_id = models.ForeignKey(Survey,on_delete=models.CASCADE,verbose_name="所属问卷id")
     sequence = models.IntegerField(default=0,verbose_name="题目顺序")
+    option_num = models.PositiveIntegerField(default=0,verbose_name="选项数目")
 
     TYPE_CHOICES = [
         (0, '单选'),
