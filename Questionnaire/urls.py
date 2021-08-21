@@ -5,6 +5,6 @@ from .views import *
 
 urlpatterns = [
 
-    path('submit',all_submittion_count),
+    path('delete/qn/',delete_survey),
 
 ]

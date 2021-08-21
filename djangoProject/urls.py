@@ -22,6 +22,8 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+import Questionnaire.views
+
 schema_view = get_schema_view(
     # 具体定义详见 [Swagger/OpenAPI 规范](https://swagger.io/specification/#infoObject "Swagger/OpenAPI 规范")
     openapi.Info(
@@ -48,7 +50,8 @@ urlpatterns = [
     path('api/qs/user/', include(('userinfo.urls', 'userinfo'))),
 
 
-    path('api/qs/all_count/',include(('Questionnaire.urls','Questionnaire'))),
+    path('api/qs/all_count/submit',Questionnaire.views.all_submittion_count),
+    path('api/qs/qn/',include(('Questionnaire.urls','Questionnaire'))),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
