@@ -1,6 +1,3 @@
-from itertools import groupby
-from operator import itemgetter
-
 import pytz
 from django.http import JsonResponse
 # Create your views here.
@@ -8,9 +5,9 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.openapi import *
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
-from drf_yasg import openapi
+
 from django.shortcuts import render
-import datetime
+
 
 # Create your views here.
 from .form import *
@@ -20,11 +17,11 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from Qn.form import CollectForm
-from Qn.models import *
+import re
+
+from Qn.models import Survey
 
 utc = pytz.UTC
-
 
 polygon_view_get_desc = '根据所选参数,获取问卷列表,默认按创建时间倒序'
 polygon_view_get_parm = [
@@ -34,11 +31,10 @@ polygon_view_get_parm = [
     Parameter(name='username', in_=IN_QUERY, description='发起人用户名', type=TYPE_STRING, required=True),
     Parameter(name='is_released', in_=IN_QUERY, description='是否发布', type=TYPE_BOOLEAN, required=False),
     Parameter(name='is_collected', in_=IN_QUERY, description='是否收藏,', type=TYPE_BOOLEAN, required=False),
-    Parameter(name='order_item', in_=IN_QUERY, description='排序项,created_time-创建时间,release_time-发布时间,recycling_num-回收量',
-              type=TYPE_STRING, required=False),
+    Parameter(name='order_item', in_=IN_QUERY, description='排序项,created_time-创建时间,release_time-发布时间,recycling_num-回收量', type=TYPE_STRING, required=False),
     Parameter(name='order_type', in_=IN_QUERY, description='排序类型,desc-倒序,asc-正序', type=TYPE_STRING, required=False),
 ]
-polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失败', 403: '用户名不匹配,没有查询权限', 404: '表单不匹配'}
+polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失败', 403:'用户名不匹配,没有查询权限'}
 
 
 @csrf_exempt
@@ -121,27 +117,6 @@ def get_list(request):
 
 
 
-class _Params:
-    USERNAME = openapi.Parameter('username', openapi.TYPE_STRING, description='用户名', type=openapi.TYPE_STRING)
-    QN_ID = openapi.Parameter('qn_id', openapi.TYPE_NUMBER,description="问卷id",type=openapi.TYPE_NUMBER)
-
-@csrf_exempt
-def empty_the_recycle_bin(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        username_form = UserNameForm(request.POST)
-        if username_form.is_valid():
-            username = username_form.cleaned_data.get('username')
-            qn_list = Survey.objects.filter(username=username,is_deleted=True)
-            for qn in qn_list:
-                qn.delete()
-            return JsonResponse(response)
-        else:
-            response = {'status_code': -1, 'message': 'invalid form'}
-            return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': '请求错误'}
-        return JsonResponse(response)
 
 @csrf_exempt
 def all_submittion_count(request):
@@ -155,16 +130,24 @@ def all_submittion_count(request):
         return JsonResponse({'status_code': 0, 'count': 0,'message':"请求错误"})
 
 @csrf_exempt
+@swagger_auto_schema(method='post',
+                     tags=['问卷添加与删除相关'],
+                     operation_summary='放入回收站',
+                     responses={1: '放入回收站成功', -1: '问卷不存在', 0: '问卷已放入回收站，不要重复操作', -2: '请求错误'},
+                     manual_parameters=[_Params.QN_ID]
+                     )
+@api_view(['POST'])
 def delete_survey_not_real(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
+        print(survey_form)
         if survey_form.is_valid():
             id = survey_form.cleaned_data.get('qn_id')
             try:
                 survey = Survey.objects.get(survey_id=id)
             except:
-                response = {'status_code': -1, 'message': '问卷不存在'}
+                response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
             if survey.is_deleted == True:
                 response = {'status_code': 0, 'message': '问卷已放入回收站'}
@@ -172,6 +155,9 @@ def delete_survey_not_real(request):
             survey.is_deleted = True
             survey.is_released = False
             survey.save()
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
             return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': '请求错误'}
@@ -387,187 +373,3 @@ def create_question(request):
 
 
 
-
-
-@csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='统计问卷回收量',
-                     operation_description="返回每日的问卷回收量",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True), ],
-                     responses=polygon_view_get_resp
-                     )
-@api_view(['POST'])
-def get_recycling_num(request):
-    # 检验是否登录
-    if not request.session.get('is_login'):
-        return JsonResponse({'status_code': 401})
-
-    collect_form = CollectForm(request.POST)
-    if collect_form.is_valid():
-        survey_id = collect_form.cleaned_data.get('survey_id')
-        try:
-            survey = Survey.objects.get(survey_id=survey_id)
-        except:
-            return JsonResponse({'status_code': 402})
-
-        # 检查用户名是否匹配
-        if survey.username != request.session.get('username'):
-            return JsonResponse({'status_code': 403})
-
-        submit_list = Submit.objects.filter(survey_id_id=survey_id)
-        submit_list = submit_list.order_by('submit_time')
-        json_list = []
-        for submit in submit_list:
-            submit.submit_time = submit.submit_time.strftime("%d")
-        date = submit_list[0].submit_time
-        num = 0
-        for submit in submit_list:
-            if submit.submit_time == date:
-                num = num + 1
-            else:
-                json_item = {"date":date,"number":num}
-                json_list.append(json_item)
-                date = submit.submit_time
-                num = 1
-
-        json_item = {"date": date, "number": num}
-        json_list.append(json_item)
-        data = {'data': json_list}
-        return JsonResponse(data, safe=False)
-    else:
-        return JsonResponse({'status_code': 404})
-
-
-@csrf_exempt
-@swagger_auto_schema(method='get',
-                     tags=['问卷相关'],
-                     operation_summary='查询全部答卷',
-                     operation_description="返回用户的所有答案",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True),
-                                        Parameter(name='username', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_STRING, required=True)],
-                     responses=polygon_view_get_resp
-                     )
-@api_view(['GET'])
-def get_answer(request):
-    # 检验是否登录
-    global answer_questions
-    if not request.session.get('is_login'):
-        return JsonResponse({'status_code': 401})
-
-    if request.method == 'GET':
-        survey_id = request.GET.get('survey_id')
-        username = request.GET.get('username')
-
-        # 用户名是否匹配
-        if username != request.session.get('username'):
-            return JsonResponse({'status_code': 403})
-
-        # 问卷信息
-        result = {}
-        try:
-            survey = Survey.objects.get(survey_id=survey_id)
-            if username != survey.username:
-                return JsonResponse({'status_code': 403})
-        except:
-            return JsonResponse({'status_code': 402})
-        result['survey_id'] = survey_id
-        result['title'] = survey.title
-        result['subtitle'] = survey.subtitle
-        result['username'] = username
-
-        # 回答信息
-        result_answers = []
-        questions = Question.objects.filter(survey_id=survey).order_by('sequence')
-        submits = Submit.objects.filter(survey_id=survey)
-
-        for submit in submits:
-            answer_questions = []
-            for question in questions:
-                answer_question = {"question_id": question.id, "sequence": question.sequence,
-                                   "title": question.title, "direction": question.direction,
-                                   "is_must_answer": question.is_must_answer, "type": question.type}
-                answer = Answer.objects.get(question_id=question, submit_id=submit)
-                answer_question['answer'] = answer
-                answer_questions.append(answer_question)
-            result_answers.append(answer_questions)
-
-        result['answers'] = result_answers
-        return JsonResponse(result)
-
-
-@csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='问卷收藏',
-                     operation_description="收藏问卷",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True)],
-                     responses={200: '收藏成功', 401: '未登录', 402: '收藏失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
-                     )
-@api_view(['post'])
-def collect(request):
-    # 检查登录情况
-    if not request.session.get('is_login'):
-        return JsonResponse({'status_code': 401})
-
-    collect_form = CollectForm(request.POST)
-    if collect_form.is_valid():
-        survey_id = collect_form.cleaned_data.get('survey_id')
-        try:
-            survey = Survey.objects.get(survey_id=survey_id)
-        except:
-            return JsonResponse({'status_code': 402})
-
-        # 检查用户名是否匹配
-        if survey.username != request.session.get('username'):
-            return JsonResponse({'status_code': 403})
-
-        try:
-            survey.is_collected = True
-            survey.save()
-            return JsonResponse({'status_code': 200})
-        except:
-            return JsonResponse({'status_code': 402})
-    else:
-        return JsonResponse({'status_code': 404})
-
-
-@csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='取消收藏',
-                     operation_description="取消收藏",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True)],
-                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
-                     )
-@api_view(['post'])
-def not_collect(request):
-    # 检查登录情况
-    if not request.session.get('is_login'):
-        return JsonResponse({'status_code': 401})
-
-    collect_form = CollectForm(request.POST)
-    if collect_form.is_valid():
-        survey_id = collect_form.cleaned_data.get('survey_id')
-        try:
-            survey = Survey.objects.get(survey_id=survey_id)
-        except:
-            return JsonResponse({'status_code': 402})
-
-        # 检查用户名是否匹配
-        if survey.username != request.session.get('username'):
-            return JsonResponse({'status_code': 403})
-
-        try:
-            survey.is_collected = False
-            survey.save()
-            return JsonResponse({'status_code': 200})
-        except:
-            return JsonResponse({'status_code': 402})
-    else:
-        return JsonResponse({'status_code': 404})
