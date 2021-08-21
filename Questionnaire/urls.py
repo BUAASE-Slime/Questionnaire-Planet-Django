@@ -7,4 +7,8 @@ urlpatterns = [
 
     path('delete/qn/',delete_survey),
     path('delete/question/',delete_question),
+    path('delete/option/',delete_option),
+
+
+
 ]
