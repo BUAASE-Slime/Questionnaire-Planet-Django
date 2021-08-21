@@ -36,7 +36,7 @@ class _Params:
                      )
 @api_view(['POST'])
 def login(request):
-    if request.session.get('is_login', None):  # login repeatedly not allowed
+    if request.session.get('is_login'):  # login repeatedly not allowed
         return JsonResponse({'status_code': 401})
 
     login_form = LoginForm(request.POST)
@@ -128,11 +128,10 @@ def register(request):
                      )
 @api_view(['GET'])
 def logout(request):
-    if not request.session.get('is_login', None):
-        return JsonResponse({'status_code': 401})
-
-    request.session.flush()
-    return JsonResponse({'status_code': 200})
+    if not request.session.get('is_login'):
+        request.session.flush()
+        return JsonResponse({'status_code': 200})
+    return JsonResponse({'status_code': 401})
 
 
 @csrf_exempt
