@@ -177,9 +177,9 @@ def create_qn(request):
                 survey.title = title
                 survey.type = type
                 survey.subtitle = subtitle
-                survey.question_num = 0;survey.recycling_num = 0
-                survey.release_time = datetime.datetime.now()
-                survey.finished_time = datetime.datetime.now()
+                survey.question_num = 0
+                survey.recycling_num = 0
+
                 survey.save()
             except:
                 response = {'status_code': -3, 'message': '后端炸了'}
@@ -205,11 +205,34 @@ def create_option(question,content):
     option.order = question.option_num
     option.save()
 
-# username title direction is_must_answer type qn_id options:只传option的title字符串使用特殊字符例如 ^%之类的隔开便于传输
+#  title direction is_must_answer type qn_id options:只传option的title字符串使用特殊字符例如 ^%之类的隔开便于传输
 def create_question(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
-        pass
+        new_question_form = CreateNewQuestionForm(request.POST)
+        if new_question_form.is_valid():
+            question = Question()
+            question.title = new_question_form.cleaned_data.get('title')
+            question.direction = new_question_form.cleaned_data.get('direction')
+            question.is_must_answer = new_question_form.cleaned_data.get('is_must_answer')
+            question.type = new_question_form.cleaned_data.get('type')
+            question.survey_id = new_question_form.cleaned_data.get('qn_id')
+            option_str = new_question_form.cleaned_data.get('options')
+
+            KEY = "^_^_^"
+
+            option_list = option_str.split(KEY)
+            for item in option_list:
+                create_option(question,item)
+            question.save()
+            response['option_num'] = option_list.count()
+
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
