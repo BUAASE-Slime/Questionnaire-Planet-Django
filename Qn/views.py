@@ -2,6 +2,7 @@ from itertools import groupby
 from operator import itemgetter
 
 import pytz
+from django.core.serializers import json
 from django.http import JsonResponse
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
@@ -13,6 +14,7 @@ from django.shortcuts import render
 import datetime
 
 # Create your views here.
+
 from .form import *
 from .models import *
 from django.shortcuts import redirect
@@ -24,7 +26,6 @@ from Qn.form import CollectForm
 from Qn.models import *
 
 utc = pytz.UTC
-
 
 polygon_view_get_desc = '根据所选参数,获取问卷列表,默认按创建时间倒序'
 polygon_view_get_parm = [
@@ -122,7 +123,8 @@ def get_list(request):
 
 class _Params:
     USERNAME = openapi.Parameter('username', openapi.TYPE_STRING, description='用户名', type=openapi.TYPE_STRING)
-    QN_ID = openapi.Parameter('qn_id', openapi.TYPE_NUMBER,description="问卷id",type=openapi.TYPE_NUMBER)
+    QN_ID = openapi.Parameter('qn_id', openapi.TYPE_NUMBER, description="问卷id", type=openapi.TYPE_NUMBER)
+
 
 @csrf_exempt
 def empty_the_recycle_bin(request):
@@ -131,7 +133,7 @@ def empty_the_recycle_bin(request):
         username_form = UserNameForm(request.POST)
         if username_form.is_valid():
             username = username_form.cleaned_data.get('username')
-            qn_list = Survey.objects.filter(username=username,is_deleted=True)
+            qn_list = Survey.objects.filter(username=username, is_deleted=True)
             for qn in qn_list:
                 qn.delete()
             return JsonResponse(response)
@@ -142,16 +144,18 @@ def empty_the_recycle_bin(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def all_submittion_count(request):
     if request.method == 'POST':
         try:
             count = int(Submit.objects.all().count())
-        except :
-            return JsonResponse({'status_code': 1,'message':"后端炸了"})
-        return JsonResponse({'status_code': 1, 'count': count,'message':"success"})
+        except:
+            return JsonResponse({'status_code': -1, 'message': "后端炸了"})
+        return JsonResponse({'status_code': 1, 'count': count, 'message': "success"})
     else:
-        return JsonResponse({'status_code': 0, 'count': 0,'message':"请求错误"})
+        return JsonResponse({'status_code': 0, 'count': 0, 'message': "请求错误"})
+
 
 @csrf_exempt
 def delete_survey_not_real(request):
@@ -175,6 +179,8 @@ def delete_survey_not_real(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+
 @csrf_exempt
 def delete_survey_real(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -209,7 +215,7 @@ def get_survey_details(request):
                 return JsonResponse(response)
 
             response['title'] = survey.title
-            response['subtitle'] = survey.subtitle
+            response['description'] = survey.description
             response['type'] = survey.type
             response['question_num'] = survey.question_num
             response['created_time'] = survey.created_time
@@ -225,21 +231,22 @@ def get_survey_details(request):
                 temp['question_id'] = item.question_id
                 temp['title'] = item.title
                 temp['direction'] = item.direction
-                temp['is_must_answer'] = item.is_must_answer
+                temp['must'] = item.is_must_answer
                 temp['type'] = item.type
                 temp['qn_id'] = id
                 temp['sequence'] = item.sequence
+                temp['id'] = item.sequence  # 按照前端的题目顺序
                 temp['option'] = []
-                if temp['type'] < 2:
-                # 单选题或者多选题有选项
+                if temp['type'] in ['radio', 'checkbox']:
+                    # 单选题或者多选题有选项
                     option_list = Option.objects.filter(question_id=item.question_id)
                     for option_item in option_list:
                         option_dict = {}
                         option_dict['option_id'] = option_item.option_id
-                        option_dict['content'] = option_item.content
+                        option_dict['title'] = option_item.content
                         temp['option'].append(option_dict)
-                    temp['answer']  = ''
-                else:# TODO 填空题或者其他
+                    temp['answer'] = ''
+                else:  # TODO 填空题或者其他
                     pass
 
                 questions.append(temp)
@@ -255,6 +262,7 @@ def get_survey_details(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
 
 @csrf_exempt
 def delete_question(request):
@@ -275,6 +283,7 @@ def delete_question(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def delete_option(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -293,7 +302,8 @@ def delete_option(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
-# username title subtitle type
+
+# username title description type
 @csrf_exempt
 def create_qn(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -302,7 +312,7 @@ def create_qn(request):
         if new_qn_form.is_valid():
             username = new_qn_form.cleaned_data.get('username')
             title = new_qn_form.cleaned_data.get('title')
-            subtitle = new_qn_form.cleaned_data.get('subtitle')
+            description = new_qn_form.cleaned_data.get('description')
             type = new_qn_form.cleaned_data.get('type')
 
             try:
@@ -319,7 +329,7 @@ def create_qn(request):
             # survey.recycling_num = 0
 
             try:
-                survey = Survey(username=username, title=title, type=type, subtitle=subtitle, question_num=0,
+                survey = Survey(username=username, title=title, type=type, description=description, question_num=0,
                                 recycling_num=0)
                 survey.save()
             except:
@@ -337,8 +347,9 @@ def create_qn(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
+
 @csrf_exempt
-def create_option(question,content):
+def create_option(question, content):
     option = Option()
     option.content = content
     question.option_num += 1
@@ -347,9 +358,11 @@ def create_option(question,content):
     option.order = question.option_num
     option.save()
 
+
 #  title direction is_must_answer type qn_id options:只传option的title字符串使用特殊字符例如 ^%之类的隔开便于传输
 @csrf_exempt
 def create_question(request):
+    # TODO 完善json。dump
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         new_question_form = CreateNewQuestionForm(request.POST)
@@ -358,10 +371,12 @@ def create_question(request):
             try:
                 question.title = new_question_form.cleaned_data.get('title')
                 question.direction = new_question_form.cleaned_data.get('direction')
-                question.is_must_answer = new_question_form.cleaned_data.get('is_must_answer')
+                question.is_must_answer = new_question_form.cleaned_data.get('must')
                 question.type = new_question_form.cleaned_data.get('type')
                 survey_id = new_question_form.cleaned_data.get('qn_id')
                 question.survey_id = Survey.objects.get(survey_id=survey_id)
+                question.raw = new_question_form.cleaned_data.get('raw')
+                question.score = new_question_form.cleaned_data.get('score')
 
                 option_str = new_question_form.cleaned_data.get('options')
             except:
@@ -370,7 +385,7 @@ def create_question(request):
             KEY = "^_^_^"
             option_list = option_str.split(KEY)
             for item in option_list:
-                create_option(question,item)
+                create_option(question, item)
             question.save()
             response['option_num'] = len(option_list)
 
@@ -385,14 +400,11 @@ def create_question(request):
         return JsonResponse(response)
 
 
-
-
-
 @csrf_exempt
 @swagger_auto_schema(method='post',
                      tags=['问卷相关'],
                      operation_summary='统计问卷回收量',
-                     operation_description="返回每日的问卷回收量",
+                     operation_description="返回近五日每天的回收量,周回收量和总回收量",
                      manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
                                                   type=TYPE_INTEGER, required=True), ],
                      responses=polygon_view_get_resp
@@ -415,32 +427,41 @@ def get_recycling_num(request):
         if survey.username != request.session.get('username'):
             return JsonResponse({'status_code': 403})
 
-        submit_list = Submit.objects.filter(survey_id_id=survey_id)
-        submit_list = submit_list.order_by('submit_time')
+        submit_list = Submit.objects.filter(survey_id=survey)
+        submit_list = submit_list.order_by("-submit_time")
+        result = {"num_all": len(submit_list)}
+        num_week = 0
+
         json_list = []
+        dea_date = (submit_list[0].submit_time + datetime.timedelta(days=-7)).strftime("%m.%d")
         for submit in submit_list:
-            submit.submit_time = submit.submit_time.strftime("%d")
+            submit.submit_time = submit.submit_time.strftime("%m.%d")
         date = submit_list[0].submit_time
-        num = 0
+        num = 0  # 记录每天的回收量
+
         for submit in submit_list:
+            if submit.submit_time > dea_date:
+                num_week = num_week + 1
             if submit.submit_time == date:
                 num = num + 1
             else:
-                json_item = {"date":date,"number":num}
+                json_item = {"date": date, "number": num}
                 json_list.append(json_item)
                 date = submit.submit_time
                 num = 1
 
         json_item = {"date": date, "number": num}
         json_list.append(json_item)
-        data = {'data': json_list}
-        return JsonResponse(data, safe=False)
+
+        result['num_week'] = num_week
+        result['num_day'] = json_list[:5]
+        return JsonResponse(result, safe=False)
     else:
         return JsonResponse({'status_code': 404})
 
 
 @csrf_exempt
-@swagger_auto_schema(method='get',
+@swagger_auto_schema(method='post',
                      tags=['问卷相关'],
                      operation_summary='查询全部答卷',
                      operation_description="返回用户的所有答案",
@@ -450,16 +471,17 @@ def get_recycling_num(request):
                                                   type=TYPE_STRING, required=True)],
                      responses=polygon_view_get_resp
                      )
-@api_view(['GET'])
+@api_view(['POST'])
 def get_answer(request):
     # 检验是否登录
     global answer_questions
     if not request.session.get('is_login'):
         return JsonResponse({'status_code': 401})
 
-    if request.method == 'GET':
-        survey_id = request.GET.get('survey_id')
-        username = request.GET.get('username')
+    answer_form = AnswerForm(request.POST)
+    if answer_form.is_valid():
+        survey_id = answer_form.cleaned_data.get('survey_id')
+        username = answer_form.cleaned_data.get('username')
 
         # 用户名是否匹配
         if username != request.session.get('username'):
@@ -475,7 +497,7 @@ def get_answer(request):
             return JsonResponse({'status_code': 402})
         result['survey_id'] = survey_id
         result['title'] = survey.title
-        result['subtitle'] = survey.subtitle
+        result['description'] = survey.description
         result['username'] = username
 
         # 回答信息
@@ -486,16 +508,18 @@ def get_answer(request):
         for submit in submits:
             answer_questions = []
             for question in questions:
-                answer_question = {"question_id": question.id, "sequence": question.sequence,
+                answer_question = {"question_id": question.question_id, "sequence": question.sequence,
                                    "title": question.title, "direction": question.direction,
                                    "is_must_answer": question.is_must_answer, "type": question.type}
                 answer = Answer.objects.get(question_id=question, submit_id=submit)
-                answer_question['answer'] = answer
+                answer_question['answer'] = answer.answer
                 answer_questions.append(answer_question)
             result_answers.append(answer_questions)
 
         result['answers'] = result_answers
-        return JsonResponse(result)
+        return JsonResponse(result, safe=False)
+    else:
+        return JsonResponse({'status_code': 404})
 
 
 @csrf_exempt
