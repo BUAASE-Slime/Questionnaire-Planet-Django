@@ -357,9 +357,10 @@ def get_code(request):
     if collect_form.is_valid():
         survey_id = collect_form.cleaned_data.get('survey_id')
 
-        # 用户名是否匹配
         try:
             survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
+            if survey.question_num == 0:
+                return JsonResponse({'status_code': 402, 'msg': "no_questions"})
             if request.session.get('username') != survey.username:
                 return JsonResponse({'status_code': 403})
         except:
@@ -493,28 +494,29 @@ def get_question_answer(request):
         for question in questions:
             answers = Answer.objects.filter(question_id=question)
             temp = {'question_id': question.question_id, 'title': question.title, 'direction': question.direction,
-                    'must': question.is_must_answer, 'type': question.type, 'id': question.sequence,
+                    'must': question.is_must_answer, 'type': question.type, 'sequence': question.sequence,
                     'num_all': len(answers), 'options': [], 'fill_blank': [], 'scores': []}
 
             if temp['type'] in ['radio', 'checkbox']:  # 单选，多选
                 options = Option.objects.filter(question_id=question)
                 for option in options:
-                    answer_option = Answer.objects.filter(question_id=question, answer__in=option.content)
+                    answer_option = Answer.objects.filter(question_id=question, answer__contains=option.content)
                     answer = {'content': option.content, 'num': len(answer_option)}
                     temp['options'].append(answer)
 
             elif temp['type'] == 'mark':  # 评分
                 max_score = question.score
-                for i in max_score:
+                for i in range(1, max_score+1):
                     answer_blank = answers.filter(answer=str(i))
                     answer = {'score': i, 'num': len(answer_blank)}
                     temp['scores'].append(answer)
             else:  # 填空
                 for item in answers:
-                    answer = {'id': item.answer_id, 'content': item.answer}
+                    answer = {'answer_id': item.answer_id, 'content': item.answer}
                     temp['fill_blank'].append(answer)
             question_list.append(temp)
-
+        data = {'qn_id': survey_id, 'title': survey.title, 'questions': question_list}
+        return JsonResponse(data)
     else:
         return JsonResponse({'status_code': 404})
 
@@ -524,11 +526,14 @@ def save_qn_answer(request):
     response = {'status_code': 1, 'message': 'success'}
     username = request.session.get('username')
     if request.method == 'POST':
-        req = json.loads(request.body, encoding='utf-8')
-        print(req)
+        req = json.loads(request.body)
+        # print(req)
         qn_id = req['qn_id']
 
         survey = Survey.objects.get(survey_id=qn_id, is_deleted=False)
+        survey.recycling_num = survey.recycling_num + 1
+        survey.save()
+
         submit = Submit(survey_id=survey)
         if username:
             submit.username = username
@@ -536,10 +541,10 @@ def save_qn_answer(request):
 
         answer_list = req['answers']
         for item in answer_list:
-            answer = Answer(question_id_id=item.question_id, submit_id_id=submit.submit_id,
-                            answer=item.answer, type=item.type)
+            answer = Answer(question_id_id=item['question_id'], submit_id_id=submit.submit_id,
+                            answer=item['answer'], type=item['type'])
             if username:
-                submit.username = username
+                answer.username = username
             answer.save()
 
         return JsonResponse(response)
