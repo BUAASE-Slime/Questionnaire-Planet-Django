@@ -11,7 +11,7 @@ class Survey(models.Model):
     question_num = models.PositiveIntegerField(default=0,verbose_name="题目数目") # 非负整数
     recycling_num = models.PositiveIntegerField(default=0,verbose_name="回收数目")
 
-    created_time = models.DateTimeField(auto_now=True,verbose_name="创建时间")
+    created_time = models.DateTimeField(auto_now_add=True,verbose_name="创建时间")
     release_time = models.DateTimeField(blank=True,verbose_name="发布时间",null=True)
     finished_time = models.DateTimeField(blank=True,verbose_name="结束时间",null=True)
 
@@ -78,8 +78,9 @@ class Answer(models.Model):
     answer_id = models.AutoField(primary_key=True,verbose_name="回答编号")
     question_id = models.ForeignKey(Question, on_delete=models.CASCADE,verbose_name="问题编号")
     submit_id = models.ForeignKey(Submit, on_delete=models.CASCADE,verbose_name="提交编号")
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
+    # user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
     answer = models.CharField(max_length=128,verbose_name="答案")
+    username = models.CharField(max_length=128, blank=True, verbose_name="用户名")
     TYPE_CHOICES = [
         (0, '单选'),
         (1, '多选'),

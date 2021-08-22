@@ -574,3 +574,43 @@ def qn_to_docx(qn_id):
     document.save(docx_path)
 
     return document,f,docx_title
+
+@csrf_exempt
+def duplicate_qn(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            new_qn = Survey(title=qn.title,description=qn.description,question_num=0,recycling_num=0,username=qn.username,type=qn.type)
+
+            new_qn.save()
+            new_qn_id = new_qn.survey_id
+            questions = Question.objects.filter(survey_id=qn)
+            for question in questions:
+                new_question = Question(title=question.title,direction=question.direction,is_must_answer=question.is_must_answer,
+                                        sequence=question.sequence,option_num=question.option_num,score=question.score,raw=question.raw,
+                                        type=question.type,survey_id=new_qn)
+                new_question.save()
+                options = Option.objects.filter(question_id=question)
+
+                for option in options:
+                    new_option = Option(content=option.content,question_id=new_question,order=option.order)
+                    new_option.save()
+            print(new_qn_id)
+            response = get_qn_data(new_qn_id)
+
+            return JsonResponse(response)
+
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
