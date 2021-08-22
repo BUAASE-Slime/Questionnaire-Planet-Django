@@ -1,5 +1,7 @@
 import base64
 
+from docx.text import font
+
 import djangoProject.settings
 import json
 from io import StringIO, BytesIO
@@ -454,6 +456,11 @@ def finish_qn(request):
         return JsonResponse(response)
 
 
+from docx.enum.style import WD_STYLE_TYPE
+from  docx import  Document
+from docx.shared import Pt, RGBColor
+from  docx.oxml.ns import  qn
+from docx.shared import Inches
 from docx import *
 from docx.shared import Inches
 @csrf_exempt
@@ -463,6 +470,12 @@ def TestDocument(request):
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
             id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+
             qn_to_docx(id)
             document = Document()
             docx_title="TEST_DOCUMENT.docx"
@@ -507,17 +520,63 @@ def TestDocument(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
+
 # 根据问卷id传递文件格式返回上一个函数。具体正在写。
 #只要文件能打开就好写了
+
 def qn_to_docx(qn_id):
 
     document = Document()
-    docx_title = "TEST_DOCUMENT.docx"
-    document.add_paragraph('问卷结果')
-    document.add_paragraph(str(qn_id))
+    survey = Survey.objects.get(survey_id=qn_id)
+    docx_title = str(survey.username) + str(qn_id)+".docx"
+    print(docx_title)
+
+    # run = document.add_paragraph().add_run('This is a letter.')
+    # font = run.font
+    # font.name = '宋体' 英文字体设置
+    document.styles.add_style('Song', WD_STYLE_TYPE.CHARACTER).font.name = '宋体'  # 添加字体样式-Song
+    document.styles['Song']._element.rPr.rFonts.set(qn('w:eastAsia'), u'宋体')
+    # document.add_paragraph().add_run('第二个段落，abcDEFg，这是中文字符', style='Song')
+
+    document.add_heading(survey.title,0)
+
+    paragraph_list = []
+
+    paragraph = document.add_paragraph().add_run(survey.description, style='Song')
+
+    introduction = "本问卷已经收集了"+str(survey.recycling_num)+"份，共计"+str(survey.question_num)+"个问题"
+    paragraph = document.add_paragraph().add_run(introduction, style='Song')
+    paragraph_list.append(paragraph)
+
+    questions = Question.objects.filter(survey_id=survey)
+    i = 1
+    for question in questions:
+        document.add_paragraph().add_run(str(i)+"、"+question.title,style='Song')
+        i+=1
+        options = Option.objects.filter(question_id=question)
+        for option in options:
+            option_str = "      "
+            option_option = 0
+            alphas = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            if question.type in ['checkbox', 'radio']:
+                option_str += alphas[option_option]+" :  "
+                option_option += 1
+            option_str += option.content
+            document.add_paragraph().add_run(option_str,style='Song')
+            if question.type in ['mark', 'text']:
+                document.add_paragraph('')
+
+
+
+ # 东亚地区的字符设置成宋体
+
+    document.add_page_break()
+    # document.add_paragraph(str(qn_id))
     f = BytesIO()
+    save_path = docx_title
     document.save(f)
-    document.save(docx_title)
+    document.save(save_path)
 
 
     return document
