@@ -163,7 +163,7 @@ def get_recycling_num(request):
     if collect_form.is_valid():
         survey_id = collect_form.cleaned_data.get('survey_id')
         try:
-            survey = Survey.objects.get(survey_id=survey_id)
+            survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
         except:
             return JsonResponse({'status_code': 402})
 
@@ -234,7 +234,7 @@ def get_answer(request):
         # 问卷信息
         result = {}
         try:
-            survey = Survey.objects.get(survey_id=survey_id)
+            survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
             if username != survey.username:
                 return JsonResponse({'status_code': 403})
         except:
@@ -285,7 +285,7 @@ def collect(request):
     if collect_form.is_valid():
         survey_id = collect_form.cleaned_data.get('survey_id')
         try:
-            survey = Survey.objects.get(survey_id=survey_id)
+            survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
         except:
             return JsonResponse({'status_code': 402})
 
@@ -322,7 +322,7 @@ def not_collect(request):
     if collect_form.is_valid():
         survey_id = collect_form.cleaned_data.get('survey_id')
         try:
-            survey = Survey.objects.get(survey_id=survey_id)
+            survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
         except:
             return JsonResponse({'status_code': 402})
 
@@ -359,9 +359,10 @@ def get_code(request):
     if collect_form.is_valid():
         survey_id = collect_form.cleaned_data.get('survey_id')
 
-        # 用户名是否匹配
         try:
-            survey = Survey.objects.get(survey_id=survey_id)
+            survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
+            if survey.question_num == 0:
+                return JsonResponse({'status_code': 402, 'msg': "no_questions"})
             if request.session.get('username') != survey.username:
                 return JsonResponse({'status_code': 403})
         except:
@@ -386,6 +387,7 @@ def get_code(request):
     else:
         return JsonResponse({'status_code': 404})
 
+
 @csrf_exempt
 @swagger_auto_schema(method='post',
                      tags=['问卷相关'],
@@ -406,7 +408,7 @@ def get_survey_from_url(request):
         if url_form.is_valid():
             url = url_form.cleaned_data.get('url')
             start = url.rindex('/')
-            code = url[start+1:]
+            code = url[start + 1:]
             try:
                 survey = Survey.objects.get(share_url=code)
                 if request.session.get('username') != survey.username:
@@ -438,7 +440,7 @@ def get_survey_from_url(request):
                 temp['id'] = item.sequence  # 按照前端的题目顺序
                 temp['option'] = []
                 temp['answer'] = ''
-                if temp['type'] in ['0', '1']:
+                if temp['type'] in ['radio', 'checkbox']:
                     # 单选题或者多选题有选项
                     option_list = Option.objects.filter(question_id=item.question_id)
                     for option_item in option_list:
@@ -459,3 +461,95 @@ def get_survey_from_url(request):
             return JsonResponse({'status_code': 404})
     else:
         return JsonResponse({'status_code': 404})
+
+
+@csrf_exempt
+@swagger_auto_schema(method='post',
+                     tags=['问卷相关'],
+                     operation_summary='获取题目答题情况',
+                     operation_description="根据问卷id获取所有题目的答题情况",
+                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
+                                                  type=TYPE_INTEGER, required=True)],
+                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
+                     )
+@api_view(['post'])
+def get_question_answer(request):
+    # 检查登录情况
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 401})
+
+    collect_form = CollectForm(request.POST)
+    if collect_form.is_valid():
+        survey_id = collect_form.cleaned_data.get('survey_id')
+
+        # 用户名是否匹配
+        try:
+            survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
+            if request.session.get('username') != survey.username:
+                return JsonResponse({'status_code': 403})
+        except:
+            return JsonResponse({'status_code': 402})
+
+        # 所有题目的答题情况
+        questions = Question.objects.filter(survey_id=survey)
+        question_list = []
+        for question in questions:
+            answers = Answer.objects.filter(question_id=question)
+            temp = {'question_id': question.question_id, 'title': question.title, 'direction': question.direction,
+                    'must': question.is_must_answer, 'type': question.type, 'sequence': question.sequence,
+                    'num_all': len(answers), 'options': [], 'fill_blank': [], 'scores': []}
+
+            if temp['type'] in ['radio', 'checkbox']:  # 单选，多选
+                options = Option.objects.filter(question_id=question)
+                for option in options:
+                    answer_option = Answer.objects.filter(question_id=question, answer__contains=option.content)
+                    answer = {'content': option.content, 'num': len(answer_option)}
+                    temp['options'].append(answer)
+
+            elif temp['type'] == 'mark':  # 评分
+                max_score = question.score
+                for i in range(1, max_score+1):
+                    answer_blank = answers.filter(answer=str(i))
+                    answer = {'score': i, 'num': len(answer_blank)}
+                    temp['scores'].append(answer)
+            else:  # 填空
+                for item in answers:
+                    answer = {'answer_id': item.answer_id, 'content': item.answer}
+                    temp['fill_blank'].append(answer)
+            question_list.append(temp)
+        data = {'qn_id': survey_id, 'title': survey.title, 'questions': question_list}
+        return JsonResponse(data)
+    else:
+        return JsonResponse({'status_code': 404})
+
+
+@csrf_exempt
+def save_qn_answer(request):
+    response = {'status_code': 1, 'message': 'success'}
+    username = request.session.get('username')
+    if request.method == 'POST':
+        req = json.loads(request.body)
+        # print(req)
+        qn_id = req['qn_id']
+
+        survey = Survey.objects.get(survey_id=qn_id, is_deleted=False)
+        survey.recycling_num = survey.recycling_num + 1
+        survey.save()
+
+        submit = Submit(survey_id=survey)
+        if username:
+            submit.username = username
+        submit.save()
+
+        answer_list = req['answers']
+        for item in answer_list:
+            answer = Answer(question_id_id=item['question_id'], submit_id_id=submit.submit_id,
+                            answer=item['answer'], type=item['type'])
+            if username:
+                answer.username = username
+            answer.save()
+
+        return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
