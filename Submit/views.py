@@ -150,6 +150,11 @@ def delete_survey_real(request):
             except:
                 response = {'status_code': -1, 'message': '问卷不存在'}
                 return JsonResponse(response)
+
+            username = request.session.get('username')
+            if survey.username != username:
+                return JsonResponse({'status_code': 0})
+
             survey.delete()
             # 是否真的删掉呢
             return JsonResponse(response)
