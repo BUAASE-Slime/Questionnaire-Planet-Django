@@ -37,6 +37,9 @@ def empty_the_recycle_bin(request):
         username_form = UserNameForm(request.POST)
         if username_form.is_valid():
             username = username_form.cleaned_data.get('username')
+            this_username = request.session.get('username')
+            if this_username != username:
+                return JsonResponse({'status_code': 0})
             qn_list = Survey.objects.filter(username=username, is_deleted=True)
             for qn in qn_list:
                 qn.delete()
@@ -512,7 +515,6 @@ from docx.enum.style import WD_STYLE_TYPE
 from  docx import  Document
 from docx.shared import Pt, RGBColor
 from  docx.oxml.ns import  qn
-from docx.shared import Inches
 from docx import *
 from docx.shared import Inches
 @csrf_exempt
@@ -638,11 +640,10 @@ def duplicate_qn(request):
                 for option in options:
                     new_option = Option(content=option.content,question_id=new_question,order=option.order)
                     new_option.save()
+
             print(new_qn_id)
-            response = get_qn_data(new_qn_id)
-
-            return JsonResponse(response)
-
+            # response = get_qn_data(new_qn_id)
+            return JsonResponse({'status_code': 1, 'qn_id': new_qn_id})
 
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
