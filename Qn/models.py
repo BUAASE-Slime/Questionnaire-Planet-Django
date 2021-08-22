@@ -78,7 +78,7 @@ class Answer(models.Model):
     answer_id = models.AutoField(primary_key=True,verbose_name="回答编号")
     question_id = models.ForeignKey(Question, on_delete=models.CASCADE,verbose_name="问题编号")
     submit_id = models.ForeignKey(Submit, on_delete=models.CASCADE,verbose_name="提交编号")
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
+    # user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
     answer = models.CharField(max_length=128,verbose_name="答案")
     TYPE_CHOICES = [
         (0, '单选'),
