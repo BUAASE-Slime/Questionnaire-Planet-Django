@@ -22,6 +22,9 @@ class Survey(models.Model):
 
     username = models.CharField(max_length=128, verbose_name="用户名")
 
+    share_url = models.URLField(verbose_name="分享链接",default='')
+
+
     SURVEY_TYPE_CHOICES = [
         (0,'普通问卷'),
         (1,'考试问卷'),
