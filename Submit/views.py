@@ -72,6 +72,12 @@ def delete_survey_not_real(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+def produce_time(example):
+    if example is None or example == '':
+        return False
+    else:
+        return True
+
 def get_qn_data(qn_id):
     id = qn_id
     survey = Survey.objects.get(survey_id=qn_id)
@@ -83,10 +89,14 @@ def get_qn_data(qn_id):
     response['type'] = survey.type
 
     response['question_num'] = survey.question_num
-    response['created_time'] = survey.created_time
+    response['created_time'] = response['release_time'] = response['finished_time'] = ''
+    if produce_time(survey.created_time):
+        response['created_time'] = survey.created_time.strftime("%Y/%m/%d %H:%M")
+    if produce_time(survey.finished_time):
+        response['finished_time'] = survey.finished_time.strftime("%Y/%m/%d %H:%M")
+    if produce_time(survey.release_time):
+        response['release_time'] = survey.release_time.strftime("%Y/%m/%d %H:%M")
     response['is_released'] = survey.is_released
-    response['release_time'] = survey.release_time
-    response['finished_time'] = survey.finished_time
     response['recycling_num'] = survey.recycling_num
 
     question_list = Question.objects.filter(survey_id=qn_id)
@@ -94,7 +104,7 @@ def get_qn_data(qn_id):
     for item in question_list:
         temp = {}
         temp['question_id'] = item.question_id
-        temp['raw'] = item.raw
+        temp['row'] = item.raw
         temp['score'] = item.score
         temp['title'] = item.title
         temp['direction'] = item.direction
@@ -453,7 +463,7 @@ def TestDocument(request):
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
             id = survey_form.cleaned_data.get('qn_id')
-
+            qn_to_docx(id)
             document = Document()
             docx_title="TEST_DOCUMENT.docx"
             # ---- Cover Letter ----
@@ -478,19 +488,14 @@ def TestDocument(request):
             # f = StringIO()
             f = BytesIO()
             document.save(f)
-
+            # document.save(demo.docx)
             length = f.tell()
             f.seek(0)
-            # response = HttpResponse(
-            #     f.getvalue(),
-            #     content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-            # )
-            # response['Content-Disposition'] = 'attachment; filename=' + docx_title
-            # response['Content-Length'] = length
+
 
             response['filename'] = '%s.docx' % docx_title
             response['b64data'] = base64.b64encode(f.getvalue()).decode()
-            print(f.getvalue())
+            # print(f.getvalue())
             # print(response['Content-Length'])
 
             return JsonResponse(response)
@@ -507,6 +512,12 @@ def TestDocument(request):
 def qn_to_docx(qn_id):
 
     document = Document()
+    docx_title = "TEST_DOCUMENT.docx"
+    document.add_paragraph('问卷结果')
+    document.add_paragraph(str(qn_id))
+    f = BytesIO()
+    document.save(f)
+    document.save(docx_title)
 
 
     return document
