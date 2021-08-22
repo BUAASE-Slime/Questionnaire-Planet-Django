@@ -401,3 +401,35 @@ def pause_qn(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+@csrf_exempt
+def finish_qn(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                survey = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            if survey.is_deleted == True:
+                response = {'status_code': 4, 'message': '问卷已经放入回收站'}
+                return JsonResponse(response)
+            if survey.is_finished :
+                response = {'status_code': 5, 'message': '问卷已经停止回收'}
+                return JsonResponse(response)
+            survey.is_finished = True
+            survey.finished_time = datetime.datetime.now()
+            survey.is_released = False
+            
+            survey.save()
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
