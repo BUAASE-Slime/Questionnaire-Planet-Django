@@ -492,7 +492,7 @@ def TestDocument(request):
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
 
-            document,f,docx_title= qn_to_docx(id)
+            document,f,docx_title,_= qn_to_docx(id)
 
 
             response['filename'] = docx_title
@@ -517,12 +517,22 @@ def TestDocument(request):
 
 # 根据问卷id传递文件格式返回上一个函数。具体正在写。
 #只要文件能打开就好写了
+import hashlib
 
+def hash_code(s, salt='Qn'):  # generate s+salt into hash_code (default: salt=online publish)
+    h = hashlib.sha256()
+    s += salt
+    h.update(s.encode())  # update method get bytes(type)
+    return h.hexdigest()
 def qn_to_docx(qn_id):
 
     document = Document()
     survey = Survey.objects.get(survey_id=qn_id)
-    docx_title = str(survey.username) + str(qn_id)+".docx"
+    docx_title = survey.title+'_'+str(survey.username)+'_' + str(qn_id)+".docx"
+
+    # code = hash_code(str(survey.username),str(qn_id))
+
+    # docx_title = code
     print(docx_title)
 
     # run = document.add_paragraph().add_run('This is a letter.')
@@ -545,22 +555,23 @@ def qn_to_docx(qn_id):
     questions = Question.objects.filter(survey_id=survey)
     i = 1
     for question in questions:
+
         document.add_paragraph().add_run(str(i)+"、"+question.title,style='Song')
         i+=1
         options = Option.objects.filter(question_id=question)
+        option_option = 0
         for option in options:
             option_str = "      "
-            option_option = 0
+
             alphas = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             if question.type in ['checkbox', 'radio']:
-                option_str += alphas[option_option]+" :  "
+                option_str += alphas[option_option] + " :  "
                 option_option += 1
+
             option_str += option.content
             document.add_paragraph().add_run(option_str,style='Song')
             if question.type in ['mark', 'text']:
                 document.add_paragraph('')
-
-
 
     document.add_page_break()
     # document.add_paragraph(str(qn_id))
@@ -569,11 +580,57 @@ def qn_to_docx(qn_id):
     document.save(f)
     # document.save(save_path)
 
-    docx_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"+save_path
+    docx_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"
     print(docx_path)
-    document.save(docx_path)
+    document.save(docx_path+docx_title)
 
-    return document,f,docx_title
+
+
+    return document,f,docx_title,docx_path
+
+import pythoncom
+from docx2pdf import convert
+
+def qn_to_pdf(qn_id):
+    document,_,docx_title,docx_path = qn_to_docx(qn_id)
+    input_file = docx_path+docx_title
+    out_file = docx_path+docx_title.replace('.docx','.pdf')
+    pdf_title = docx_title.replace('.docx','.pdf')
+
+    pythoncom.CoInitialize()
+    convert(input_file,out_file)
+
+    return pdf_title
+
+@csrf_exempt
+def pdf_document(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+
+            pdf_title = qn_to_pdf(qn.survey_id)
+            response['filename'] = pdf_title
+            response['pdf_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + pdf_title
+            # TODO: 根据实时文件位置设置url
+            qn.pdf_url = response['pdf_url']
+            qn.save()
+
+            return JsonResponse(response)
+
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
 
 @csrf_exempt
 def duplicate_qn(request):

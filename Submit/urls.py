@@ -22,6 +22,6 @@ urlpatterns = [
     path('pause_qn',pause_qn),
 
     path('export/docx',TestDocument),
-
+    path('export/pdf',pdf_document),
     path('duplicate/qn',duplicate_qn)
 ]
