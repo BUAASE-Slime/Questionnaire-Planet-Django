@@ -2,7 +2,6 @@ from django.conf.urls.static import static
 from django.urls import path
 from .views import *
 
-
 urlpatterns = [
 
     path('get_list', get_list),
@@ -10,5 +9,6 @@ urlpatterns = [
     path('get_answer', get_answer),
     path('collect', collect),
     path('not_collect', not_collect),
-    path('get_url', get_url),
+    path('get_code', get_code),
+    path('get_survey_from_url', get_survey_from_url),
 ]
