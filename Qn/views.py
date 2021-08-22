@@ -74,8 +74,6 @@ def get_list(request):
         if username != request.session.get('username'):
             return JsonResponse({'status_code': 403})
 
-        json_list = []
-
         if survey_id is not None:
             try:
                 survey = Survey.objects.get(survey_id=survey_id)
@@ -84,7 +82,7 @@ def get_list(request):
                              "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                              "recycling_num": survey.recycling_num, "username": survey.username,
                              "created_time": survey.created_time, "release_time": survey.release_time}
-                json_list.append(json_item)
+                return JsonResponse(json_item)
             except:
                 return JsonResponse({'status_code': 402})
 
@@ -107,6 +105,7 @@ def get_list(request):
         else:
             survey_list = survey_list.order_by(order_item)
 
+        json_list = []
         for survey in survey_list:
             json_item = {"survey_id": survey.survey_id, "title": survey.title,
                          "subtitle": survey.subtitle, "is_released": survey.is_released,
