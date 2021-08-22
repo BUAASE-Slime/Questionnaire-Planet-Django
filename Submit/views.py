@@ -1,5 +1,7 @@
 import base64
 
+from docx.text import font
+
 import djangoProject.settings
 import json
 from io import StringIO, BytesIO
@@ -35,6 +37,9 @@ def empty_the_recycle_bin(request):
         username_form = UserNameForm(request.POST)
         if username_form.is_valid():
             username = username_form.cleaned_data.get('username')
+            this_username = request.session.get('username')
+            if this_username != username:
+                return JsonResponse({'status_code': 0})
             qn_list = Survey.objects.filter(username=username, is_deleted=True)
             for qn in qn_list:
                 qn.delete()
@@ -82,7 +87,7 @@ def produce_time(example):
 def get_qn_data(qn_id):
     id = qn_id
     survey = Survey.objects.get(survey_id=qn_id)
-    response = {'status_code': 0, 'message': 'success'}
+    response = {'status_code': 1, 'message': 'success'}
     response['qn_id'] = survey.survey_id
     response['username'] = survey.username
     response['title'] = survey.title
@@ -120,7 +125,7 @@ def get_qn_data(qn_id):
             option_list = Option.objects.filter(question_id=item.question_id)
             for option_item in option_list:
                 option_dict = {}
-                option_dict['option_id'] = option_item.option_id
+                option_dict['id'] = option_item.option_id
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
             temp['answer'] = ''
@@ -131,6 +136,8 @@ def get_qn_data(qn_id):
         print(questions)
     response['questions'] = questions
     return response
+
+
 @csrf_exempt
 def delete_survey_real(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -153,6 +160,36 @@ def delete_survey_real(request):
 @csrf_exempt
 def get_survey_details(request):
     response = {'status_code': 1, 'message': 'success'}
+    this_username = request.session.get('username')
+    if not this_username:
+        return JsonResponse({'status_code': 0})
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                survey = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': -2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+
+            if survey.username != this_username:
+                return JsonResponse({'status_code': 0})
+
+            response = get_qn_data(id)
+
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': '问卷id不为整数'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
+def get_survey_details_by_others(request):
+    response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
@@ -171,6 +208,7 @@ def get_survey_details(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
 
 @csrf_exempt
 def delete_question(request):
@@ -328,6 +366,7 @@ def save_qn(request):
         survey.title = req['title']
         survey.description = req['description']
         survey.type = req['type']
+        survey.save()
         question_list = req['questions']
 
         if request.session.get("username") != req['username']:
@@ -341,7 +380,8 @@ def save_qn(request):
             create_question_in_save(question['title'], question['direction'], question['must']
                                     , question['type'], qn_id=req['qn_id'], raw=question['row'],
                                     score=question['score'],
-                                    options=question['options']
+                                    options=question['options'],
+                                    sequence=question['id']
                                     )
 
         return JsonResponse(response)
@@ -349,7 +389,7 @@ def save_qn(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
 
 
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options):
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence):
     question = Question()
     try:
         question.title = title
@@ -360,6 +400,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         question.survey_id = Survey.objects.get(survey_id=survey_id)
         question.raw = raw
         question.score = score
+        question.sequence = sequence
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
         return JsonResponse(response)
@@ -470,6 +511,10 @@ def finish_qn(request):
         return JsonResponse(response)
 
 
+from docx.enum.style import WD_STYLE_TYPE
+from  docx import  Document
+from docx.shared import Pt, RGBColor
+from  docx.oxml.ns import  qn
 from docx import *
 from docx.shared import Inches
 @csrf_exempt
@@ -479,37 +524,20 @@ def TestDocument(request):
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
             id = survey_form.cleaned_data.get('qn_id')
-            qn_to_docx(id)
-            document = Document()
-            docx_title="TEST_DOCUMENT.docx"
-            # ---- Cover Letter ----
-            # document.add_picture((r'%s/static/images/my-header.png' % (settings.PROJECT_PATH)), width=Inches(4))
-            document.add_paragraph()
-            document.add_paragraph("%s" % datetime.date.today().strftime('%B %d, %Y'))
+            try:
+                survey = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+
+            document,f,docx_title= qn_to_docx(id)
 
 
-
-            document.add_paragraph('Dear Sir or Madam:')
-            document.add_paragraph('We are pleased to help you with your widgets.')
-            document.add_paragraph('Please feel free to contact me for any additional information.')
-            document.add_paragraph('I look forward to assisting you in this project.')
-
-            document.add_paragraph()
-            document.add_paragraph('Best regards,')
-            document.add_paragraph('Acme Specialist 1]')
-            document.add_page_break()
-
-            # Prepare document for download
-            # -----------------------------
-            # f = StringIO()
-            f = BytesIO()
-            document.save(f)
-            # document.save(demo.docx)
-            length = f.tell()
-            f.seek(0)
-
-
-            response['filename'] = '%s.docx' % docx_title
+            response['filename'] = docx_title
+            response['docx_url'] = djangoProject.settings.WEB_ROOT+"/media/Document/"+docx_title
+            #TODO: 根据实时文件位置设置url
+            survey.docx_url = response['docx_url']
+            survey.save()
             response['b64data'] = base64.b64encode(f.getvalue()).decode()
             # print(f.getvalue())
             # print(response['Content-Length'])
@@ -523,17 +551,103 @@ def TestDocument(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
+
 # 根据问卷id传递文件格式返回上一个函数。具体正在写。
 #只要文件能打开就好写了
+
 def qn_to_docx(qn_id):
 
     document = Document()
-    docx_title = "TEST_DOCUMENT.docx"
-    document.add_paragraph('问卷结果')
-    document.add_paragraph(str(qn_id))
+    survey = Survey.objects.get(survey_id=qn_id)
+    docx_title = str(survey.username) + str(qn_id)+".docx"
+    print(docx_title)
+
+    # run = document.add_paragraph().add_run('This is a letter.')
+    # font = run.font
+    # font.name = '宋体' 英文字体设置
+    document.styles.add_style('Song', WD_STYLE_TYPE.CHARACTER).font.name = '宋体'  # 添加字体样式-Song
+    document.styles['Song']._element.rPr.rFonts.set(qn('w:eastAsia'), u'宋体')
+    # document.add_paragraph().add_run('第二个段落，abcDEFg，这是中文字符', style='Song')
+
+    document.add_heading(survey.title,0)
+
+    paragraph_list = []
+
+    paragraph = document.add_paragraph().add_run(survey.description, style='Song')
+
+    introduction = "本问卷已经收集了"+str(survey.recycling_num)+"份，共计"+str(survey.question_num)+"个问题"
+    paragraph = document.add_paragraph().add_run(introduction, style='Song')
+    paragraph_list.append(paragraph)
+
+    questions = Question.objects.filter(survey_id=survey)
+    i = 1
+    for question in questions:
+        document.add_paragraph().add_run(str(i)+"、"+question.title,style='Song')
+        i+=1
+        options = Option.objects.filter(question_id=question)
+        for option in options:
+            option_str = "      "
+            option_option = 0
+            alphas = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            if question.type in ['checkbox', 'radio']:
+                option_str += alphas[option_option]+" :  "
+                option_option += 1
+            option_str += option.content
+            document.add_paragraph().add_run(option_str,style='Song')
+            if question.type in ['mark', 'text']:
+                document.add_paragraph('')
+
+
+
+    document.add_page_break()
+    # document.add_paragraph(str(qn_id))
     f = BytesIO()
+    save_path = docx_title
     document.save(f)
-    document.save(docx_title)
+    # document.save(save_path)
 
+    docx_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"+save_path
+    print(docx_path)
+    document.save(docx_path)
 
-    return document
+    return document,f,docx_title
+
+@csrf_exempt
+def duplicate_qn(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            new_qn = Survey(title=qn.title,description=qn.description,question_num=0,recycling_num=0,username=qn.username,type=qn.type)
+
+            new_qn.save()
+            new_qn_id = new_qn.survey_id
+            questions = Question.objects.filter(survey_id=qn)
+            for question in questions:
+                new_question = Question(title=question.title,direction=question.direction,is_must_answer=question.is_must_answer,
+                                        sequence=question.sequence,option_num=question.option_num,score=question.score,raw=question.raw,
+                                        type=question.type,survey_id=new_qn)
+                new_question.save()
+                options = Option.objects.filter(question_id=question)
+
+                for option in options:
+                    new_option = Option(content=option.content,question_id=new_question,order=option.order)
+                    new_option.save()
+
+            print(new_qn_id)
+            # response = get_qn_data(new_qn_id)
+            return JsonResponse({'status_code': 1, 'qn_id': new_qn_id})
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
