@@ -61,6 +61,9 @@ def delete_survey_not_real(request):
             survey.is_released = False
             survey.save()
             return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
@@ -337,3 +340,13 @@ def create_question_in_save(title,direction,must,type,qn_id,raw,score,options):
         create_option(question,content,sequence)
     question.save()
 
+
+@csrf_exempt
+def deploy_qn(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            pass
+        else:
+            pass
