@@ -109,7 +109,6 @@ def get_list(request):
         return JsonResponse({'status_code': 404})
 
 
-
 class _Params:
     USERNAME = openapi.Parameter('username', openapi.TYPE_STRING, description='用户名', type=openapi.TYPE_STRING)
     QN_ID = openapi.Parameter('qn_id', openapi.TYPE_NUMBER, description="问卷id", type=openapi.TYPE_NUMBER)
@@ -333,6 +332,7 @@ def not_collect(request):
     else:
         return JsonResponse({'status_code': 404})
 
+
 @csrf_exempt
 @swagger_auto_schema(method='post',
                      tags=['问卷相关'],
@@ -361,15 +361,12 @@ def get_url(request):
             return JsonResponse({'status_code': 402})
 
         # 生成链接
-        code = hash_code(survey.username, survey_id)
-        status_http = 'http://'
-        end_info = code
-        domain_name = request.get_host()
+        code = hash_code(survey.username, str(survey_id))
+        status_http = 'https://'
+        end_info = code[:20].upper()
+        domain_name = 'zewan.cc/qn'
 
-        if domain_name != '本项目域名':
-            status_http = 'https://'
-
-        link_url = status_http + domain_name + end_info
+        link_url = status_http + domain_name + '/' + end_info
         survey.share_url = link_url
         try:
             survey.save()
