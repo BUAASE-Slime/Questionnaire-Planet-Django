@@ -347,6 +347,58 @@ def deploy_qn(request):
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
-            pass
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                survey = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            if survey.is_deleted == True:
+                response = {'status_code': 4, 'message': '问卷已经放入回收站'}
+                return JsonResponse(response)
+
+            if survey.is_released == True:
+                response = {'status_code': 3, 'message': '问卷已经发布，不要重复操作'}
+                return JsonResponse(response)
+
+            survey.is_released = True
+            if survey.release_time == '' or survey.release_time is None or survey.release_time == 'null':
+                survey.release_time = datetime.datetime.now()
+            survey.save()
+            return JsonResponse(response)
+
         else:
-            pass
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+@csrf_exempt
+def pause_qn(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                survey = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': -1, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            if survey.is_deleted == True:
+                response = {'status_code': 2, 'message': '问卷已放入回收站'}
+                return JsonResponse(response)
+            if not survey.is_released:
+                response = {'status_code': 3, 'message': '问卷为发行，不可取消发行'}
+                return JsonResponse(response)
+            survey.is_released = False
+            survey.save()
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)

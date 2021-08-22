@@ -18,5 +18,7 @@ urlpatterns = [
     path('create/question/',create_question),
 
     path('save/qn/',save_qn),
+    path('deploy_qn/',deploy_qn),
+    path('pause_qn/',pause_qn),
 
 ]
