@@ -336,14 +336,14 @@ def not_collect(request):
 @csrf_exempt
 @swagger_auto_schema(method='post',
                      tags=['问卷相关'],
-                     operation_summary='获取问卷链接',
-                     operation_description="根据用户的username以及问卷id得到链接",
+                     operation_summary='获取问卷码',
+                     operation_description="根据用户的username以及问卷id得到问卷码",
                      manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
                                                   type=TYPE_INTEGER, required=True)],
                      responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
                      )
 @api_view(['post'])
-def get_url(request):
+def get_code(request):
     # 检查登录情况
     if not request.session.get('is_login'):
         return JsonResponse({'status_code': 401})
@@ -360,25 +360,95 @@ def get_url(request):
         except:
             return JsonResponse({'status_code': 402})
 
-        # 生成链接
-        status_http = 'https://'
-        domain_name = 'zewan.cc/qn'
+        # 生成问卷码
         code = hash_code(survey.username, str(survey_id))
         # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         end_info = code[:20].upper()
-        link_url = status_http + domain_name + '/' + end_info
-        while Survey.objects.filter(share_url=link_url):
+        while Survey.objects.filter(share_url=end_info):
             code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             end_info = code[:20].upper()
-            link_url = status_http + domain_name + '/' + end_info
 
-        survey.share_url = link_url
+        survey.share_url = end_info
         try:
             survey.save()
-            data = {'url': link_url}
+            data = {'code': end_info}
             return JsonResponse(data)
         except:
             return JsonResponse({'status_code': 402})
 
+    else:
+        return JsonResponse({'status_code': 404})
+
+@csrf_exempt
+@swagger_auto_schema(method='post',
+                     tags=['问卷相关'],
+                     operation_summary='根据链接获取问卷详细信息',
+                     manual_parameters=[Parameter(name='url', in_=IN_QUERY, description='问卷链接',
+                                                  type=TYPE_INTEGER, required=True)],
+                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
+                     )
+@api_view(['post'])
+def get_survey_from_url(request):
+    # 检查登录情况
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 401})
+
+    if request.method == 'POST':
+        response = {}
+        url_form = URLForm(request.POST)
+        if url_form.is_valid():
+            url = url_form.cleaned_data.get('url')
+            start = url.rindex('/')
+            code = url[start+1:]
+            try:
+                survey = Survey.objects.get(share_url=code)
+                if request.session.get('username') != survey.username:
+                    return JsonResponse({'status_code': 403})
+            except:
+                return JsonResponse({'status_code': 402})
+
+            response['title'] = survey.title
+            response['description'] = survey.description
+            response['type'] = survey.type
+            response['question_num'] = survey.question_num
+            response['created_time'] = survey.created_time
+            response['is_released'] = survey.is_released
+            response['release_time'] = survey.release_time
+            response['finished_time'] = survey.finished_time
+            response['recycling_num'] = survey.recycling_num
+
+            question_list = Question.objects.filter(survey_id=survey.survey_id)
+            questions = []
+            for item in question_list:
+                temp = {}
+                temp['question_id'] = item.question_id
+                temp['title'] = item.title
+                temp['direction'] = item.direction
+                temp['must'] = item.is_must_answer
+                temp['type'] = item.type
+                temp['qn_id'] = survey.survey_id
+                temp['sequence'] = item.sequence
+                temp['id'] = item.sequence  # 按照前端的题目顺序
+                temp['option'] = []
+                temp['answer'] = ''
+                if temp['type'] in ['0', '1']:
+                    # 单选题或者多选题有选项
+                    option_list = Option.objects.filter(question_id=item.question_id)
+                    for option_item in option_list:
+                        option_dict = {}
+                        option_dict['option_id'] = option_item.option_id
+                        option_dict['title'] = option_item.content
+                        temp['option'].append(option_dict)
+
+                else:  # TODO 填空题或者其他
+                    pass
+
+                questions.append(temp)
+                print(questions)
+            response['questions'] = questions
+
+            return JsonResponse(response)
+        else:
+            return JsonResponse({'status_code': 404})
     else:
         return JsonResponse({'status_code': 404})
