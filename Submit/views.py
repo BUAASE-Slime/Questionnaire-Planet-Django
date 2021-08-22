@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render
 import pytz
 
@@ -226,7 +228,7 @@ def create_qn(request):
 
 
 @csrf_exempt
-def create_option(question, content):
+def create_option(question, content,sequence):
     option = Option()
     option.content = content
     question.option_num += 1
@@ -276,5 +278,62 @@ def create_question(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
-def editor_qn(request):
-    pass
+@csrf_exempt
+def save_qn(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        req = json.loads(request.body,encoding='utf-8')
+        print(req)
+        qn_id = req['qn_id']
+        try:
+            question_list = Question.objects.filter(survey_id=qn_id)
+        except:
+            response = {'status_code': 3, 'message': '问卷不存在'}
+            return JsonResponse(response)
+        for question in question_list:
+            question.delete()
+
+        survey = Survey.objects.get(survey_id=qn_id)
+        survey.username = req['username']
+        survey.title = req['title']
+        survey.description = req['description']
+        survey.type = req['type']
+        question_list = req['questions']
+        #TODO
+
+        for question in question_list:
+            question['direction'] = ''
+            create_question_in_save(question['title'],question['direction'],question['must']
+                                ,question['type'],qn_id=req['qn_id'],raw=question['raw'],score=question['score'],
+                                    options=question['options']
+                                    )
+
+        return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+
+def create_question_in_save(title,direction,must,type,qn_id,raw,score,options):
+
+    question = Question()
+    try:
+        question.title = title
+        question.direction = direction
+        question.is_must_answer = must
+        question.type = type
+        survey_id = qn_id
+        question.survey_id = Survey.objects.get(survey_id=survey_id)
+        question.raw = raw
+        question.score = score
+    except:
+        response = {'status_code': -3, 'message': '后端炸了'}
+        return JsonResponse(response)
+    KEY = "^_^_^"
+
+    option_list = options
+    for item in option_list:
+        print(item)
+        content = item['title']
+        sequence = item['id']
+        create_option(question,content,sequence)
+    question.save()
+
