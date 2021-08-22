@@ -192,6 +192,7 @@ def delete_option(request):
 # username title description type
 @csrf_exempt
 def create_qn(request):
+    global survey
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         new_qn_form = CreateNewQnForm(request.POST)
@@ -201,12 +202,18 @@ def create_qn(request):
             description = new_qn_form.cleaned_data.get('description')
             type = new_qn_form.cleaned_data.get('type')
 
+            description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
+
             try:
                 user = User.objects.get(username=username)
 
             except:
                 response = {'status_code': 2, 'message': '用户不存在'}
                 return JsonResponse(response)
+
+            if request.session.get('username') != username:
+                return JsonResponse({'status_code': 2})
+
             if title == '':
                 title = "默认标题"
 
