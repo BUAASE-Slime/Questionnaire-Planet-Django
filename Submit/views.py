@@ -82,7 +82,7 @@ def produce_time(example):
 def get_qn_data(qn_id):
     id = qn_id
     survey = Survey.objects.get(survey_id=qn_id)
-    response = {'status_code': 0, 'message': 'success'}
+    response = {'status_code': 1, 'message': 'success'}
     response['qn_id'] = survey.survey_id
     response['username'] = survey.username
     response['title'] = survey.title
@@ -120,7 +120,7 @@ def get_qn_data(qn_id):
             option_list = Option.objects.filter(question_id=item.question_id)
             for option_item in option_list:
                 option_dict = {}
-                option_dict['option_id'] = option_item.option_id
+                option_dict['id'] = option_item.option_id
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
             temp['answer'] = ''
@@ -131,6 +131,8 @@ def get_qn_data(qn_id):
         print(questions)
     response['questions'] = questions
     return response
+
+
 @csrf_exempt
 def delete_survey_real(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -153,6 +155,36 @@ def delete_survey_real(request):
 @csrf_exempt
 def get_survey_details(request):
     response = {'status_code': 1, 'message': 'success'}
+    this_username = request.session.get('username')
+    if not this_username:
+        return JsonResponse({'status_code': 0})
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                survey = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': -2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+
+            if survey.username != this_username:
+                return JsonResponse({'status_code': 0})
+
+            response = get_qn_data(id)
+
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': '问卷id不为整数'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
+def get_survey_details_by_others(request):
+    response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
@@ -171,6 +203,7 @@ def get_survey_details(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
 
 @csrf_exempt
 def delete_question(request):
@@ -328,6 +361,7 @@ def save_qn(request):
         survey.title = req['title']
         survey.description = req['description']
         survey.type = req['type']
+        survey.save()
         question_list = req['questions']
 
         if request.session.get("username") != req['username']:
@@ -341,7 +375,8 @@ def save_qn(request):
             create_question_in_save(question['title'], question['direction'], question['must']
                                     , question['type'], qn_id=req['qn_id'], raw=question['row'],
                                     score=question['score'],
-                                    options=question['options']
+                                    options=question['options'],
+                                    sequence=question['id']
                                     )
 
         return JsonResponse(response)
@@ -349,7 +384,7 @@ def save_qn(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
 
 
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options):
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence):
     question = Question()
     try:
         question.title = title
@@ -360,6 +395,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         question.survey_id = Survey.objects.get(survey_id=survey_id)
         question.raw = raw
         question.score = score
+        question.sequence = sequence
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
         return JsonResponse(response)
