@@ -21,5 +21,7 @@ urlpatterns = [
     path('deploy_qn',deploy_qn),
     path('pause_qn',pause_qn),
 
-    path('export/docx',TestDocument)
+    path('export/docx',TestDocument),
+
+    path('duplicate/qn',duplicate_qn)
 ]

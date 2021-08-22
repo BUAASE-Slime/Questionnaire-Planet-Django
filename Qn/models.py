@@ -80,6 +80,7 @@ class Answer(models.Model):
     submit_id = models.ForeignKey(Submit, on_delete=models.CASCADE,verbose_name="提交编号")
     # user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
     answer = models.CharField(max_length=128,verbose_name="答案")
+    username = models.CharField(max_length=128, blank=True, verbose_name="用户名")
     TYPE_CHOICES = [
         (0, '单选'),
         (1, '多选'),
