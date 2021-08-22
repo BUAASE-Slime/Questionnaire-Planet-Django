@@ -1,5 +1,6 @@
 from django.conf import settings
 
+from userinfo.models import ConfirmString
 from utils.toHash import *
 
 import datetime
