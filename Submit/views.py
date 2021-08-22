@@ -487,42 +487,19 @@ def TestDocument(request):
         if survey_form.is_valid():
             id = survey_form.cleaned_data.get('qn_id')
             try:
-                qn = Survey.objects.get(survey_id=id)
+                survey = Survey.objects.get(survey_id=id)
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
 
-            qn_to_docx(id)
-            document = Document()
-            docx_title="TEST_DOCUMENT.docx"
-            # ---- Cover Letter ----
-            # document.add_picture((r'%s/static/images/my-header.png' % (settings.PROJECT_PATH)), width=Inches(4))
-            document.add_paragraph()
-            document.add_paragraph("%s" % datetime.date.today().strftime('%B %d, %Y'))
+            document,f,docx_title= qn_to_docx(id)
 
 
-
-            document.add_paragraph('Dear Sir or Madam:')
-            document.add_paragraph('We are pleased to help you with your widgets.')
-            document.add_paragraph('Please feel free to contact me for any additional information.')
-            document.add_paragraph('I look forward to assisting you in this project.')
-
-            document.add_paragraph()
-            document.add_paragraph('Best regards,')
-            document.add_paragraph('Acme Specialist 1]')
-            document.add_page_break()
-
-            # Prepare document for download
-            # -----------------------------
-            # f = StringIO()
-            f = BytesIO()
-            document.save(f)
-            # document.save(demo.docx)
-            length = f.tell()
-            f.seek(0)
-
-
-            response['filename'] = '%s.docx' % docx_title
+            response['filename'] = docx_title
+            response['docx_url'] = djangoProject.settings.WEB_ROOT+"/media/Document/"+docx_title
+            #TODO: 根据实时文件位置设置url
+            survey.docx_url = response['docx_url']
+            survey.save()
             response['b64data'] = base64.b64encode(f.getvalue()).decode()
             # print(f.getvalue())
             # print(response['Content-Length'])
@@ -585,14 +562,15 @@ def qn_to_docx(qn_id):
 
 
 
- # 东亚地区的字符设置成宋体
-
     document.add_page_break()
     # document.add_paragraph(str(qn_id))
     f = BytesIO()
     save_path = docx_title
     document.save(f)
-    document.save(save_path)
+    # document.save(save_path)
 
+    docx_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"+save_path
+    print(docx_path)
+    document.save(docx_path)
 
-    return document
+    return document,f,docx_title

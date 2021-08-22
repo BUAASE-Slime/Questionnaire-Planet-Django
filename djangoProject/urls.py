@@ -22,6 +22,9 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+from django.conf.urls import url
+from django.views.static import serve
+
 import Qn.views
 
 schema_view = get_schema_view(
@@ -51,6 +54,9 @@ urlpatterns = [
     path('api/qs/qn/', include(('Qn.urls', 'Qn'))),
     path('api/qs/sm/', include(('Submit.urls', 'Submit'))),
     path('api/qs/all_count/submit', Qn.views.all_submittion_count),
+
+    url(r'media/(?P<path>.*)',serve,{'document_root':settings.MEDIA_ROOT}),
+
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
