@@ -361,12 +361,17 @@ def get_url(request):
             return JsonResponse({'status_code': 402})
 
         # 生成链接
-        code = hash_code(survey.username, str(survey_id))
         status_http = 'https://'
-        end_info = code[:20].upper()
         domain_name = 'zewan.cc/qn'
-
+        code = hash_code(survey.username, str(survey_id))
+        # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        end_info = code[:20].upper()
         link_url = status_http + domain_name + '/' + end_info
+        while Survey.objects.filter(share_url=link_url):
+            code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            end_info = code[:20].upper()
+            link_url = status_http + domain_name + '/' + end_info
+
         survey.share_url = link_url
         try:
             survey.save()
