@@ -137,8 +137,6 @@ def get_survey_details(request):
             response['questions'] = questions
 
             return JsonResponse(response)
-
-
         else:
             response = {'status_code': -1, 'message': '问卷id不为整数'}
             return JsonResponse(response)
@@ -204,12 +202,8 @@ def create_qn(request):
             except:
                 response = {'status_code': 2, 'message': '用户不存在'}
                 return JsonResponse(response)
-            # survey.username = username
-            # survey.title = title
-            # survey.type = int(type)
-            # survey.subtitle = subtitle
-            # survey.question_num = 0
-            # survey.recycling_num = 0
+            if title == '':
+                title = "默认标题"
 
             try:
                 survey = Survey(username=username, title=title, type=type, description=description, question_num=0,
@@ -282,3 +276,5 @@ def create_question(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
+def editor_qn(request):
+    pass
