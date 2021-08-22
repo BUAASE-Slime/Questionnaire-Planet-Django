@@ -81,6 +81,8 @@ def get_list(request):
         survey_list = Survey.objects.all()
         if is_deleted:
             survey_list = survey_list.filter(is_deleted=is_deleted)
+        else:
+            survey_list = survey_list.filter(is_deleted=False)
         if title_key:
             survey_list = survey_list.filter(title__contains=title_key)
         if username:

@@ -19,8 +19,9 @@ from django.views.decorators.csrf import csrf_exempt
 
 from Qn.form import CollectForm
 
-
 utc = pytz.UTC
+
+
 # Create your views here.
 
 @csrf_exempt
@@ -238,7 +239,7 @@ def create_qn(request):
 
 
 @csrf_exempt
-def create_option(question, content,sequence):
+def create_option(question, content, sequence):
     option = Option()
     option.content = content
     question.option_num += 1
@@ -288,11 +289,12 @@ def create_question(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def save_qn(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
-        req = json.loads(request.body,encoding='utf-8')
+        req = json.loads(request.body)
         print(req)
         qn_id = req['qn_id']
         try:
@@ -309,12 +311,18 @@ def save_qn(request):
         survey.description = req['description']
         survey.type = req['type']
         question_list = req['questions']
-        #TODO
+
+        if request.session.get("username") != req['username']:
+            request.session.flush()
+            return JsonResponse({'status_code': 0})
+
+        # TODO
 
         for question in question_list:
             question['direction'] = ''
-            create_question_in_save(question['title'],question['direction'],question['must']
-                                ,question['type'],qn_id=req['qn_id'],raw=question['raw'],score=question['score'],
+            create_question_in_save(question['title'], question['direction'], question['must']
+                                    , question['type'], qn_id=req['qn_id'], raw=question['row'],
+                                    score=question['score'],
                                     options=question['options']
                                     )
 
@@ -322,8 +330,8 @@ def save_qn(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
 
-def create_question_in_save(title,direction,must,type,qn_id,raw,score,options):
 
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options):
     question = Question()
     try:
         question.title = title
@@ -344,7 +352,7 @@ def create_question_in_save(title,direction,must,type,qn_id,raw,score,options):
         print(item)
         content = item['title']
         sequence = item['id']
-        create_option(question,content,sequence)
+        create_option(question, content, sequence)
     question.save()
 
 
@@ -380,6 +388,7 @@ def deploy_qn(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
 
 @csrf_exempt
 def pause_qn(request):
