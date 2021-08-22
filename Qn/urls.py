@@ -10,6 +10,5 @@ urlpatterns = [
     path('get_answer', get_answer),
     path('collect', collect),
     path('not_collect', not_collect),
-
-
+    path('get_url', get_url),
 ]
