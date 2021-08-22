@@ -1,29 +1,20 @@
 import base64
 
-from docx.text import font
-
 import djangoProject.settings
 import json
-from io import StringIO, BytesIO
+from io import BytesIO
 
-from django.shortcuts import render
 import pytz
 
 # Create your views here.
-from django.views.decorators.csrf import csrf_exempt
-from drf_yasg.openapi import *
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework.decorators import api_view
-from drf_yasg import openapi
 
 import datetime
 from Qn.form import *
 from Qn.models import *
 
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from Qn.form import CollectForm
 
 utc = pytz.UTC
 
@@ -517,11 +508,8 @@ def finish_qn(request):
 
 
 from docx.enum.style import WD_STYLE_TYPE
-from  docx import  Document
-from docx.shared import Pt, RGBColor
 from  docx.oxml.ns import  qn
 from docx import *
-from docx.shared import Inches
 @csrf_exempt
 def TestDocument(request):
     response = {'status_code': 1, 'message': 'success'}
