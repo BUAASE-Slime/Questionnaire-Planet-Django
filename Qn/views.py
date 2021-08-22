@@ -74,6 +74,8 @@ def get_list(request):
                              "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                              "recycling_num": survey.recycling_num, "username": survey.username,
                              "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M")}
+
+                print(json_item)
                 return JsonResponse(json_item)
             except:
                 return JsonResponse({'status_code': 402})
