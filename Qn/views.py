@@ -14,7 +14,7 @@ from django.shortcuts import render
 import datetime
 
 # Create your views here.
-
+from utils.toHash import hash_code
 from .form import *
 from .models import *
 from django.shortcuts import redirect
@@ -592,5 +592,53 @@ def not_collect(request):
             return JsonResponse({'status_code': 200})
         except:
             return JsonResponse({'status_code': 402})
+    else:
+        return JsonResponse({'status_code': 404})
+
+@csrf_exempt
+@swagger_auto_schema(method='post',
+                     tags=['问卷相关'],
+                     operation_summary='获取问卷链接',
+                     operation_description="根据用户的username以及问卷id得到链接",
+                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
+                                                  type=TYPE_INTEGER, required=True)],
+                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
+                     )
+@api_view(['post'])
+def get_url(request):
+    # 检查登录情况
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 401})
+
+    collect_form = CollectForm(request.POST)
+    if collect_form.is_valid():
+        survey_id = collect_form.cleaned_data.get('survey_id')
+
+        # 用户名是否匹配
+        try:
+            survey = Survey.objects.get(survey_id=survey_id)
+            if request.session.get('username') != survey.username:
+                return JsonResponse({'status_code': 403})
+        except:
+            return JsonResponse({'status_code': 402})
+
+        # 生成链接
+        code = hash_code(survey.username, survey_id)
+        status_http = 'http://'
+        end_info = code
+        domain_name = request.get_host()
+
+        if domain_name != '本项目域名':
+            status_http = 'https://'
+
+        link_url = status_http + domain_name + end_info
+        survey.share_url = link_url
+        try:
+            survey.save()
+            data = {'url': link_url}
+            return JsonResponse(data)
+        except:
+            return JsonResponse({'status_code': 402})
+
     else:
         return JsonResponse({'status_code': 404})
