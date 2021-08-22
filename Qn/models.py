@@ -28,13 +28,13 @@ class Survey(models.Model):
         (2,'投票问卷'),
         (3,'报名问卷'),
     ]
-    type = models.IntegerField(choices=SURVEY_TYPE_CHOICES,default=0,verbose_name="问卷类型")
+    type = models.CharField(max_length=32, verbose_name="问卷类型",default='')
 
 
 class Question(models.Model):
 
     question_id = models.AutoField(primary_key=True,verbose_name="问题id")
-    title = models.CharField(max_length=64,verbose_name="标题",blank=True,default='')
+    title = models.CharField(max_length=64,verbose_name="标题",blank=True,default='默认标题')
     direction = models.CharField(max_length=256,blank=True,verbose_name="说明")
     is_must_answer = models.BooleanField(default=False,verbose_name="是必答题")
 
@@ -51,7 +51,8 @@ class Question(models.Model):
         (3, '评分'),
     ]
     # type = models.IntegerField(choices=TYPE_CHOICES,default=0,verbose_name="题型")
-    type = models.CharField(max_length=256,verbose_name="类型",default='')
+    type = models.CharField(max_length=256,verbose_name="问题类型",default='radio')
+    # radio checkbox 单选题 多选题 text 填空 mark 判断
 class Option(models.Model):
 
     option_id = models.AutoField(primary_key=True,verbose_name="选项编号")
@@ -81,6 +82,6 @@ class Answer(models.Model):
         (3, '评分'),
     ]
     # type = models.IntegerField(choices=TYPE_CHOICES, default=0,verbose_name="题目类型")
-    type = models.CharField(max_length=256, verbose_name="类型",default='')
+    type = models.CharField(max_length=32, verbose_name="问题类型",default='')
 
 

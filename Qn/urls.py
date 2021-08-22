@@ -18,11 +18,11 @@ urlpatterns = [
     path('create/qn/',create_qn),
     path('create/question/',create_question),
 
-    path('get_list', get_list),
-    path('get_recycling_num', get_recycling_num),
-    path('get_answer', get_answer),
-    path('collect', collect),
-    path('not_collect', not_collect),
+    path('get_list/', get_list),
+    path('get_recycling_num/', get_recycling_num),
+    path('get_answer/', get_answer),
+    path('collect/', collect),
+    path('not_collect/', not_collect),
 
 
 ]
