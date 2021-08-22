@@ -24,3 +24,6 @@ uritemplate==3.0.1
 urllib3==1.26.6
 
 django-filter~=2.4.0
+
+python-docx==0.8.11
+lxml==4.6.3
