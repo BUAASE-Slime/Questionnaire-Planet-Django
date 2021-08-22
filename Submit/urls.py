@@ -11,6 +11,8 @@ urlpatterns = [
     path('delete/question',delete_question),
     path('delete/option',delete_option),
 
+    path('delete/all_submit',empty_qn_all_Submit),
+
     path('get/qn_detail',get_survey_details),
 
 
@@ -22,6 +24,8 @@ urlpatterns = [
     path('pause_qn',pause_qn),
 
     path('export/docx',TestDocument),
-
+    path('export/pdf',pdf_document),
     path('duplicate/qn',duplicate_qn)
+
+
 ]

@@ -27,3 +27,10 @@ django-filter~=2.4.0
 
 python-docx==0.8.11
 lxml==4.6.3
+
+colorama==0.4.4
+docx2pdf==0.1.7
+pywin32==227
+tqdm==4.62.1
+
+
