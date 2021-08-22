@@ -5,20 +5,20 @@ from .views import *
 urlpatterns = [
 
 
-    path('delete/qn/not_real/',delete_survey_not_real),
-    path('delete/qn/real/',delete_survey_real),
-    path('delete/qn/empty/',empty_the_recycle_bin),
-    path('delete/question/',delete_question),
-    path('delete/option/',delete_option),
+    path('delete/qn/not_real',delete_survey_not_real),
+    path('delete/qn/real',delete_survey_real),
+    path('delete/qn/empty',empty_the_recycle_bin),
+    path('delete/question',delete_question),
+    path('delete/option',delete_option),
 
-    path('get/qn_detail/',get_survey_details),
+    path('get/qn_detail',get_survey_details),
 
 
-    path('create/qn/',create_qn),
-    path('create/question/',create_question),
+    path('create/qn',create_qn),
+    path('create/question',create_question),
 
-    path('save/qn/',save_qn),
-    path('deploy_qn/',deploy_qn),
-    path('pause_qn/',pause_qn),
+    path('save/qn',save_qn),
+    path('deploy_qn',deploy_qn),
+    path('pause_qn',pause_qn),
 
 ]
