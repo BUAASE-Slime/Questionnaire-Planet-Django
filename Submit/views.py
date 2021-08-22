@@ -1,4 +1,6 @@
+import djangoProject.settings
 import json
+from io import StringIO, BytesIO
 
 from django.shortcuts import render
 import pytz
@@ -14,7 +16,7 @@ import datetime
 from Qn.form import *
 from Qn.models import *
 
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from Qn.form import CollectForm
@@ -423,7 +425,7 @@ def finish_qn(request):
             survey.is_finished = True
             survey.finished_time = datetime.datetime.now()
             survey.is_released = False
-            
+
             survey.save()
             return JsonResponse(response)
 
@@ -433,3 +435,42 @@ def finish_qn(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+
+from docx import *
+from docx.shared import Inches
+@csrf_exempt
+def TestDocument(request):
+
+    document = Document()
+    docx_title="TEST_DOCUMENT.docx"
+    # ---- Cover Letter ----
+    # document.add_picture((r'%s/static/images/my-header.png' % (settings.PROJECT_PATH)), width=Inches(4))
+    document.add_paragraph()
+    document.add_paragraph("%s" % datetime.date.today().strftime('%B %d, %Y'))
+
+    document.add_paragraph('Dear Sir or Madam:')
+    document.add_paragraph('We are pleased to help you with your widgets.')
+    document.add_paragraph('Please feel free to contact me for any additional information.')
+    document.add_paragraph('I look forward to assisting you in this project.')
+
+    document.add_paragraph()
+    document.add_paragraph('Best regards,')
+    document.add_paragraph('Acme Specialist 1]')
+    document.add_page_break()
+
+    # Prepare document for download
+    # -----------------------------
+    # f = StringIO()
+    f = BytesIO()
+    document.save(f)
+    length = f.tell()
+    f.seek(0)
+    response = HttpResponse(
+        f.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    )
+    response['Content-Disposition'] = 'attachment; filename=' + docx_title
+    response['Content-Length'] = length
+    print(f.getvalue())
+    return response
