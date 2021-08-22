@@ -70,10 +70,10 @@ def get_list(request):
             try:
                 survey = Survey.objects.get(survey_id=survey_id)
                 json_item = {"survey_id": survey.survey_id, "title": survey.title,
-                             "subtitle": survey.subtitle, "is_released": survey.is_released,
+                             "description": survey.description, "is_released": survey.is_released,
                              "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                              "recycling_num": survey.recycling_num, "username": survey.username,
-                             "created_time": survey.created_time, "release_time": survey.release_time}
+                             "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M")}
                 return JsonResponse(json_item)
             except:
                 return JsonResponse({'status_code': 402})
@@ -81,6 +81,8 @@ def get_list(request):
         survey_list = Survey.objects.all()
         if is_deleted:
             survey_list = survey_list.filter(is_deleted=is_deleted)
+        else:
+            survey_list = survey_list.filter(is_deleted=False)
         if title_key:
             survey_list = survey_list.filter(title__contains=title_key)
         if username:
@@ -100,14 +102,15 @@ def get_list(request):
         json_list = []
         for survey in survey_list:
             json_item = {"survey_id": survey.survey_id, "title": survey.title,
-                         "subtitle": survey.subtitle, "is_released": survey.is_released,
+                         "description": survey.description, "is_released": survey.is_released,
                          "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                          "recycling_num": survey.recycling_num, "username": survey.username,
-                         "created_time": survey.created_time, "release_time": survey.release_time}
+                         "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M")}
             json_list.append(json_item)
 
         if json_list:
-            return JsonResponse(list(json_list), safe=False, json_dumps_params={'ensure_ascii': False})
+            return JsonResponse({'data': json.dumps(json_list, ensure_ascii=False)})
+            # return JsonResponse(list(json_list), safe=False, json_dumps_params={'ensure_ascii': False})
         return JsonResponse({'status_code': 404})
 
 
