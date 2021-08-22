@@ -1,3 +1,5 @@
+import base64
+
 import djangoProject.settings
 import json
 from io import StringIO, BytesIO
@@ -70,7 +72,54 @@ def delete_survey_not_real(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+def get_qn_data(qn_id):
+    id = qn_id
+    survey = Survey.objects.get(survey_id=qn_id)
+    response = {'status_code': 0, 'message': 'success'}
+    response['qn_id'] = survey.survey_id
+    response['username'] = survey.username
+    response['title'] = survey.title
+    response['description'] = survey.description
+    response['type'] = survey.type
 
+    response['question_num'] = survey.question_num
+    response['created_time'] = survey.created_time
+    response['is_released'] = survey.is_released
+    response['release_time'] = survey.release_time
+    response['finished_time'] = survey.finished_time
+    response['recycling_num'] = survey.recycling_num
+
+    question_list = Question.objects.filter(survey_id=qn_id)
+    questions = []
+    for item in question_list:
+        temp = {}
+        temp['question_id'] = item.question_id
+        temp['raw'] = item.raw
+        temp['score'] = item.score
+        temp['title'] = item.title
+        temp['direction'] = item.direction
+        temp['must'] = item.is_must_answer
+        temp['type'] = item.type
+        temp['qn_id'] = qn_id
+        temp['sequence'] = item.sequence
+        temp['id'] = item.sequence  # 按照前端的题目顺序
+        temp['options'] = []
+        if temp['type'] in ['radio', 'checkbox', 'text', 'mark']:
+            # 单选题或者多选题有选项
+            option_list = Option.objects.filter(question_id=item.question_id)
+            for option_item in option_list:
+                option_dict = {}
+                option_dict['option_id'] = option_item.option_id
+                option_dict['title'] = option_item.content
+                temp['options'].append(option_dict)
+            temp['answer'] = ''
+        else:  # TODO 填空题或者其他
+            pass
+
+        questions.append(temp)
+        print(questions)
+    response['questions'] = questions
+    return response
 @csrf_exempt
 def delete_survey_real(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -102,49 +151,7 @@ def get_survey_details(request):
             except:
                 response = {'status_code': -2, 'message': '问卷不存在'}
                 return JsonResponse(response)
-            response['qn_id'] = survey.survey_id
-            response['username'] = survey.username
-            response['title'] = survey.title
-            response['description'] = survey.description
-            response['type'] = survey.type
-
-            response['question_num'] = survey.question_num
-            response['created_time'] = survey.created_time
-            response['is_released'] = survey.is_released
-            response['release_time'] = survey.release_time
-            response['finished_time'] = survey.finished_time
-            response['recycling_num'] = survey.recycling_num
-
-            question_list = Question.objects.filter(survey_id=id)
-            questions = []
-            for item in question_list:
-                temp = {}
-                temp['question_id'] = item.question_id
-                temp['raw'] = item.raw
-                temp['score'] = item.score
-                temp['title'] = item.title
-                temp['direction'] = item.direction
-                temp['must'] = item.is_must_answer
-                temp['type'] = item.type
-                temp['qn_id'] = id
-                temp['sequence'] = item.sequence
-                temp['id'] = item.sequence  # 按照前端的题目顺序
-                temp['options'] = []
-                if temp['type'] in ['radio', 'checkbox','text','mark']:
-                    # 单选题或者多选题有选项
-                    option_list = Option.objects.filter(question_id=item.question_id)
-                    for option_item in option_list:
-                        option_dict = {}
-                        option_dict['option_id'] = option_item.option_id
-                        option_dict['title'] = option_item.content
-                        temp['options'].append(option_dict)
-                    temp['answer'] = ''
-                else:  # TODO 填空题或者其他
-                    pass
-
-                questions.append(temp)
-                print(questions)
-            response['questions'] = questions
+            response = get_qn_data(id)
 
             return JsonResponse(response)
         else:
@@ -441,36 +448,65 @@ from docx import *
 from docx.shared import Inches
 @csrf_exempt
 def TestDocument(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+
+            document = Document()
+            docx_title="TEST_DOCUMENT.docx"
+            # ---- Cover Letter ----
+            # document.add_picture((r'%s/static/images/my-header.png' % (settings.PROJECT_PATH)), width=Inches(4))
+            document.add_paragraph()
+            document.add_paragraph("%s" % datetime.date.today().strftime('%B %d, %Y'))
+
+
+
+            document.add_paragraph('Dear Sir or Madam:')
+            document.add_paragraph('We are pleased to help you with your widgets.')
+            document.add_paragraph('Please feel free to contact me for any additional information.')
+            document.add_paragraph('I look forward to assisting you in this project.')
+
+            document.add_paragraph()
+            document.add_paragraph('Best regards,')
+            document.add_paragraph('Acme Specialist 1]')
+            document.add_page_break()
+
+            # Prepare document for download
+            # -----------------------------
+            # f = StringIO()
+            f = BytesIO()
+            document.save(f)
+
+            length = f.tell()
+            f.seek(0)
+            # response = HttpResponse(
+            #     f.getvalue(),
+            #     content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            # )
+            # response['Content-Disposition'] = 'attachment; filename=' + docx_title
+            # response['Content-Length'] = length
+
+            response['filename'] = '%s.docx' % docx_title
+            response['b64data'] = base64.b64encode(f.getvalue()).decode()
+            print(f.getvalue())
+            # print(response['Content-Length'])
+
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+# 根据问卷id传递文件格式返回上一个函数。具体正在写。
+#只要文件能打开就好写了
+def qn_to_docx(qn_id):
 
     document = Document()
-    docx_title="TEST_DOCUMENT.docx"
-    # ---- Cover Letter ----
-    # document.add_picture((r'%s/static/images/my-header.png' % (settings.PROJECT_PATH)), width=Inches(4))
-    document.add_paragraph()
-    document.add_paragraph("%s" % datetime.date.today().strftime('%B %d, %Y'))
 
-    document.add_paragraph('Dear Sir or Madam:')
-    document.add_paragraph('We are pleased to help you with your widgets.')
-    document.add_paragraph('Please feel free to contact me for any additional information.')
-    document.add_paragraph('I look forward to assisting you in this project.')
 
-    document.add_paragraph()
-    document.add_paragraph('Best regards,')
-    document.add_paragraph('Acme Specialist 1]')
-    document.add_page_break()
-
-    # Prepare document for download
-    # -----------------------------
-    # f = StringIO()
-    f = BytesIO()
-    document.save(f)
-    length = f.tell()
-    f.seek(0)
-    response = HttpResponse(
-        f.getvalue(),
-        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    )
-    response['Content-Disposition'] = 'attachment; filename=' + docx_title
-    response['Content-Length'] = length
-    print(f.getvalue())
-    return response
+    return document
