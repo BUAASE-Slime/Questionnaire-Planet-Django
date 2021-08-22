@@ -671,3 +671,31 @@ def duplicate_qn(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+def empty_qn_all_Submit(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            username = qn.username
+            if request.session['username'] != username:
+                response = {'status_code': 0, 'message': '没有访问权限'}
+                return JsonResponse(response)
+
+            submit_list = Submit.objects.filter(survey_id=qn.survey_id)
+            for submit in submit_list:
+                submit.delete()
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
