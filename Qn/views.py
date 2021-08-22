@@ -2,6 +2,7 @@ from itertools import groupby
 from operator import itemgetter
 
 import pytz
+from django.core.serializers import json
 from django.http import JsonResponse
 # Create your views here.
 from django.views.decorators.csrf import csrf_exempt
@@ -13,6 +14,7 @@ from django.shortcuts import render
 import datetime
 
 # Create your views here.
+
 from .form import *
 from .models import *
 from django.shortcuts import redirect
@@ -24,7 +26,6 @@ from Qn.form import CollectForm
 from Qn.models import *
 
 utc = pytz.UTC
-
 
 polygon_view_get_desc = '根据所选参数,获取问卷列表,默认按创建时间倒序'
 polygon_view_get_parm = [
@@ -403,7 +404,7 @@ def get_list(request):
 @swagger_auto_schema(method='post',
                      tags=['问卷相关'],
                      operation_summary='统计问卷回收量',
-                     operation_description="返回每日的问卷回收量",
+                     operation_description="返回近五日每天的回收量,周回收量和总回收量",
                      manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
                                                   type=TYPE_INTEGER, required=True), ],
                      responses=polygon_view_get_resp
@@ -426,32 +427,41 @@ def get_recycling_num(request):
         if survey.username != request.session.get('username'):
             return JsonResponse({'status_code': 403})
 
-        submit_list = Submit.objects.filter(survey_id_id=survey_id)
-        submit_list = submit_list.order_by('submit_time')
+        submit_list = Submit.objects.filter(survey_id=survey)
+        submit_list = submit_list.order_by("-submit_time")
+        result = {"num_all": len(submit_list)}
+        num_week = 0
+
         json_list = []
+        dea_date = (submit_list[0].submit_time + datetime.timedelta(days=-7)).strftime("%m.%d")
         for submit in submit_list:
-            submit.submit_time = submit.submit_time.strftime("%d")
+            submit.submit_time = submit.submit_time.strftime("%m.%d")
         date = submit_list[0].submit_time
-        num = 0
+        num = 0  # 记录每天的回收量
+
         for submit in submit_list:
+            if submit.submit_time > dea_date:
+                num_week = num_week + 1
             if submit.submit_time == date:
                 num = num + 1
             else:
-                json_item = {"date":date,"number":num}
+                json_item = {"date": date, "number": num}
                 json_list.append(json_item)
                 date = submit.submit_time
                 num = 1
 
         json_item = {"date": date, "number": num}
         json_list.append(json_item)
-        data = {'data': json_list}
-        return JsonResponse(data, safe=False)
+
+        result['num_week'] = num_week
+        result['num_day'] = json_list[:5]
+        return JsonResponse(result, safe=False)
     else:
         return JsonResponse({'status_code': 404})
 
 
 @csrf_exempt
-@swagger_auto_schema(method='get',
+@swagger_auto_schema(method='post',
                      tags=['问卷相关'],
                      operation_summary='查询全部答卷',
                      operation_description="返回用户的所有答案",
@@ -461,16 +471,17 @@ def get_recycling_num(request):
                                                   type=TYPE_STRING, required=True)],
                      responses=polygon_view_get_resp
                      )
-@api_view(['GET'])
+@api_view(['POST'])
 def get_answer(request):
     # 检验是否登录
     global answer_questions
     if not request.session.get('is_login'):
         return JsonResponse({'status_code': 401})
 
-    if request.method == 'GET':
-        survey_id = request.GET.get('survey_id')
-        username = request.GET.get('username')
+    answer_form = AnswerForm(request.POST)
+    if answer_form.is_valid():
+        survey_id = answer_form.cleaned_data.get('survey_id')
+        username = answer_form.cleaned_data.get('username')
 
         # 用户名是否匹配
         if username != request.session.get('username'):
@@ -486,7 +497,7 @@ def get_answer(request):
             return JsonResponse({'status_code': 402})
         result['survey_id'] = survey_id
         result['title'] = survey.title
-        result['subtitle'] = survey.subtitle
+        result['description'] = survey.description
         result['username'] = username
 
         # 回答信息
@@ -497,16 +508,18 @@ def get_answer(request):
         for submit in submits:
             answer_questions = []
             for question in questions:
-                answer_question = {"question_id": question.id, "sequence": question.sequence,
+                answer_question = {"question_id": question.question_id, "sequence": question.sequence,
                                    "title": question.title, "direction": question.direction,
                                    "is_must_answer": question.is_must_answer, "type": question.type}
                 answer = Answer.objects.get(question_id=question, submit_id=submit)
-                answer_question['answer'] = answer
+                answer_question['answer'] = answer.answer
                 answer_questions.append(answer_question)
             result_answers.append(answer_questions)
 
         result['answers'] = result_answers
-        return JsonResponse(result)
+        return JsonResponse(result, safe=False)
+    else:
+        return JsonResponse({'status_code': 404})
 
 
 @csrf_exempt
