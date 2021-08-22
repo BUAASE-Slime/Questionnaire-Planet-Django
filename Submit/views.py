@@ -88,7 +88,6 @@ def delete_survey_real(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
-
 @csrf_exempt
 def get_survey_details(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -101,10 +100,12 @@ def get_survey_details(request):
             except:
                 response = {'status_code': -2, 'message': '问卷不存在'}
                 return JsonResponse(response)
-
+            response['qn_id'] = survey.survey_id
+            response['username'] = survey.username
             response['title'] = survey.title
             response['description'] = survey.description
             response['type'] = survey.type
+
             response['question_num'] = survey.question_num
             response['created_time'] = survey.created_time
             response['is_released'] = survey.is_released
@@ -117,6 +118,8 @@ def get_survey_details(request):
             for item in question_list:
                 temp = {}
                 temp['question_id'] = item.question_id
+                temp['raw'] = item.raw
+                temp['score'] = item.score
                 temp['title'] = item.title
                 temp['direction'] = item.direction
                 temp['must'] = item.is_must_answer
@@ -124,15 +127,15 @@ def get_survey_details(request):
                 temp['qn_id'] = id
                 temp['sequence'] = item.sequence
                 temp['id'] = item.sequence  # 按照前端的题目顺序
-                temp['option'] = []
-                if temp['type'] in ['radio', 'checkbox']:
+                temp['options'] = []
+                if temp['type'] in ['radio', 'checkbox','text','mark']:
                     # 单选题或者多选题有选项
                     option_list = Option.objects.filter(question_id=item.question_id)
                     for option_item in option_list:
                         option_dict = {}
                         option_dict['option_id'] = option_item.option_id
                         option_dict['title'] = option_item.content
-                        temp['option'].append(option_dict)
+                        temp['options'].append(option_dict)
                     temp['answer'] = ''
                 else:  # TODO 填空题或者其他
                     pass
@@ -148,7 +151,6 @@ def get_survey_details(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
-
 
 @csrf_exempt
 def delete_question(request):
@@ -169,7 +171,6 @@ def delete_question(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
-
 @csrf_exempt
 def delete_option(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -187,7 +188,6 @@ def delete_option(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
-
 
 # username title description type
 @csrf_exempt
@@ -229,7 +229,6 @@ def create_qn(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
-
 @csrf_exempt
 def create_option(question, content,sequence):
     option = Option()
@@ -237,7 +236,7 @@ def create_option(question, content,sequence):
     question.option_num += 1
     option.question_id = question
     question.save()
-    option.order = question.option_num
+    option.order = sequence
     option.save()
 
 
