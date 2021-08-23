@@ -361,6 +361,7 @@ def get_code(request):
 
         try:
             survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
+            print(survey.question_num)
             if survey.question_num == 0:
                 return JsonResponse({'status_code': 402, 'msg': "no_questions"})
             if request.session.get('username') != survey.username:
@@ -378,14 +379,42 @@ def get_code(request):
 
         survey.share_url = end_info
         try:
+            survey.is_released = True
             survey.save()
-            data = {'code': end_info}
+            data = {'code': end_info, 'status_code': 200}
             return JsonResponse(data)
         except:
             return JsonResponse({'status_code': 402})
 
     else:
         return JsonResponse({'status_code': 404})
+
+
+@csrf_exempt
+def get_code_existed(request):
+    # 检查登录情况
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 0})
+
+    collect_form = CollectForm(request.POST)
+    if collect_form.is_valid():
+        survey_id = collect_form.cleaned_data.get('survey_id')
+
+        try:
+            survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
+            if request.session.get('username') != survey.username:
+                return JsonResponse({'status_code': 0})
+        except:
+            return JsonResponse({'status_code': 2})
+
+        if not survey.is_released:
+            return JsonResponse({'status_code': 2})
+        if survey.share_url:
+            return JsonResponse({'status_code': 1, 'code': survey.share_url})
+        return JsonResponse({'status_code': 2})
+
+    else:
+        return JsonResponse({'status_code': 2})
 
 
 @csrf_exempt
@@ -406,9 +435,7 @@ def get_survey_from_url(request):
         response = {}
         url_form = URLForm(request.POST)
         if url_form.is_valid():
-            url = url_form.cleaned_data.get('url')
-            start = url.rindex('/')
-            code = url[start + 1:]
+            code = url_form.cleaned_data.get('code')
             try:
                 survey = Survey.objects.get(share_url=code)
                 if request.session.get('username') != survey.username:
