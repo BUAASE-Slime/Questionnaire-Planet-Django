@@ -556,10 +556,12 @@ def save_qn_answer(request):
     username = request.session.get('username')
     if request.method == 'POST':
         req = json.loads(request.body)
-        # print(req)
-        qn_id = req['qn_id']
+        print(req)
+        code = req['code']
 
-        survey = Survey.objects.get(survey_id=qn_id, is_deleted=False)
+        survey = Survey.objects.get(share_url=code)
+        if survey.is_deleted or not survey.is_released:
+            return JsonResponse({'status_code': 2})
         survey.recycling_num = survey.recycling_num + 1
         survey.save()
 
