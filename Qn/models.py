@@ -73,6 +73,8 @@ class Submit(models.Model):
     # user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
     username = models.CharField(max_length=128,blank=True,verbose_name="用户名")
 
+    is_valid = models.BooleanField(default=True,verbose_name="答卷是否有效")
+
 class Answer(models.Model):
 
     answer_id = models.AutoField(primary_key=True,verbose_name="回答编号")
