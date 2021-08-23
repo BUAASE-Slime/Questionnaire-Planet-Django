@@ -233,7 +233,7 @@ def get_survey_details_by_others(request):
         except:
             response = {'status_code': 2, 'message': '问卷不存在'}
             return JsonResponse(response)
-        if survey.is_released:
+        if survey.is_released and not survey.is_deleted:
             response = get_qn_data(survey.survey_id)
             return JsonResponse(response)
         else:

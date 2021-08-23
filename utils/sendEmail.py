@@ -17,14 +17,14 @@ def send_email_confirm(email, code):
 
     from django.core.mail import EmailMultiAlternatives
 
-    subject = '来自www.zewan.top的注册确认邮件'
+    subject = '来自zewan.cc的注册确认邮件'
 
-    text_content = '''感谢注册www.zewan.com，这里是网上出版系统，专注于管理出版与审核！\
+    text_content = '''感谢注册zewan.cc，这里是问卷星球，专注于管理与发布问卷！\
                     如果你看到这条消息，说明你的邮箱服务器不提供HTML链接功能，请联系管理员！'''
 
     html_content = '''
-                    <p>感谢注册<a href="{}/confirm/?code={}" target=blank>www.zewan.top</a>，\
-                    这里是网上出版系统，专注于管理出版与审核！</p>
+                    <p>感谢注册<a href="{}/confirm/?code={}" target=blank>zewan.cc</a>，\
+                    这里是问卷星球，专注于管理与发布问卷！</p>
                     <p>请点击站点链接完成注册确认！</p>
                     <p>此链接有效期为{}天！</p>
                     '''.format(settings.WEB_FRONT, code, settings.CONFIRM_DAYS)   # url must be corrected

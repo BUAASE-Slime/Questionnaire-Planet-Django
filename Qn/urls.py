@@ -6,6 +6,7 @@ urlpatterns = [
 
     path('get_list', get_list),
     path('get_recycling_num', get_recycling_num),
+    path('get_recycling_num_total', get_recycling_num_total),
     path('get_answer', get_answer),
     path('collect', collect),
     path('not_collect', not_collect),
