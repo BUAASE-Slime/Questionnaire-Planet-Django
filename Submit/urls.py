@@ -4,7 +4,7 @@ from .views import *
 
 urlpatterns = [
 
-
+    path('delete/qn/recover',recover_survey_from_delete),
     path('delete/qn/not_real',delete_survey_not_real),
     path('delete/qn/real',delete_survey_real),
     path('delete/qn/empty',empty_the_recycle_bin),

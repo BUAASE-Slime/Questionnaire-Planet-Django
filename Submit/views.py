@@ -59,7 +59,40 @@ def delete_survey_not_real(request):
                 response = {'status_code': 0, 'message': '问卷已放入回收站'}
                 return JsonResponse(response)
             survey.is_deleted = True
+
             survey.is_released = False
+            survey.is_finished = False
+            survey.is_collected = False
+            survey.save()
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
+def recover_survey_from_delete(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                survey = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': -1, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            if survey.is_deleted == False:
+                response = {'status_code': 3, 'message': '问卷未放入回收站'}
+                return JsonResponse(response)
+
+            survey.is_deleted = False
+            survey.is_released = False
+            survey.is_finished = False
+            survey.is_collected = False
             survey.save()
             return JsonResponse(response)
         else:
