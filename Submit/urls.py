@@ -39,5 +39,8 @@ urlpatterns = [
     path('change/signup/max',change_signup_max),  #更改报名问卷最大报名人数
 
 
-    path('get/recycling_num',get_qn_recycling_num)
+    path('get/recycling_num',get_qn_recycling_num),
+
+    path('get/submit_answers',get_answer_from_submit),
+
 ]

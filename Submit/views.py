@@ -1032,11 +1032,13 @@ def get_answer_from_submit(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         # survey_form = SurveyIdForm(request.POST)
-        submit_form = SubmitIdForm(request.POST)
+        submit_form = SubmitIDForm(request.POST)
+        # print(submit_form)
         if submit_form.is_valid():
             id = submit_form.cleaned_data.get('submit_id')
+            print(id)
             try:
-                submit = Survey.objects.get(submit_id=id)
+                submit = Submit.objects.get(submit_id=id)
             except:
                 response = {'status_code': 2, 'message': '答卷不存在'}
                 return JsonResponse(response)
@@ -1054,12 +1056,25 @@ def get_answer_from_submit(request):
                 response = {'status_code': 3, 'message': '该问卷暂无回答'}
                 return JsonResponse(response)
             answers = []
+            response['submit_id'] = submit.submit_id
+            response['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
+            response['username'] = submit.username
+            response['is_valid'] = submit.is_valid
+            response['score'] = submit.score
+            response['qn_id'] = submit.survey_id.survey_id
+
             for answer in answer_list:
-                pass
+                item = {}
+                item['answer'] = answer.answer
+                item['score'] = answer.score
+                item['username'] = answer.username
+                item['answer_id'] = answer.answer_id
+                item['type'] = answer.type
+                item['question_id'] = answer.question_id.question_id
+                item['submit_id'] = id
+                answers.append(item)
             #TODO
-
-
-
+            response['answers'] = answers
             return JsonResponse(response)
 
         else:
