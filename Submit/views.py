@@ -406,9 +406,9 @@ def save_qn(request):
         survey.title = req['title']
         survey.description = req['description']
         survey.type = req['type']
-        print(req['finish_time'])
-        if req['finish_time'] != '' and req['finish_time'] is not None:
-            survey.finished_time = req['finish_time']
+        # print(req['finish_time'])
+        # if req['finish_time'] != '' and req['finish_time'] is not None:
+        #     survey.finished_time = req['finish_time']
         survey.save()
         question_list = req['questions']
 
@@ -425,7 +425,7 @@ def save_qn(request):
                                     score=question['score'],
                                     options=question['options'],
                                     sequence=question['id'],
-                                    right_answer=question['refer'],
+                                    # right_answer=question['refer'],
                                     )
 
         survey.question_num = question_num
