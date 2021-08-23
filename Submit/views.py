@@ -7,7 +7,7 @@ from io import BytesIO
 import pytz
 
 # Create your views here.
-
+from .forms import *
 import datetime
 from Qn.form import *
 from Qn.models import *
@@ -132,7 +132,14 @@ def get_qn_data(qn_id):
     if produce_time(survey.release_time):
         response['release_time'] = survey.release_time.strftime("%Y/%m/%d %H:%M")
     response['is_released'] = survey.is_released
+    response['is_deleted'] = survey.is_deleted
+    response['is_finished'] = survey.is_finished
+    response['share_url'] = survey.share_url
+    response['docx_url'] = survey.docx_url
+    response['pdf_url'] = survey.pdf_url
+    response['excel_url'] = survey.excel_url
     response['recycling_num'] = survey.recycling_num
+    response['max_recycling'] = survey.max_recycling
 
     question_list = Question.objects.filter(survey_id=qn_id)
     questions = []
@@ -399,12 +406,15 @@ def save_qn(request):
         survey.title = req['title']
         survey.description = req['description']
         survey.type = req['type']
+        print(req['finish_time'])
+        if req['finish_time'] != '' and req['finish_time'] is not None:
+            survey.finished_time = req['finish_time']
         survey.save()
         question_list = req['questions']
 
-        # if request.session.get("username") != req['username']:
-        #     request.session.flush()
-        #     return JsonResponse({'status_code': 0})
+        if request.session.get("username") != req['username']:
+            request.session.flush()
+            return JsonResponse({'status_code': 0})
 
         # TODO
         question_num = 0
@@ -414,7 +424,8 @@ def save_qn(request):
                                     , question['type'], qn_id=req['qn_id'], raw=question['row'],
                                     score=question['score'],
                                     options=question['options'],
-                                    sequence=question['id']
+                                    sequence=question['id'],
+                                    right_answer=question['refer'],
                                     )
 
         survey.question_num = question_num
@@ -713,7 +724,7 @@ def qn_to_pdf(qn_id):
         pythoncom.CoInitialize()
         convert(input_file,out_file)
     except:
-        doc2pdf_linux(input_file,out_file)
+        doc2pdf_linux(input_file,docx_path)
 
     return pdf_title
 
@@ -908,12 +919,24 @@ def doc2pdf_linux(docPath, pdfPath):
     convert a doc/docx document to pdf format (linux only, requires libreoffice)
     :param doc: path to document
     """
-    cmd = 'libreoffice6.2 --headless --convert-to pdf'.split() + [docPath] + ['--outdir'] + [pdfPath]
+    cmd = 'libreoffice7.0 --headless --invisible  --convert-to pdf:writer_pdf_Export'.split() + [docPath] + ['--outdir'] + [pdfPath]
+    print(cmd)
     p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     p.wait(timeout=30)
     stdout, stderr = p.communicate()
     if stderr:
         raise subprocess.SubprocessError(stderr)
+# def doc2pdf_linux(docPath, pdfPath):
+#     """
+#     convert a doc/docx document to pdf format (linux only, requires libreoffice)
+#     :param doc: path to document
+#     """
+#     cmd = 'libreoffice7.0  --headless --convert-to pdf'.split() + [docPath] + ['--outdir'] + [pdfPath]
+#     p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+#     p.wait(timeout=30)
+#     stdout, stderr = p.communicate()
+#     if stderr:
+#         raise subprocess.SubprocessError(stderr)
 
 def question_dict_to_question(question,question_dict):
     # question = Question()#TODO delete
@@ -967,7 +990,11 @@ def save_qn_keep_history(request):
         survey = Survey.objects.get(survey_id=qn_id)
         survey.username = req['username']
         survey.title = req['title']
+        if survey.title == '':
+            survey.title = "默认标题"
         survey.description = req['description']
+        if survey.description == '':
+            survey.description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
         survey.type = req['type']
         survey.save()
         question_list = req['questions']
@@ -983,13 +1010,13 @@ def save_qn_keep_history(request):
                 if question_dict['question_id'] == question.question_id:
                     #旧问题在新问题中有 更新问题
                     question_dict_to_question(question,question_dict)
-                    num = 2*len(question_list)
+                    num = 1
                     break
 
             if num == 0:
                 question.delete()
         for question_dict in question_list:
-            num = 1
+            # num = 1
             # for question in questions:
             #     if question_dict['question_id'] != 0:
             #         break
@@ -1010,3 +1037,157 @@ def save_qn_keep_history(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
 
+@csrf_exempt
+def get_answer_from_submit(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        # survey_form = SurveyIdForm(request.POST)
+        submit_form = SubmitIDForm(request.POST)
+        # print(submit_form)
+        if submit_form.is_valid():
+            id = submit_form.cleaned_data.get('submit_id')
+            print(id)
+            try:
+                submit = Submit.objects.get(submit_id=id)
+            except:
+                response = {'status_code': 2, 'message': '答卷不存在'}
+                return JsonResponse(response)
+
+            #TODO
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            try:
+                answer_list = Answer.objects.filter(submit_id=submit)
+                if len(answer_list) == 0:
+                    raise Exception('')
+            except:
+                response = {'status_code': 3, 'message': '该问卷暂无回答'}
+                return JsonResponse(response)
+            answers = []
+            response['submit_id'] = submit.submit_id
+            response['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
+            response['username'] = submit.username
+            response['is_valid'] = submit.is_valid
+            response['score'] = submit.score
+            response['qn_id'] = submit.survey_id.survey_id
+
+            for answer in answer_list:
+                item = {}
+                item['answer'] = answer.answer
+                item['score'] = answer.score
+                item['username'] = answer.username
+                item['answer_id'] = answer.answer_id
+                item['type'] = answer.type
+                item['question_id'] = answer.question_id.question_id
+                item['submit_id'] = id
+                answers.append(item)
+            #TODO
+            response['answers'] = answers
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+
+
+# 当天回收，当周，总税收，前五天的返回时间返回日期
+@csrf_exempt
+def get_qn_recycling_num(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            username = qn.username
+            #TODO
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            num_all = len(Submit.objects.filter(survey_id=qn))
+
+            today_exact = datetime.datetime.now()
+            today = datetime.datetime(year=today_exact.year, month=today_exact.month, day=today_exact.day)
+            yesterday = today - datetime.timedelta(days=1)
+            a_week_ago = today - datetime.timedelta(days=7)
+            day_list = []
+            for i in range(7, 0, -1):
+                the_day = today - datetime.timedelta(days=i)
+                print(the_day)
+                day_list.append(the_day)
+            print(today)
+            num_day = len(Submit.objects.filter(survey_id=qn,submit_time__gte=today))
+            num_week = len(Submit.objects.filter(survey_id=qn,submit_time__gte=a_week_ago))
+
+            response['num_week'] =num_week
+            response['num_day'] = num_day
+            response['num_all'] = num_all
+
+            dates = []
+            nums = []
+            for i in range(4,-1,-1):
+                before = today - datetime.timedelta(days=i)
+                after = today - datetime.timedelta(days=i-1)
+                num = len(Submit.objects.filter(survey_id=qn,submit_time__gte=before,submit_time__lte=after))
+                nums.append(num)
+                date_str = before.strftime("%m.%d")
+                if date_str[0] == '0':
+                    date_str = date_str[1:]
+                dates.append(date_str)
+
+            response['nums'] = nums
+            response['dates'] = dates
+
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+@csrf_exempt
+def delete_submit(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        # survey_form = SurveyIdForm(request.POST)
+        submit_form = SubmitIDForm(request.POST)
+        # print(submit_form)
+        if submit_form.is_valid():
+            id = submit_form.cleaned_data.get('submit_id')
+            print(id)
+            try:
+                submit = Submit.objects.get(submit_id=id)
+            except:
+                response = {'status_code': 2, 'message': '答卷不存在'}
+                return JsonResponse(response)
+
+            # TODO
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+            answer_list = Answer.objects.filter(submit_id=submit)
+            # for answer in answer_list:
+            #     answer.delete()
+            # 数据库是级联删除的，删除了submit 带有这个外键的自动珊瑚
+            submit.delete()
+
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
