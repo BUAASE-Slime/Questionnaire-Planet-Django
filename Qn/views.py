@@ -633,8 +633,17 @@ def save_qn_answer(request):
         answer_list = req['answers']
         for item in answer_list:
             if item['answer']:
+                print(item['answer'])
+                KEY_STR = "-<^-^>-"
+                answer_str = str(item['answer'])
+
+                # answer_str.replace(KEY_STR, ";")
+                the_answer = ";".join(str(i) for i in answer_str.split(KEY_STR))
+                print(the_answer)
+                print(answer_str.split(KEY_STR))
+                print(answer_str)
                 answer = Answer(question_id_id=item['question_id'], submit_id_id=submit.submit_id,
-                            answer=item['answer'], type=item['type'])
+                            answer=the_answer, type=item['type'])
                 if username:
                     answer.username = username
                 answer.save()

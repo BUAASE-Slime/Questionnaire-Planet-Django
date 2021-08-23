@@ -1,7 +1,7 @@
 from django.conf.urls.static import static
 from django.urls import path
 from .views import *
-
+from Submit.views import change_code
 urlpatterns = [
 
     path('get_list', get_list),
@@ -15,4 +15,6 @@ urlpatterns = [
     path('get_survey_from_url', get_survey_from_url),
     path('get_ans', get_question_answer),
     path('save_ans', save_qn_answer),
+
+    path('change/code',change_code),
 ]

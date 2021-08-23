@@ -817,10 +817,10 @@ def export_excel(request):
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
-            username = qn.username
-            if request.session['username'] != username:
-                response = {'status_code': 0, 'message': '没有访问权限'}
-                return JsonResponse(response)
+            # username = qn.username
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
             try:
                 submit_list = Submit.objects.filter(survey_id=qn)
                 # 找不到问卷提交
@@ -1182,6 +1182,92 @@ def delete_submit(request):
             #     answer.delete()
             # 数据库是级联删除的，删除了submit 带有这个外键的自动珊瑚
             submit.delete()
+
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+@csrf_exempt
+def get_qn_all_submit(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            # username = qn.username
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            question_sum = qn.question_num
+            print(question_sum)
+            submits = []
+            submit_list = Submit.objects.filter(survey_id=qn.survey_id)
+            for submit in submit_list:
+                item = {}
+                item['submit_id'] = submit.submit_id
+                item['submit_id'] = submit.submit_id
+                item['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
+                item['username'] = submit.username
+                item['is_valid'] = submit.is_valid
+                item['score'] = submit.score
+                item['qn_id'] = submit.survey_id.survey_id
+
+                answer_num = len(Answer.objects.filter(submit_id=submit))
+                item['answer_num'] = answer_num
+                item['answer_percent'] = int((float(answer_num)/question_sum)*100)
+                submits.append(item)
+
+            response['submits'] = submits
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+from utils.toHash import hash_code
+import random
+@csrf_exempt
+def change_code(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            #TODO
+            # username = qn.username
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            if qn.share_url == '':
+                response = {'status_code': 3, 'message': '尚未存在分享链接'}
+                return JsonResponse(response)
+            raw_code = hash_code(qn.username, str(id))
+            code = ""
+            raw_code_len = len(raw_code)
+            for i in range(20):
+                code += raw_code[random.randint(0,raw_code_len-1)]
+            qn.share_url = code
+            qn.save()
 
             return JsonResponse(response)
 
