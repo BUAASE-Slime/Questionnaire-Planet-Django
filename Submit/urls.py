@@ -42,5 +42,6 @@ urlpatterns = [
     path('get/recycling_num',get_qn_recycling_num),
 
     path('get/submit_answers',get_answer_from_submit),
+    path('delete/submit',delete_submit),
 
 ]

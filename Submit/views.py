@@ -1146,3 +1146,38 @@ def get_qn_recycling_num(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+@csrf_exempt
+def delete_submit(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        # survey_form = SurveyIdForm(request.POST)
+        submit_form = SubmitIDForm(request.POST)
+        # print(submit_form)
+        if submit_form.is_valid():
+            id = submit_form.cleaned_data.get('submit_id')
+            print(id)
+            try:
+                submit = Submit.objects.get(submit_id=id)
+            except:
+                response = {'status_code': 2, 'message': '答卷不存在'}
+                return JsonResponse(response)
+
+            # TODO
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+            answer_list = Answer.objects.filter(submit_id=submit)
+            # for answer in answer_list:
+            #     answer.delete()
+            # 数据库是级联删除的，删除了submit 带有这个外键的自动珊瑚
+            submit.delete()
+
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
