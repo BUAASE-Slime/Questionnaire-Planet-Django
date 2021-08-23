@@ -132,7 +132,14 @@ def get_qn_data(qn_id):
     if produce_time(survey.release_time):
         response['release_time'] = survey.release_time.strftime("%Y/%m/%d %H:%M")
     response['is_released'] = survey.is_released
+    response['is_deleted'] = survey.is_deleted
+    response['is_finished'] = survey.is_finished
+    response['share_url'] = survey.share_url
+    response['docx_url'] = survey.docx_url
+    response['pdf_url'] = survey.pdf_url
+    response['excel_url'] = survey.excel_url
     response['recycling_num'] = survey.recycling_num
+    response['max_recycling'] = survey.max_recycling
 
     question_list = Question.objects.filter(survey_id=qn_id)
     questions = []
