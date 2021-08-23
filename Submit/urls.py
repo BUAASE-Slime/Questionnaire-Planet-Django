@@ -14,6 +14,7 @@ urlpatterns = [
     path('delete/all_submit',empty_qn_all_Submit),
 
     path('get/qn_detail',get_survey_details),
+    path('get/qn_for_fill', get_survey_details_by_others),
 
 
     path('create/qn',create_qn),

@@ -220,20 +220,18 @@ def get_survey_details(request):
 def get_survey_details_by_others(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
-        survey_form = SurveyIdForm(request.POST)
-        if survey_form.is_valid():
-            id = survey_form.cleaned_data.get('qn_id')
-            try:
-                survey = Survey.objects.get(survey_id=id)
-            except:
-                response = {'status_code': -2, 'message': '问卷不存在'}
-                return JsonResponse(response)
-            response = get_qn_data(id)
-
+        code = request.POST.get('code')
+        try:
+            print(code)
+            survey = Survey.objects.get(share_url=code)
+        except:
+            response = {'status_code': 2, 'message': '问卷不存在'}
+            return JsonResponse(response)
+        if survey.is_released:
+            response = get_qn_data(survey.survey_id)
             return JsonResponse(response)
         else:
-            response = {'status_code': -1, 'message': '问卷id不为整数'}
-            return JsonResponse(response)
+            return JsonResponse({'status_code': 3})
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
@@ -459,6 +457,7 @@ def deploy_qn(request):
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
+
             if survey.is_deleted == True:
                 response = {'status_code': 4, 'message': '问卷已经放入回收站'}
                 return JsonResponse(response)
@@ -476,8 +475,21 @@ def deploy_qn(request):
             survey.is_released = True
             if survey.release_time == '' or survey.release_time is None or survey.release_time == 'null':
                 survey.release_time = datetime.datetime.now()
-            survey.save()
-            return JsonResponse(response)
+            if survey.share_url == '' or survey.share_url is None or survey.share_url == 'null':
+                # 生成问卷码
+                code = hash_code(survey.username, str(survey.survey_id))
+                # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                end_info = code[:20].upper()
+                while Survey.objects.filter(share_url=end_info):
+                    code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    end_info = code[:20].upper()
+
+                survey.share_url = end_info
+                survey.save()
+                return JsonResponse({'status_code': 10, 'code': survey.share_url})
+            else:
+                survey.save()
+                return JsonResponse(response)
 
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
