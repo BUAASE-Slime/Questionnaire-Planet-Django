@@ -182,3 +182,4 @@ MEDIA_URL = '/media/'
 
 WEB_FRONT = Secrets.RootUrl.webFront
 WEB_ROOT = Secrets.RootUrl.webBack
+
