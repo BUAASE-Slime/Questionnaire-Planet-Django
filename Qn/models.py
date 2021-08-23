@@ -10,6 +10,7 @@ class Survey(models.Model):
 
     question_num = models.PositiveIntegerField(default=0,verbose_name="题目数目") # 非负整数
     recycling_num = models.PositiveIntegerField(default=0,verbose_name="回收数目")
+    max_recycling = models.PositiveIntegerField(default=100,verbose_name="最大回收数目")
 
     created_time = models.DateTimeField(auto_now_add=True,verbose_name="创建时间")
     release_time = models.DateTimeField(blank=True,verbose_name="发布时间",null=True)
@@ -57,6 +58,8 @@ class Question(models.Model):
     ]
     # type = models.IntegerField(choices=TYPE_CHOICES,default=0,verbose_name="题型")
     type = models.CharField(max_length=256,verbose_name="问题类型",default='radio')
+    right_answer = models.CharField(max_length=256,verbose_name="正确答案",blank=True,default='')
+
     # radio checkbox 单选题 多选题 text 填空 mark 判断
 class Option(models.Model):
 
@@ -74,6 +77,7 @@ class Submit(models.Model):
     username = models.CharField(max_length=128,blank=True,verbose_name="用户名")
 
     is_valid = models.BooleanField(default=True,verbose_name="答卷是否有效")
+    score = models.PositiveIntegerField(default=0,verbose_name="答卷总得分")
 
 class Answer(models.Model):
 
@@ -82,6 +86,8 @@ class Answer(models.Model):
     submit_id = models.ForeignKey(Submit, on_delete=models.CASCADE,verbose_name="提交编号")
     # user_id = models.ForeignKey(User, on_delete=models.CASCADE,verbose_name="用户编号")
     answer = models.CharField(max_length=128,verbose_name="答案")
+    score = models.PositiveIntegerField(default=0, verbose_name="单题得分")
+
     username = models.CharField(max_length=128, blank=True, verbose_name="用户名")
     TYPE_CHOICES = [
         (0, '单选'),
