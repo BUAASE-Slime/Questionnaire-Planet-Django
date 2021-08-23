@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'Qn',
 
     'Submit',
+    'exam',
+    'vote',
+    'signup',
 ]
 
 MIDDLEWARE = [
@@ -182,3 +185,4 @@ MEDIA_URL = '/media/'
 
 WEB_FRONT = Secrets.RootUrl.webFront
 WEB_ROOT = Secrets.RootUrl.webBack
+
