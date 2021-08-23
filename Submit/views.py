@@ -144,7 +144,8 @@ def get_qn_data(qn_id):
         temp['sequence'] = item.sequence
         temp['id'] = item.sequence  # 按照前端的题目顺序
         temp['options'] = []
-        if temp['type'] in ['radio', 'checkbox', 'text', 'mark']:
+        temp['answer'] = item.right_answer
+        if temp['type'] in ['radio', 'checkbox']:
             # 单选题或者多选题有选项
             option_list = Option.objects.filter(question_id=item.question_id)
             for option_item in option_list:
@@ -152,7 +153,7 @@ def get_qn_data(qn_id):
                 option_dict['id'] = option_item.option_id
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
-            temp['answer'] = ''
+
         else:  # TODO 填空题或者其他
             pass
 
