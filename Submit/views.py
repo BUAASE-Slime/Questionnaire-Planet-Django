@@ -714,7 +714,7 @@ def qn_to_pdf(qn_id):
         pythoncom.CoInitialize()
         convert(input_file,out_file)
     except:
-        doc2pdf_linux(input_file,out_file)
+        doc2pdf_linux(input_file,docx_path)
 
     return pdf_title
 
@@ -909,12 +909,24 @@ def doc2pdf_linux(docPath, pdfPath):
     convert a doc/docx document to pdf format (linux only, requires libreoffice)
     :param doc: path to document
     """
-    cmd = 'libreoffice6.2 --headless --convert-to pdf'.split() + [docPath] + ['--outdir'] + [pdfPath]
+    cmd = 'libreoffice7.0 --headless --invisible  --convert-to pdf:writer_pdf_Export'.split() + [docPath] + ['--outdir'] + [pdfPath]
+    print(cmd)
     p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     p.wait(timeout=30)
     stdout, stderr = p.communicate()
     if stderr:
         raise subprocess.SubprocessError(stderr)
+# def doc2pdf_linux(docPath, pdfPath):
+#     """
+#     convert a doc/docx document to pdf format (linux only, requires libreoffice)
+#     :param doc: path to document
+#     """
+#     cmd = 'libreoffice7.0  --headless --convert-to pdf'.split() + [docPath] + ['--outdir'] + [pdfPath]
+#     p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+#     p.wait(timeout=30)
+#     stdout, stderr = p.communicate()
+#     if stderr:
+#         raise subprocess.SubprocessError(stderr)
 
 def question_dict_to_question(question,question_dict):
     # question = Question()#TODO delete
@@ -968,7 +980,11 @@ def save_qn_keep_history(request):
         survey = Survey.objects.get(survey_id=qn_id)
         survey.username = req['username']
         survey.title = req['title']
+        if survey.title == '':
+            survey.title = "默认标题"
         survey.description = req['description']
+        if survey.description == '':
+            survey.description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
         survey.type = req['type']
         survey.save()
         question_list = req['questions']
@@ -984,13 +1000,13 @@ def save_qn_keep_history(request):
                 if question_dict['question_id'] == question.question_id:
                     #旧问题在新问题中有 更新问题
                     question_dict_to_question(question,question_dict)
-                    num = 2*len(question_list)
+                    num = 1
                     break
 
             if num == 0:
                 question.delete()
         for question_dict in question_list:
-            num = 1
+            # num = 1
             # for question in questions:
             #     if question_dict['question_id'] != 0:
             #         break
