@@ -13,6 +13,5 @@ class CreateNewQuestionForm(forms.Form):
     raw = forms.IntegerField(required=False,widget=forms.TextInput(attrs={'class': 'form-control'}),label="行数")
     score = forms.IntegerField(required=False,widget=forms.TextInput(attrs={'class': 'form-control'}),label="得分")
 
-
-class SubmitIdForm(forms.Form):
+class SubmitIDForm(forms.Form):
     submit_id = forms.IntegerField(widget=forms.TextInput(attrs={'class': 'form-control'}))
