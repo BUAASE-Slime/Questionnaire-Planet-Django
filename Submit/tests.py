@@ -21,7 +21,16 @@ def doc2pdf_linux(docPath, pdfPath):
     if stderr:
         raise subprocess.SubprocessError(stderr)
 
-
+import datetime
 
 # convert(os.getcwd()+"\\1.docx",os.getcwd()+"\\1.pdf")
-doc2pdf_linux(os.getcwd()+"/hzh8.docx",os.getcwd())
+today_exact = datetime.datetime.now()
+today = datetime.datetime(year=today_exact.year,month=today_exact.month,day=today_exact.day)
+yesterday = today - datetime.timedelta(days=1)
+a_week_age = today - datetime.timedelta(days=7)
+day_list = []
+for i in range(7,0,-1):
+    the_day = today-datetime.timedelta(days=i)
+    print(the_day)
+    day_list.append(the_day)
+print(today)

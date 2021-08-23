@@ -7,7 +7,7 @@ from io import BytesIO
 import pytz
 
 # Create your views here.
-
+from .forms import *
 import datetime
 from Qn.form import *
 from Qn.models import *
@@ -1027,3 +1027,107 @@ def save_qn_keep_history(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
 
+@csrf_exempt
+def get_answer_from_submit(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        # survey_form = SurveyIdForm(request.POST)
+        submit_form = SubmitIdForm(request.POST)
+        if submit_form.is_valid():
+            id = submit_form.cleaned_data.get('submit_id')
+            try:
+                submit = Survey.objects.get(submit_id=id)
+            except:
+                response = {'status_code': 2, 'message': '答卷不存在'}
+                return JsonResponse(response)
+
+            #TODO
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            try:
+                answer_list = Answer.objects.filter(submit_id=submit)
+                if len(answer_list) == 0:
+                    raise Exception('')
+            except:
+                response = {'status_code': 3, 'message': '该问卷暂无回答'}
+                return JsonResponse(response)
+            answers = []
+            for answer in answer_list:
+                pass
+            #TODO
+
+
+
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+
+
+# 当天回收，当周，总税收，前五天的返回时间返回日期
+@csrf_exempt
+def get_qn_recycling_num(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            username = qn.username
+            #TODO
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            num_all = len(Submit.objects.filter(survey_id=qn))
+
+            today_exact = datetime.datetime.now()
+            today = datetime.datetime(year=today_exact.year, month=today_exact.month, day=today_exact.day)
+            yesterday = today - datetime.timedelta(days=1)
+            a_week_ago = today - datetime.timedelta(days=7)
+            day_list = []
+            for i in range(7, 0, -1):
+                the_day = today - datetime.timedelta(days=i)
+                print(the_day)
+                day_list.append(the_day)
+            print(today)
+            num_day = len(Submit.objects.filter(survey_id=qn,submit_time__gte=today))
+            num_week = len(Submit.objects.filter(survey_id=qn,submit_time__gte=a_week_ago))
+
+            response['num_week'] =num_week
+            response['num_day'] = num_day
+            response['num_all'] = num_all
+
+            dates = []
+            nums = []
+            for i in range(4,-1,-1):
+                before = today - datetime.timedelta(days=i)
+                after = today - datetime.timedelta(days=i-1)
+                num = len(Submit.objects.filter(survey_id=qn,submit_time__gte=before,submit_time__lte=after))
+                nums.append(num)
+                date_str = before.strftime("%m.%d")
+                if date_str[0] == '0':
+                    date_str = date_str[1:]
+                dates.append(date_str)
+
+            response['nums'] = nums
+            response['dates'] = dates
+
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
