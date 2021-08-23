@@ -50,6 +50,9 @@ INSTALLED_APPS = [
     'Qn',
 
     'Submit',
+    'exam',
+    'vote',
+    'signup',
 ]
 
 MIDDLEWARE = [
