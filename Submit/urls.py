@@ -26,6 +26,8 @@ urlpatterns = [
 
     path('export/docx',TestDocument),
     path('export/pdf',pdf_document),
+    path('export/excel',export_excel),
+
     path('duplicate/qn',duplicate_qn)
 
 

@@ -27,6 +27,7 @@ class Survey(models.Model):
     share_url = models.URLField(verbose_name="分享链接",default='')
     docx_url = models.URLField(verbose_name="word链接",default='')
     pdf_url = models.URLField(verbose_name="pdf链接", default='')
+    excel_url = models.URLField(verbose_name="答卷数据统计excel链接",default='')
 
     SURVEY_TYPE_CHOICES = [
         (0,'普通问卷'),

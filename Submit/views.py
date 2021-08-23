@@ -144,7 +144,8 @@ def get_qn_data(qn_id):
         temp['sequence'] = item.sequence
         temp['id'] = item.sequence  # 按照前端的题目顺序
         temp['options'] = []
-        if temp['type'] in ['radio', 'checkbox', 'text', 'mark']:
+        temp['answer'] = item.right_answer
+        if temp['type'] in ['radio', 'checkbox']:
             # 单选题或者多选题有选项
             option_list = Option.objects.filter(question_id=item.question_id)
             for option_item in option_list:
@@ -152,7 +153,7 @@ def get_qn_data(qn_id):
                 option_dict['id'] = option_item.option_id
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
-            temp['answer'] = ''
+
         else:  # TODO 填空题或者其他
             pass
 
@@ -719,6 +720,92 @@ def pdf_document(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+import xlwt
+def write_submit_to_excel(qn_id):
+    qn = Survey.objects.get(survey_id=qn_id)
+    submit_list = Submit.objects.filter(survey_id=qn)
+
+    xls = xlwt.Workbook()
+    sht1 = xls.add_sheet("Sheet1")
+
+    sht1.write(0,0,"序号")
+    sht1.write(0,1,"提交者")
+    sht1.write(0, 2, "提交时间")
+    question_list = Question.objects.filter(survey_id=qn)
+    question_num = len(question_list)
+    i = 1
+
+    for question in question_list:
+        sht1.write(0, 2+i, str(i)+"、"+question.title)
+        i += 1
+
+    id = 1
+    for submit in submit_list:
+        sht1.write(id,0,id)
+        username = submit.username
+        if username == '' or username is None:
+            username = "匿名用户"
+        sht1.write(id, 1, username)
+        sht1.write(id, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        question_num = 1
+        for question in question_list:
+            answer_str = ""
+            try:
+                answer = Answer.objects.get(submit_id=submit,question_id=question)
+                answer_str = answer.answer
+            except:
+                answer_str = ""
+            sht1.write(id, 2+question_num,answer_str)
+
+            question_num += 1
+
+        id += 1
+    save_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"
+    excel_name = qn.title+"问卷的统计信息"+".xls"
+    xls.save(save_path+excel_name)
+    return excel_name
+
+@csrf_exempt
+def export_excel(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            username = qn.username
+            if request.session['username'] != username:
+                response = {'status_code': 0, 'message': '没有访问权限'}
+                return JsonResponse(response)
+            try:
+                submit_list = Submit.objects.filter(survey_id=qn)
+                # 找不到问卷提交
+            except():
+                response = {'status_code': 3, 'message': '该问卷暂无提交，无法导出'}
+                return JsonResponse(response)
+            if len(submit_list) == 0:
+                response = {'status_code': 3, 'message': '该问卷暂无提交，无法导出'}
+                return JsonResponse(response)
+
+            excel_name = write_submit_to_excel(id)
+
+            response['excel_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + excel_name
+            qn.excel_url = response['excel_url']
+
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
 
 @csrf_exempt
 def duplicate_qn(request):
