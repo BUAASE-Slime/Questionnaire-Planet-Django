@@ -30,9 +30,9 @@ class Survey(models.Model):
     excel_url = models.URLField(verbose_name="答卷数据统计excel链接",default='')
 
     SURVEY_TYPE_CHOICES = [
-        (0,'普通问卷'),
-        (1,'考试问卷'),
-        (2,'投票问卷'),
+        (1,'普通问卷'),
+        (2,'考试问卷'),
+        (4,'投票问卷'),
         (3,'报名问卷'),
     ]
     type = models.CharField(max_length=32, verbose_name="问卷类型",default='')
