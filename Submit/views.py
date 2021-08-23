@@ -403,8 +403,9 @@ def save_qn(request):
             return JsonResponse({'status_code': 0})
 
         # TODO
-
+        question_num = 0
         for question in question_list:
+            question_num += 1
             question['direction'] = ''
             create_question_in_save(question['title'], question['direction'], question['must']
                                     , question['type'], qn_id=req['qn_id'], raw=question['row'],
@@ -413,6 +414,8 @@ def save_qn(request):
                                     sequence=question['id']
                                     )
 
+        survey.question_num = question_num
+        survey.save()
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
@@ -463,6 +466,12 @@ def deploy_qn(request):
             if survey.is_released == True:
                 response = {'status_code': 3, 'message': '问卷已经发布，不要重复操作'}
                 return JsonResponse(response)
+            if survey.is_finished == True:
+                response = {'status_code': 6, 'message': '问卷已经结束，不可操作'}
+                return JsonResponse(response)
+            if (Question.objects.filter(survey_id=survey)).count() == 0:
+                response = {'status_code': 7, 'message': '问卷中无问题，不可发行'}
+                return JsonResponse(response)
 
             survey.is_released = True
             if survey.release_time == '' or survey.release_time is None or survey.release_time == 'null':
@@ -492,6 +501,9 @@ def pause_qn(request):
                 return JsonResponse(response)
             if survey.is_deleted == True:
                 response = {'status_code': 2, 'message': '问卷已放入回收站'}
+                return JsonResponse(response)
+            if survey.is_finished == True:
+                response = {'status_code': 6, 'message': '问卷已经结束，不可操作'}
                 return JsonResponse(response)
             if not survey.is_released:
                 response = {'status_code': 3, 'message': '问卷为发行，不可取消发行'}
