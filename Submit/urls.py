@@ -17,7 +17,6 @@ urlpatterns = [
     path('get/qn_detail',get_survey_details),
     path('get/qn_for_fill', get_survey_details_by_others),
 
-
     path('create/qn',create_qn),
     path('create/question',create_question),
 
@@ -43,5 +42,7 @@ urlpatterns = [
 
     path('get/submit_answers',get_answer_from_submit),
     path('delete/submit',delete_submit),
+
+    path('get/qn/all_submit',get_qn_all_submit),
 
 ]
