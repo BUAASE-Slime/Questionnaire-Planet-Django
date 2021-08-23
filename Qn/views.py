@@ -44,8 +44,9 @@ polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失�
 @api_view(['POST'])
 def get_list(request):
     # 检验是否登录
-    if not request.session.get('is_login', None):
+    if not request.session.get('is_login'):
         return JsonResponse({'status_code': 401})
+    print("user login")
 
     if request.method == 'POST':
         survey_id = request.POST.get('survey_id')
@@ -75,7 +76,8 @@ def get_list(request):
                              "description": survey.description, "is_released": survey.is_released,
                              "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                              "recycling_num": survey.recycling_num, "username": survey.username,
-                             "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M")}
+                             "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M"),
+                             "type": survey.type}
 
                 print(json_item)
                 return JsonResponse(json_item)
@@ -109,7 +111,8 @@ def get_list(request):
                          "description": survey.description, "is_released": survey.is_released,
                          "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                          "recycling_num": survey.recycling_num, "username": survey.username,
-                         "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M")}
+                         "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M"),
+                         "type": survey.type}
             json_list.append(json_item)
 
         if json_list:
@@ -145,6 +148,7 @@ def create_option(question, content):
     option.order = question.option_num
     option.save()
 
+from django.utils import timezone
 
 @csrf_exempt
 @swagger_auto_schema(method='post',
@@ -169,6 +173,8 @@ def get_recycling_num(request):
         except:
             return JsonResponse({'status_code': 402})
 
+        print(survey_id)
+
         # 检查用户名是否匹配
         if survey.username != request.session.get('username'):
             return JsonResponse({'status_code': 403})
@@ -178,12 +184,18 @@ def get_recycling_num(request):
         result = {"num_all": len(submit_list)}
         num_week = 0
 
+        if len(submit_list) == 0:
+            return JsonResponse({'num_all': 0, 'num_week': 0, 'num_day': 0, 'status_code': 200})
+
         json_list = []
-        dea_date = (submit_list[0].submit_time + datetime.timedelta(days=-7)).strftime("%m.%d")
+        dea_date = (timezone.now() + datetime.timedelta(days=-7)).strftime("%m.%d")
         for submit in submit_list:
             submit.submit_time = submit.submit_time.strftime("%m.%d")
         date = submit_list[0].submit_time
         num = 0  # 记录每天的回收量
+
+        datelist = []
+        numlist = []
 
         for submit in submit_list:
             if submit.submit_time > dea_date:
@@ -192,6 +204,8 @@ def get_recycling_num(request):
                 num = num + 1
             else:
                 json_item = {"date": date, "number": num}
+                datelist.append(date)
+                numlist.append(num)
                 json_list.append(json_item)
                 date = submit.submit_time
                 num = 1
@@ -201,6 +215,50 @@ def get_recycling_num(request):
 
         result['num_week'] = num_week
         result['num_day'] = json_list[:5]
+        result['status_code'] = 200
+        return JsonResponse(result, safe=False)
+    else:
+        return JsonResponse({'status_code': 404})
+
+
+@csrf_exempt
+def get_recycling_num_total(request):
+    # 检验是否登录
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 401})
+
+    collect_form = CollectForm(request.POST)
+    if collect_form.is_valid():
+        survey_id = collect_form.cleaned_data.get('survey_id')
+        try:
+            survey = Survey.objects.get(survey_id=survey_id, is_deleted=False)
+        except:
+            return JsonResponse({'status_code': 402})
+
+        # 检查用户名是否匹配
+        if survey.username != request.session.get('username'):
+            return JsonResponse({'status_code': 403})
+
+        submit_list = Submit.objects.filter(survey_id=survey)
+
+        if len(submit_list) == 0:
+            return JsonResponse({'status_code': 2})
+
+        submit_list = submit_list.order_by("-submit_time")
+        result = {"num_all": len(submit_list)}
+        num_week = 0
+
+        json_list = []
+        dea_date = submit_list[0].submit_time + datetime.timedelta(days=-7)
+        date = submit_list[0].submit_time
+
+        for submit in submit_list:
+            if submit.submit_time > dea_date:
+                num_week = num_week + 1
+
+        result['num_week'] = num_week
+        result['num_day'] = json_list[:5]
+        result['status_code'] = 200
         return JsonResponse(result, safe=False)
     else:
         return JsonResponse({'status_code': 404})

@@ -312,6 +312,53 @@ def set_finish(request):
 
 
 @csrf_exempt
+def create_qn(request):
+    global survey
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        new_qn_form = CreateNewQuestionForm(request.POST)
+        if new_qn_form.is_valid():
+            username = new_qn_form.cleaned_data.get('username')
+            title = new_qn_form.cleaned_data.get('title')
+            description = new_qn_form.cleaned_data.get('description')
+            type = new_qn_form.cleaned_data.get('type')
+
+            description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
+
+            try:
+                user = User.objects.get(username=username)
+
+            except:
+                response = {'status_code': 2, 'message': '用户不存在'}
+                return JsonResponse(response)
+
+            if request.session.get('username') != username:
+                return JsonResponse({'status_code': 2})
+
+            if title == '':
+                title = "默认标题"
+
+            try:
+                survey = Survey(username=username, title=title, type=type, description=description, question_num=0,
+                                recycling_num=0)
+                survey.save()
+            except:
+                response = {'status_code': -3, 'message': '后端炸了'}
+                return JsonResponse(response)
+
+            response['qn_id'] = survey.survey_id
+            return JsonResponse(response)
+
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
 def create_question(request):
     # TODO 完善json。dump
     response = {'status_code': 1, 'message': 'success'}
@@ -372,6 +419,9 @@ def save_qn(request):
         survey.title = req['title']
         survey.description = req['description']
         survey.type = req['type']
+        print(req['finish_time'])
+        if req['finish_time'] != '' and req['finish_time'] is not None:
+            survey.finished_time = req['finish_time']
         survey.save()
         question_list = req['questions']
 
@@ -383,13 +433,12 @@ def save_qn(request):
         question_num = 0
         for question in question_list:
             question_num += 1
-            question['direction'] = ''
-            create_question_in_save(question['title'], question['direction'], question['must']
-                                    , question['type'], qn_id=req['qn_id'], raw=question['raw'],
+            create_question_in_save(question['title'], question['description'], question['must']
+                                    , question['type'], qn_id=req['qn_id'], raw=question['row'],
                                     score=question['score'],
                                     options=question['options'],
                                     sequence=question['id'],
-                                    right_answer=question['right_answer'],
+                                    right_answer=question['refer'],
                                     )
 
         survey.question_num = question_num
