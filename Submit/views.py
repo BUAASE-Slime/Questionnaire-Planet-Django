@@ -765,7 +765,10 @@ def export_excel(request):
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
-
+            username = qn.username
+            if request.session['username'] != username:
+                response = {'status_code': 0, 'message': '没有访问权限'}
+                return JsonResponse(response)
             try:
                 submit_list = Submit.objects.filter(survey_id=qn)
                 # 找不到问卷提交
@@ -782,7 +785,6 @@ def export_excel(request):
             qn.excel_url = response['excel_url']
 
             return JsonResponse(response)
-
 
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
