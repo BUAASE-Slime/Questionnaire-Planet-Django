@@ -399,23 +399,26 @@ def save_qn(request):
         survey.title = req['title']
         survey.description = req['description']
         survey.type = req['type']
+        print(req['finish_time'])
+        if req['finish_time'] != '' and req['finish_time'] is not None:
+            survey.finished_time = req['finish_time']
         survey.save()
         question_list = req['questions']
 
-        # if request.session.get("username") != req['username']:
-        #     request.session.flush()
-        #     return JsonResponse({'status_code': 0})
+        if request.session.get("username") != req['username']:
+            request.session.flush()
+            return JsonResponse({'status_code': 0})
 
         # TODO
         question_num = 0
         for question in question_list:
             question_num += 1
-            question['direction'] = ''
-            create_question_in_save(question['title'], question['direction'], question['must']
+            create_question_in_save(question['title'], question['description'], question['must']
                                     , question['type'], qn_id=req['qn_id'], raw=question['row'],
                                     score=question['score'],
                                     options=question['options'],
-                                    sequence=question['id']
+                                    sequence=question['id'],
+                                    right_answer=question['refer'],
                                     )
 
         survey.question_num = question_num
