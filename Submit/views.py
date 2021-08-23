@@ -979,14 +979,15 @@ def save_qn_keep_history(request):
         #     return JsonResponse({'status_code': 0})
 
         for question in questions:
-            num = 1
+            num = 0
             for question_dict in question_list:
                 if question_dict['question_id'] == question.question_id:
                     #旧问题在新问题中有 更新问题
                     question_dict_to_question(question,question_dict)
+                    num = 2*len(question_list)
                     break
-                num += 1
-            if num == len(question_list):
+
+            if num == 0:
                 question.delete()
         for question_dict in question_list:
             num = 1
