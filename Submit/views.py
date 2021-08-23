@@ -137,7 +137,7 @@ def get_qn_data(qn_id):
         temp['row'] = item.raw
         temp['score'] = item.score
         temp['title'] = item.title
-        temp['direction'] = item.direction
+        temp['description'] = item.direction
         temp['must'] = item.is_must_answer
         temp['type'] = item.type
         temp['qn_id'] = qn_id
@@ -344,7 +344,7 @@ def create_question(request):
             question = Question()
             try:
                 question.title = new_question_form.cleaned_data.get('title')
-                question.direction = new_question_form.cleaned_data.get('direction')
+                question.direction = new_question_form.cleaned_data.get('description')
                 question.is_must_answer = new_question_form.cleaned_data.get('must')
                 question.type = new_question_form.cleaned_data.get('type')
                 survey_id = new_question_form.cleaned_data.get('qn_id')
@@ -405,8 +405,7 @@ def save_qn(request):
         question_num = 0
         for question in question_list:
             question_num += 1
-            question['direction'] = ''
-            create_question_in_save(question['title'], question['direction'], question['must']
+            create_question_in_save(question['title'], question['description'], question['must']
                                     , question['type'], qn_id=req['qn_id'], raw=question['row'],
                                     score=question['score'],
                                     options=question['options'],

@@ -461,7 +461,7 @@ def get_survey_from_url(request):
                 temp = {}
                 temp['question_id'] = item.question_id
                 temp['title'] = item.title
-                temp['direction'] = item.direction
+                temp['description'] = item.direction
                 temp['must'] = item.is_must_answer
                 temp['type'] = item.type
                 temp['qn_id'] = survey.survey_id
@@ -524,7 +524,7 @@ def get_question_answer(request):
         question_list = []
         for question in questions:
             answers = Answer.objects.filter(question_id=question)
-            temp = {'question_id': question.question_id, 'title': question.title, 'direction': question.direction,
+            temp = {'question_id': question.question_id, 'title': question.title, 'description': question.direction,
                     'must': question.is_must_answer, 'type': question.type, 'sequence': question.sequence,
                     'num_all': len(answers), 'options': [], 'fill_blank': [], 'scores': []}
 
