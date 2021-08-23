@@ -198,3 +198,62 @@ def unverified_email(request):
         return JsonResponse({'status_code': 403})
 
     return JsonResponse({'status_code': 200})
+
+
+
+@csrf_exempt
+def change_passwords(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        password_form = ChangePasswordForm(request.POST)
+        if password_form.is_valid():
+            try:
+                this_user = User.objects.get(username=request.session['username'])
+            except:
+                return JsonResponse({'status_code': 401})
+            old_password = password_form.cleaned_data.get('old_password')
+            new_password_1 = password_form.cleaned_data.get('new_password_1')
+            new_password_2 = password_form.cleaned_data.get('new_password_2')
+            if new_password_1 != new_password_2:
+                response = {'status_code': 402, 'message': '两次输入的密码不同'}
+                return JsonResponse(response)
+            if new_password_1 == old_password:
+                response = {'status_code': 403, 'message': '新旧密码相同'}
+                return JsonResponse(response)
+            this_user.password = new_password_1
+            this_user.save()
+            return JsonResponse({'status_code': 200, 'message': 'success'})
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
+def change_passwords(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        email_form = ChangeEmailForm(request.POST)
+        if email_form.is_valid():
+            try:
+                this_user = User.objects.get(username=request.session['username'])
+            except:
+                return JsonResponse({'status_code': 401})
+            email = email_form.cleaned_data.get('email')
+            if email == this_user.email:
+                response = {'status_code': 403, 'message': '新旧邮箱相同'}
+                return JsonResponse(response)
+            this_user.has_confirmed = False
+            this_user.email = email
+            this_user.save()
+            return JsonResponse({'status_code': 200, 'message': 'success'})
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)

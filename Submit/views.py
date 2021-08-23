@@ -18,6 +18,11 @@ from django.views.decorators.csrf import csrf_exempt
 
 utc = pytz.UTC
 
+IS_LINUX = False
+try:
+    import pythoncom
+except:
+    IS_LINUX = True
 
 # Create your views here.
 
@@ -645,31 +650,50 @@ def qn_to_docx(qn_id):
     i = 1
     for question in questions:
 
-        document.add_paragraph().add_run(str(i)+"、"+question.title,style='Song')
+        type = question.type
+        type_str = ""
+        if type == 'radio':
+            type_str = "单选题"
+        elif type == 'checkbox':
+            type_str = '多选题'
+        elif type == 'text':
+            type_str = '填空题'
+        elif type == 'mark':
+            type_str = '评分题'
+        document.add_paragraph().add_run(str(i)+"、"+question.title+"("+type_str+")",style='Song')
+
         i+=1
         options = Option.objects.filter(question_id=question)
         option_option = 0
+        num = 1
         for option in options:
             option_str = "      "
 
             alphas = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
             if question.type in ['checkbox', 'radio']:
-                option_str += alphas[option_option] + " :  "
+                # option_str += alphas[option_option] + " :  "
+                option_str += "选项 "+str(num) + " :  "
                 option_option += 1
+                num += 1
 
             option_str += option.content
             document.add_paragraph().add_run(option_str,style='Song')
-            if question.type in ['mark', 'text']:
-                document.add_paragraph('')
+        if question.type in ['mark', 'text']:
+            document.add_paragraph(' ')
 
     document.add_page_break()
     # document.add_paragraph(str(qn_id))
     f = BytesIO()
     save_path = docx_title
+
     document.save(f)
     # document.save(save_path)
 
     docx_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"
+    if IS_LINUX:
+        docx_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
+
     print(docx_path)
     document.save(docx_path+docx_title)
 
@@ -677,7 +701,7 @@ def qn_to_docx(qn_id):
 
     return document,f,docx_title,docx_path
 
-import pythoncom
+
 from docx2pdf import convert
 
 def qn_to_pdf(qn_id):
@@ -685,9 +709,12 @@ def qn_to_pdf(qn_id):
     input_file = docx_path+docx_title
     out_file = docx_path+docx_title.replace('.docx','.pdf')
     pdf_title = docx_title.replace('.docx','.pdf')
-
-    pythoncom.CoInitialize()
-    convert(input_file,out_file)
+    try:
+        import pythoncom
+        pythoncom.CoInitialize()
+        convert(input_file,out_file)
+    except:
+        doc2pdf_linux(input_file,out_file)
 
     return pdf_title
 
@@ -762,6 +789,8 @@ def write_submit_to_excel(qn_id):
 
         id += 1
     save_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"
+    if IS_LINUX:
+        save_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
     excel_name = qn.title+"问卷的统计信息"+".xls"
     xls.save(save_path+excel_name)
     return excel_name
@@ -873,3 +902,16 @@ def empty_qn_all_Submit(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+import subprocess
+def doc2pdf_linux(docPath, pdfPath):
+    """
+    convert a doc/docx document to pdf format (linux only, requires libreoffice)
+    :param doc: path to document
+    """
+    cmd = 'libreoffice6.2 --headless --convert-to pdf'.split() + [docPath] + ['--outdir'] + [pdfPath]
+    p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    p.wait(timeout=30)
+    stdout, stderr = p.communicate()
+    if stderr:
+        raise subprocess.SubprocessError(stderr)
