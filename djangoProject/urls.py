@@ -53,6 +53,7 @@ urlpatterns = [
     path('api/qs/user/', include(('userinfo.urls', 'userinfo'))),
     path('api/qs/qn/', include(('Qn.urls', 'Qn'))),
     path('api/qs/sm/', include(('Submit.urls', 'Submit'))),
+    path('api/qs/ex/', include(('exam.urls', 'exam'))),
     path('api/qs/all_count/submit', Qn.views.all_submittion_count),
 
     url(r'media/(?P<path>.*)',serve,{'document_root':settings.MEDIA_ROOT}),
