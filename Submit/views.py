@@ -402,9 +402,9 @@ def save_qn(request):
         survey.save()
         question_list = req['questions']
 
-        if request.session.get("username") != req['username']:
-            request.session.flush()
-            return JsonResponse({'status_code': 0})
+        # if request.session.get("username") != req['username']:
+        #     request.session.flush()
+        #     return JsonResponse({'status_code': 0})
 
         # TODO
         question_num = 0
@@ -915,3 +915,98 @@ def doc2pdf_linux(docPath, pdfPath):
     stdout, stderr = p.communicate()
     if stderr:
         raise subprocess.SubprocessError(stderr)
+
+def question_dict_to_question(question,question_dict):
+    # question = Question()#TODO delete
+    question.title = question_dict['title']
+    print(question_dict)
+    question.direction = question_dict['direction']
+    question.is_must_answer=question_dict['must']
+    question.type = question_dict['type']
+    # qn_id =  question_dict['qn_id']
+    # question.survey_id = Survey.objects.get(survey_id=qn_id)
+    question.raw = question_dict['row']
+    question.score = question_dict['score']
+    options = question_dict['options']
+    question.sequence = question_dict['id']
+
+    option_list_delete = Option.objects.filter(question_id=question)
+    for option in option_list_delete:
+        option.delete()
+    option_list = options
+    # option_list = option_set[0]
+    # print("options") ,print(options)
+    print(option_list)
+
+
+    for item in option_list:
+        print("item",end=" ")
+        print(item)
+        content = item['title']
+        sequence = item['id']
+        create_option(question, content, sequence)
+    question.save()
+
+
+@csrf_exempt
+def save_qn_keep_history(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        req = json.loads(request.body)
+        print(req)
+        qn_id = req['qn_id']
+        try:
+            questions = Question.objects.filter(survey_id=qn_id)
+        except:
+            response = {'status_code': 3, 'message': '问卷不存在'}
+            return JsonResponse(response)
+        submit_list =  Survey.objects.filter(survey_id=qn_id)
+        for submit in submit_list:
+            submit.is_valid = False
+            submit.save()
+
+        survey = Survey.objects.get(survey_id=qn_id)
+        survey.username = req['username']
+        survey.title = req['title']
+        survey.description = req['description']
+        survey.type = req['type']
+        survey.save()
+        question_list = req['questions']
+
+
+        # if request.session.get("username") != req['username']:
+        #     request.session.flush()
+        #     return JsonResponse({'status_code': 0})
+
+        for question in questions:
+            num = 1
+            for question_dict in question_list:
+                if question_dict['question_id'] == question.question_id:
+                    #旧问题在新问题中有 更新问题
+                    question_dict_to_question(question,question_dict)
+                    break
+                num += 1
+            if num == len(question_list):
+                question.delete()
+        for question_dict in question_list:
+            num = 1
+            # for question in questions:
+            #     if question_dict['question_id'] != 0:
+            #         break
+            #     num += 1
+            # if num == len(questions):
+            if question_dict['question_id'] == 0:
+                create_question_in_save(question_dict['title'], question_dict['direction'], question_dict['must']
+                                        , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
+                                        score=question_dict['score'],
+                                        options=question_dict['options'],
+                                        sequence=question_dict['id']
+                                        )
+                # 添加问题
+
+
+        survey.save()
+        return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+
