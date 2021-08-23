@@ -56,7 +56,9 @@ def get_list(request):
         is_collected = bool(request.POST.get('is_collected'))
         order_item = request.POST.get('order_item')
         order_type = request.POST.get('order_type')
+
         print(is_released, order_item, order_type, title_key, username, is_collected)
+
         if order_item is None:
             order_item = "created_time"
         if order_type is None:
@@ -89,11 +91,11 @@ def get_list(request):
             survey_list = survey_list.filter(title__contains=title_key)
         if username:
             survey_list = survey_list.filter(username=username)
-        if is_released == 1:
-            survey_list = survey_list.filter(is_released=is_released)
-        if is_released == 0:
+        if is_released == 1 or is_released == '1':
+            survey_list = survey_list.filter(is_released=True)
+        if is_released == 0 or is_released == '0':
             print(1)
-            survey_list = survey_list.filter(is_released != is_released)
+            survey_list = survey_list.filter(is_released=False)
         if is_collected:
             survey_list = survey_list.filter(is_collected=is_collected)
         if order_type == 'desc':
@@ -572,11 +574,12 @@ def save_qn_answer(request):
 
         answer_list = req['answers']
         for item in answer_list:
-            answer = Answer(question_id_id=item['question_id'], submit_id_id=submit.submit_id,
+            if item['answer']:
+                answer = Answer(question_id_id=item['question_id'], submit_id_id=submit.submit_id,
                             answer=item['answer'], type=item['type'])
-            if username:
-                answer.username = username
-            answer.save()
+                if username:
+                    answer.username = username
+                answer.save()
 
         return JsonResponse(response)
     else:
