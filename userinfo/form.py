@@ -13,3 +13,11 @@ class RegisterForm(forms.Form):
                                 widget=forms.PasswordInput(attrs={'class': 'form-control'}))
     email = forms.EmailField(label="邮箱地址", widget=forms.EmailInput(attrs={'class': 'form-control'}))
 
+class ChangePasswordForm(forms.Form):
+    old_password = forms.CharField(label="旧密码", max_length=256, widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    new_password_1 = forms.CharField(label="新密码1", max_length=256, widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+    new_password_2 = forms.CharField(label="新密码2", max_length=256,
+                                     widget=forms.PasswordInput(attrs={'class': 'form-control'}))
+
+class ChangeEmailForm(forms.Form):
+    email = forms.EmailField(label="旧邮箱", max_length=256)
