@@ -244,6 +244,9 @@ def save_qn_answer(request):
         if Submit.objects.filter(survey_id=survey, username=username):
             return JsonResponse({'status_code': 3, 'message': '已提交过问卷'})
 
+        if not survey.is_released:
+            return JsonResponse({'status_code': 4, 'message': '问卷未发布'})
+
         survey.recycling_num = survey.recycling_num + 1
         survey.save()
 
@@ -260,15 +263,19 @@ def save_qn_answer(request):
             answer = Answer(question_id_id=item['question_id'], submit_id_id=submit.submit_id,
                             answer=item['answer'], type=item['type'])
             question = Question.objects.get(question_id=item['question_id'])
-            score = 0
-            if question.right_answer == item['answer']:
-                score = question.score
+            score = question.score
+            result = "正确"
+            if question.right_answer != item['answer'] and question.right_answer != "":
+                score = 0
+                result = "错误"
+
             sum_score = sum_score + score
             answer.score = score
             answer.username = username
             answer.save()
             data = {'question_id': question.question_id, 'title': question.title,
-                    'score': score, 'right_answer': question.right_answer}
+                    'score': score, 'right_answer': question.right_answer,
+                    'your_answer': item['answer'], 'result': result}
             question_score.append(data)
 
         submit.score = sum_score
