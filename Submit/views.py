@@ -900,6 +900,8 @@ def empty_qn_all_Submit(request):
             if request.session['username'] != username:
                 response = {'status_code': 0, 'message': '没有访问权限'}
                 return JsonResponse(response)
+            qn.recycling_num = 0
+            qn.save()
 
             submit_list = Submit.objects.filter(survey_id=qn.survey_id)
             for submit in submit_list:
@@ -1022,6 +1024,11 @@ def save_qn_keep_history(request):
             #         break
             #     num += 1
             # if num == len(questions):
+            try:
+                question_dict['question_id'] = question_dict['question_id']
+            except:
+                question_dict['question_id'] = 0
+
             if question_dict['question_id'] == 0:
                 create_question_in_save(question_dict['title'], question_dict['direction'], question_dict['must']
                                         , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
@@ -1036,6 +1043,7 @@ def save_qn_keep_history(request):
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
 
 @csrf_exempt
 def get_answer_from_submit(request):
@@ -1373,3 +1381,45 @@ def cross_analysis(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+@csrf_exempt
+def get_qn_question(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            # username = qn.username
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            question_list = Question.objects.filter(survey_id=qn)
+            i = 1
+            questions = []
+            for question in question_list:
+
+                if question.type in ['radio','checkbox']:
+                    item = {}
+                    item['value1'] = item['value2'] = i
+                    i+=1
+                    item['label'] = question.title
+                    item['question_id'] = question.question_id
+                    questions.append(item)
+            response['questions'] = questions
+
+            return  JsonResponse(response)
+
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+

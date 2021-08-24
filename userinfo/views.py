@@ -233,7 +233,7 @@ def change_passwords(request):
 
 
 @csrf_exempt
-def change_passwords(request):
+def change_email(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         email_form = ChangeEmailForm(request.POST)
