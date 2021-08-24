@@ -1328,26 +1328,43 @@ def cross_analysis(request):
                 i+=1
 
             tableData = []
+            tableHead = []
             item = {}
-            item['column_0'] = "子问题"
+            item['column_name'] = "column_0"
+            item['column_comment'] = "子问题"
+            tableHead.append(item)
             j=1
             for option in option_list2:
-                item['column_{}'.format(j)] = option.content
-                j += 1
-            tableData.append(item)
+                item = {}
+                item['column_name'] = "column_{}".format(j)
+                item['column_comment'] = option.content
+                tableHead.append(item)
+                j+=1
+
+
+            # tableData.append(item)
             i = 1
             for option in option_list1:
                 item = {}
+                sum = 0
+                for kk in range(len(option_list2)+1):
+                    sum += num_list[i][kk]
                 item['column_0'] = option.content
                 for j in range(1,len(option_list2)+1):
                     recycling_num = qn.recycling_num
                     if recycling_num == 0:
                         recycling_num = 1
-                    item['column_{}'.format(j)] = num_list[i][j]
+                    if sum == 0:
+                        ret = "0(0%)"
+                    else:
+                        ret = str(num_list[i][j]) + "("+str(int(num_list[i][j]*100/sum))+"%)"
+
+                    item['column_{}'.format(j)] = ret
                 i += 1
                 tableData.append(item)
+            response['tableHead'] = tableHead
             response['tableData'] = tableData
-            response['num_list'] = num_list
+            # response['num_list'] = num_list
             return JsonResponse(response)
 
         else:
