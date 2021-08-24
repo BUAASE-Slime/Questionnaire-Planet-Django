@@ -1277,3 +1277,82 @@ def change_code(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+@csrf_exempt
+def cross_analysis(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        cross_form = CrossAnalysisForm(request.POST)
+        if cross_form.is_valid():
+            question_id_1 = cross_form.cleaned_data.get('question_id_1')
+            question_id_2 = cross_form.cleaned_data.get('question_id_2')
+            try:
+                question_1 = Question.objects.get(question_id=question_id_1)
+                question_2 = Question.objects.get(question_id=question_id_2)
+            except:
+                response = {'status_code': 2, 'message': '问题不存在'}
+                return JsonResponse(response)
+            qn = question_1.survey_id
+            num_list = [[int(0) for x in range(0, question_1.option_num++7)] for y in range(0, question_2.option_num+7)]
+            submit_list = Submit.objects.filter(survey_id=qn)
+            option_list1 = Option.objects.filter(question_id=question_1)
+            option_list2 = Option.objects.filter(question_id=question_2)
+            for option in option_list1:
+                print(option.content,end=" ")
+            print()
+            for option in option_list2:
+                print(option.content,end=" ")
+
+            # for submit in submit_list:
+            #
+            #     answer_list = Answer.objects.filter(submit_id=submit)
+            #     i = 1; j = 1;
+
+            i=1
+            for option in option_list1:
+                # answer_list = Answer.objects.all()
+                answers = []
+                for answer in Answer.objects.all():
+                    if answer.question_id.survey_id == question_1.survey_id:
+                        answers.append(answer)
+                for answer in answers:
+                    if answer.answer.find(option.content) >= 0:
+                        # submit = answer.submit_id
+                        answer_q2_list = Answer.objects.filter(submit_id=answer.submit_id,question_id=question_2)
+                        for answer_q2 in answer_q2_list:
+                            j = 1
+                            for oprion_q2 in option_list2:
+                                if answer_q2.answer.find(oprion_q2.content) >= 0:
+                                    num_list[i][j] += 1
+                                j += 1
+                i+=1
+
+            tableData = []
+            item = {}
+            item['column_0'] = "子问题"
+            j=1
+            for option in option_list2:
+                item['column_{}'.format(j)] = option.content
+                j += 1
+            tableData.append(item)
+            i = 1
+            for option in option_list1:
+                item = {}
+                item['column_0'] = option.content
+                for j in range(1,len(option_list2)+1):
+                    recycling_num = qn.recycling_num
+                    if recycling_num == 0:
+                        recycling_num = 1
+                    item['column_{}'.format(j)] = num_list[i][j]
+                i += 1
+                tableData.append(item)
+            response['tableData'] = tableData
+            response['num_list'] = num_list
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
