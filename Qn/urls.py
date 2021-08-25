@@ -1,7 +1,7 @@
 from django.conf.urls.static import static
 from django.urls import path
 from .views import *
-from Submit.views import change_code
+
 urlpatterns = [
 
     path('get_list', get_list),

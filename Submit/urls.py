@@ -1,8 +1,6 @@
 from django.conf.urls.static import static
 from django.urls import path
 from .views import *
-from signup.views import *
-from vote.views import *
 urlpatterns = [
 
     path('delete/qn/recover',recover_survey_from_delete),
@@ -16,6 +14,7 @@ urlpatterns = [
 
     path('get/qn_detail',get_survey_details),
     path('get/qn_for_fill', get_survey_details_by_others),
+
 
     path('create/qn',create_qn),
     path('create/question',create_question),
@@ -32,20 +31,15 @@ urlpatterns = [
 
     path('duplicate/qn',duplicate_qn),
 
-    path('get/vote/answer',save_qn_vote),
-    path('get/signup/answer',save_qn_signup), # 提交报名问卷
-
-    path('change/signup/max',change_signup_max),  #更改报名问卷最大报名人数
-
-
     path('get/recycling_num',get_qn_recycling_num),
 
     path('get/submit_answers',get_answer_from_submit),
     path('delete/submit',delete_submit),
 
     path('get/qn/all_submit',get_qn_all_submit),
-
     path('cross/analysis',cross_analysis),
+
     path('get/qn/question/analysis',get_qn_question),
+    path('get/qn/stat_analysis',submit_reporter),
 
 ]
