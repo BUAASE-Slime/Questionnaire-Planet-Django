@@ -59,7 +59,7 @@ class Question(models.Model):
     ]
     # type = models.IntegerField(choices=TYPE_CHOICES,default=0,verbose_name="题型")
     type = models.CharField(max_length=256,verbose_name="问题类型",default='radio')
-    right_answer = models.CharField(max_length=256,verbose_name="正确答案",blank=True,default='')
+    right_answer = models.CharField(max_length=256,verbose_name="正确答案",default='')
 
     # radio checkbox 单选题 多选题 text 填空 mark 判断
 class Option(models.Model):
