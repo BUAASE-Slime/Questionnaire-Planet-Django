@@ -1036,6 +1036,7 @@ def save_qn_keep_history(request):
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
 
 @csrf_exempt
 def get_answer_from_submit(request):
