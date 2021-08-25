@@ -900,6 +900,8 @@ def empty_qn_all_Submit(request):
             if request.session['username'] != username:
                 response = {'status_code': 0, 'message': '没有访问权限'}
                 return JsonResponse(response)
+            qn.recycling_num = 0
+            qn.save()
 
             submit_list = Submit.objects.filter(survey_id=qn.survey_id)
             for submit in submit_list:
@@ -1022,6 +1024,11 @@ def save_qn_keep_history(request):
             #         break
             #     num += 1
             # if num == len(questions):
+            try:
+                question_dict['question_id'] = question_dict['question_id']
+            except:
+                question_dict['question_id'] = 0
+
             if question_dict['question_id'] == 0:
                 create_question_in_save(question_dict['title'], question_dict['direction'], question_dict['must']
                                         , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
@@ -1278,3 +1285,141 @@ def change_code(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+@csrf_exempt
+def cross_analysis(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        cross_form = CrossAnalysisForm(request.POST)
+        if cross_form.is_valid():
+            question_id_1 = cross_form.cleaned_data.get('question_id_1')
+            question_id_2 = cross_form.cleaned_data.get('question_id_2')
+            try:
+                question_1 = Question.objects.get(question_id=question_id_1)
+                question_2 = Question.objects.get(question_id=question_id_2)
+            except:
+                response = {'status_code': 2, 'message': '问题不存在'}
+                return JsonResponse(response)
+            qn = question_1.survey_id
+            num_list = [[int(0) for x in range(0, question_1.option_num++7)] for y in range(0, question_2.option_num+7)]
+            submit_list = Submit.objects.filter(survey_id=qn)
+            option_list1 = Option.objects.filter(question_id=question_1)
+            option_list2 = Option.objects.filter(question_id=question_2)
+            for option in option_list1:
+                print(option.content,end=" ")
+            print()
+            for option in option_list2:
+                print(option.content,end=" ")
+
+            # for submit in submit_list:
+            #
+            #     answer_list = Answer.objects.filter(submit_id=submit)
+            #     i = 1; j = 1;
+
+            i=1
+            for option in option_list1:
+                # answer_list = Answer.objects.all()
+                answers = []
+                for answer in Answer.objects.all():
+                    if answer.question_id.survey_id == question_1.survey_id:
+                        answers.append(answer)
+                for answer in answers:
+                    if answer.answer.find(option.content) >= 0:
+                        # submit = answer.submit_id
+                        answer_q2_list = Answer.objects.filter(submit_id=answer.submit_id,question_id=question_2)
+                        for answer_q2 in answer_q2_list:
+                            j = 1
+                            for oprion_q2 in option_list2:
+                                if answer_q2.answer.find(oprion_q2.content) >= 0:
+                                    num_list[i][j] += 1
+                                j += 1
+                i+=1
+
+            tableData = []
+            tableHead = []
+            item = {}
+            item['column_name'] = "column_0"
+            item['column_comment'] = "子问题"
+            tableHead.append(item)
+            j=1
+            for option in option_list2:
+                item = {}
+                item['column_name'] = "column_{}".format(j)
+                item['column_comment'] = option.content
+                tableHead.append(item)
+                j+=1
+
+
+            # tableData.append(item)
+            i = 1
+            for option in option_list1:
+                item = {}
+                sum = 0
+                for kk in range(len(option_list2)+1):
+                    sum += num_list[i][kk]
+                item['column_0'] = option.content
+                for j in range(1,len(option_list2)+1):
+                    recycling_num = qn.recycling_num
+                    if recycling_num == 0:
+                        recycling_num = 1
+                    if sum == 0:
+                        ret = "0(0%)"
+                    else:
+                        ret = str(num_list[i][j]) + "("+str(int(num_list[i][j]*100/sum))+"%)"
+
+                    item['column_{}'.format(j)] = ret
+                i += 1
+                tableData.append(item)
+            response['tableHead'] = tableHead
+            response['tableData'] = tableData
+            # response['num_list'] = num_list
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+@csrf_exempt
+def get_qn_question(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            # username = qn.username
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            question_list = Question.objects.filter(survey_id=qn)
+            i = 1
+            questions = []
+            for question in question_list:
+
+                if question.type in ['radio','checkbox']:
+                    item = {}
+                    item['value1'] = item['value2'] = i
+                    i+=1
+                    item['label'] = question.title
+                    item['question_id'] = question.question_id
+                    questions.append(item)
+            response['questions'] = questions
+
+            return  JsonResponse(response)
+
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+

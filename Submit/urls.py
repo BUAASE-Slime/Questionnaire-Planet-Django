@@ -45,4 +45,7 @@ urlpatterns = [
 
     path('get/qn/all_submit',get_qn_all_submit),
 
+    path('cross/analysis',cross_analysis),
+    path('get/qn/question/analysis',get_qn_question),
+
 ]
