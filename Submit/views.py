@@ -1423,3 +1423,15 @@ def get_qn_question(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+# @csrf_exempt
+# def change_user_password(request):
+#     try:
+#         user_list = User.objects.all()
+#         for user in user_list:
+#             password = user.password
+#             username = user.username
+#             user.password = hash_code(password)
+#             user.save()
+#         return JsonResponse({'status_code':1})
+#     except:
+#         return JsonResponse({'status_code': 0})
