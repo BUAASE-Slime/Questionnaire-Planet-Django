@@ -15,7 +15,6 @@ from Qn.models import *
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-
 utc = pytz.UTC
 
 IS_LINUX = False
@@ -23,6 +22,7 @@ try:
     import pythoncom
 except:
     IS_LINUX = True
+
 
 # Create your views here.
 
@@ -107,11 +107,13 @@ def recover_survey_from_delete(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 def produce_time(example):
     if example is None or example == '':
         return False
     else:
         return True
+
 
 def get_qn_data(qn_id):
     id = qn_id
@@ -199,6 +201,7 @@ def delete_survey_real(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def get_survey_details(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -211,6 +214,7 @@ def get_survey_details(request):
             id = survey_form.cleaned_data.get('qn_id')
             try:
                 survey = Survey.objects.get(survey_id=id)
+                print(survey.survey_id)
             except:
                 response = {'status_code': -2, 'message': '问卷不存在'}
                 return JsonResponse(response)
@@ -269,6 +273,7 @@ def delete_question(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def delete_option(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -286,6 +291,7 @@ def delete_option(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
 
 # username title description type
 @csrf_exempt
@@ -333,6 +339,7 @@ def create_qn(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
+
 
 @csrf_exempt
 def create_option(question, content, sequence):
@@ -406,9 +413,6 @@ def save_qn(request):
         survey.title = req['title']
         survey.description = req['description']
         survey.type = req['type']
-        # print(req['finish_time'])
-        # if req['finish_time'] != '' and req['finish_time'] is not None:
-        #     survey.finished_time = req['finish_time']
         survey.save()
         question_list = req['questions']
 
@@ -425,7 +429,6 @@ def save_qn(request):
                                     score=question['score'],
                                     options=question['options'],
                                     sequence=question['id'],
-                                    # right_answer=question['refer'],
                                     )
 
         survey.question_num = question_num
@@ -435,7 +438,7 @@ def save_qn(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
 
 
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence):
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point):
     question = Question()
     try:
         question.title = title
@@ -447,6 +450,8 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         question.raw = raw
         question.score = score
         question.sequence = sequence
+        question.score = point
+        question.right_answer =refer
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
         return JsonResponse(response)
@@ -547,6 +552,7 @@ def pause_qn(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def finish_qn(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -562,7 +568,7 @@ def finish_qn(request):
             if survey.is_deleted == True:
                 response = {'status_code': 4, 'message': '问卷已经放入回收站'}
                 return JsonResponse(response)
-            if survey.is_finished :
+            if survey.is_finished:
                 response = {'status_code': 5, 'message': '问卷已经停止回收'}
                 return JsonResponse(response)
             survey.is_finished = True
@@ -581,8 +587,10 @@ def finish_qn(request):
 
 
 from docx.enum.style import WD_STYLE_TYPE
-from  docx.oxml.ns import  qn
+from docx.oxml.ns import qn
 from docx import *
+
+
 @csrf_exempt
 def TestDocument(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -596,12 +604,11 @@ def TestDocument(request):
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
 
-            document,f,docx_title,_= qn_to_docx(id)
-
+            document, f, docx_title, _ = qn_to_docx(id)
 
             response['filename'] = docx_title
-            response['docx_url'] = djangoProject.settings.WEB_ROOT+"/media/Document/"+docx_title
-            #TODO: 根据实时文件位置设置url
+            response['docx_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + docx_title
+            # TODO: 根据实时文件位置设置url
             survey.docx_url = response['docx_url']
             survey.save()
             response['b64data'] = base64.b64encode(f.getvalue()).decode()
@@ -618,21 +625,22 @@ def TestDocument(request):
         return JsonResponse(response)
 
 
-
 # 根据问卷id传递文件格式返回上一个函数。具体正在写。
-#只要文件能打开就好写了
+# 只要文件能打开就好写了
 import hashlib
+
 
 def hash_code(s, salt='Qn'):  # generate s+salt into hash_code (default: salt=online publish)
     h = hashlib.sha256()
     s += salt
     h.update(s.encode())  # update method get bytes(type)
     return h.hexdigest()
-def qn_to_docx(qn_id):
 
+
+def qn_to_docx(qn_id):
     document = Document()
     survey = Survey.objects.get(survey_id=qn_id)
-    docx_title = survey.title+'_'+str(survey.username)+'_' + str(qn_id)+".docx"
+    docx_title = survey.title + '_' + str(survey.username) + '_' + str(qn_id) + ".docx"
 
     # code = hash_code(str(survey.username),str(qn_id))
 
@@ -646,13 +654,13 @@ def qn_to_docx(qn_id):
     document.styles['Song']._element.rPr.rFonts.set(qn('w:eastAsia'), u'宋体')
     # document.add_paragraph().add_run('第二个段落，abcDEFg，这是中文字符', style='Song')
 
-    document.add_heading(survey.title,0)
+    document.add_heading(survey.title, 0)
 
     paragraph_list = []
 
     paragraph = document.add_paragraph().add_run(survey.description, style='Song')
 
-    introduction = "本问卷已经收集了"+str(survey.recycling_num)+"份，共计"+str(survey.question_num)+"个问题"
+    introduction = "本问卷已经收集了" + str(survey.recycling_num) + "份，共计" + str(survey.question_num) + "个问题"
     paragraph = document.add_paragraph().add_run(introduction, style='Song')
     paragraph_list.append(paragraph)
 
@@ -670,9 +678,9 @@ def qn_to_docx(qn_id):
             type_str = '填空题'
         elif type == 'mark':
             type_str = '评分题'
-        document.add_paragraph().add_run(str(i)+"、"+question.title+"("+type_str+")",style='Song')
+        document.add_paragraph().add_run(str(i) + "、" + question.title + "(" + type_str + ")", style='Song')
 
-        i+=1
+        i += 1
         options = Option.objects.filter(question_id=question)
         option_option = 0
         num = 1
@@ -683,12 +691,12 @@ def qn_to_docx(qn_id):
 
             if question.type in ['checkbox', 'radio']:
                 # option_str += alphas[option_option] + " :  "
-                option_str += "选项 "+str(num) + " :  "
+                option_str += "选项 " + str(num) + " :  "
                 option_option += 1
                 num += 1
 
             option_str += option.content
-            document.add_paragraph().add_run(option_str,style='Song')
+            document.add_paragraph().add_run(option_str, style='Song')
         if question.type in ['mark', 'text']:
             document.add_paragraph(' ')
 
@@ -700,33 +708,33 @@ def qn_to_docx(qn_id):
     document.save(f)
     # document.save(save_path)
 
-    docx_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"
+    docx_path = djangoProject.settings.MEDIA_ROOT + "\Document\\"
     if IS_LINUX:
         docx_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
 
     print(docx_path)
-    document.save(docx_path+docx_title)
+    document.save(docx_path + docx_title)
 
-
-
-    return document,f,docx_title,docx_path
+    return document, f, docx_title, docx_path
 
 
 from docx2pdf import convert
 
+
 def qn_to_pdf(qn_id):
-    document,_,docx_title,docx_path = qn_to_docx(qn_id)
-    input_file = docx_path+docx_title
-    out_file = docx_path+docx_title.replace('.docx','.pdf')
-    pdf_title = docx_title.replace('.docx','.pdf')
+    document, _, docx_title, docx_path = qn_to_docx(qn_id)
+    input_file = docx_path + docx_title
+    out_file = docx_path + docx_title.replace('.docx', '.pdf')
+    pdf_title = docx_title.replace('.docx', '.pdf')
     try:
         import pythoncom
         pythoncom.CoInitialize()
-        convert(input_file,out_file)
+        convert(input_file, out_file)
     except:
-        doc2pdf_linux(input_file,docx_path)
+        doc2pdf_linux(input_file, docx_path)
 
     return pdf_title
+
 
 @csrf_exempt
 def pdf_document(request):
@@ -758,7 +766,10 @@ def pdf_document(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 import xlwt
+
+
 def write_submit_to_excel(qn_id):
     qn = Survey.objects.get(survey_id=qn_id)
     submit_list = Submit.objects.filter(survey_id=qn)
@@ -766,20 +777,20 @@ def write_submit_to_excel(qn_id):
     xls = xlwt.Workbook()
     sht1 = xls.add_sheet("Sheet1")
 
-    sht1.write(0,0,"序号")
-    sht1.write(0,1,"提交者")
+    sht1.write(0, 0, "序号")
+    sht1.write(0, 1, "提交者")
     sht1.write(0, 2, "提交时间")
     question_list = Question.objects.filter(survey_id=qn)
     question_num = len(question_list)
     i = 1
 
     for question in question_list:
-        sht1.write(0, 2+i, str(i)+"、"+question.title)
+        sht1.write(0, 2 + i, str(i) + "、" + question.title)
         i += 1
 
     id = 1
     for submit in submit_list:
-        sht1.write(id,0,id)
+        sht1.write(id, 0, id)
         username = submit.username
         if username == '' or username is None:
             username = "匿名用户"
@@ -789,21 +800,22 @@ def write_submit_to_excel(qn_id):
         for question in question_list:
             answer_str = ""
             try:
-                answer = Answer.objects.get(submit_id=submit,question_id=question)
+                answer = Answer.objects.get(submit_id=submit, question_id=question)
                 answer_str = answer.answer
             except:
                 answer_str = ""
-            sht1.write(id, 2+question_num,answer_str)
+            sht1.write(id, 2 + question_num, answer_str)
 
             question_num += 1
 
         id += 1
-    save_path = djangoProject.settings.MEDIA_ROOT+"\Document\\"
+    save_path = djangoProject.settings.MEDIA_ROOT + "\Document\\"
     if IS_LINUX:
         save_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
-    excel_name = qn.title+"问卷的统计信息"+".xls"
-    xls.save(save_path+excel_name)
+    excel_name = qn.title + "问卷的统计信息" + ".xls"
+    xls.save(save_path + excel_name)
     return excel_name
+
 
 @csrf_exempt
 def export_excel(request):
@@ -817,10 +829,10 @@ def export_excel(request):
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
-            # username = qn.username
-            # if request.session['username'] != username:
-            #     response = {'status_code': 0, 'message': '没有访问权限'}
-            #     return JsonResponse(response)
+            username = qn.username
+            if request.session['username'] != username:
+                response = {'status_code': 0, 'message': '没有访问权限'}
+                return JsonResponse(response)
             try:
                 submit_list = Submit.objects.filter(survey_id=qn)
                 # 找不到问卷提交
@@ -835,6 +847,7 @@ def export_excel(request):
 
             response['excel_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + excel_name
             qn.excel_url = response['excel_url']
+            response['excel_name'] = excel_name
 
             return JsonResponse(response)
 
@@ -858,20 +871,23 @@ def duplicate_qn(request):
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
-            new_qn = Survey(title=qn.title,description=qn.description,question_num=0,recycling_num=0,username=qn.username,type=qn.type)
+            new_qn = Survey(title=qn.title+"-副本", description=qn.description, question_num=qn.question_num, recycling_num=0,
+                            username=qn.username, type=qn.type)
 
             new_qn.save()
             new_qn_id = new_qn.survey_id
             questions = Question.objects.filter(survey_id=qn)
             for question in questions:
-                new_question = Question(title=question.title,direction=question.direction,is_must_answer=question.is_must_answer,
-                                        sequence=question.sequence,option_num=question.option_num,score=question.score,raw=question.raw,
-                                        type=question.type,survey_id=new_qn)
+                new_question = Question(title=question.title, direction=question.direction,
+                                        is_must_answer=question.is_must_answer,
+                                        sequence=question.sequence, option_num=question.option_num,
+                                        score=question.score, raw=question.raw,
+                                        type=question.type, survey_id=new_qn)
                 new_question.save()
                 options = Option.objects.filter(question_id=question)
 
                 for option in options:
-                    new_option = Option(content=option.content,question_id=new_question,order=option.order)
+                    new_option = Option(content=option.content, question_id=new_question, order=option.order)
                     new_option.save()
 
             print(new_qn_id)
@@ -885,6 +901,8 @@ def duplicate_qn(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
+@csrf_exempt
 def empty_qn_all_Submit(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
@@ -900,8 +918,6 @@ def empty_qn_all_Submit(request):
             if request.session['username'] != username:
                 response = {'status_code': 0, 'message': '没有访问权限'}
                 return JsonResponse(response)
-            qn.recycling_num = 0
-            qn.save()
 
             submit_list = Submit.objects.filter(survey_id=qn.survey_id)
             for submit in submit_list:
@@ -915,19 +931,25 @@ def empty_qn_all_Submit(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 import subprocess
+
+
 def doc2pdf_linux(docPath, pdfPath):
     """
     convert a doc/docx document to pdf format (linux only, requires libreoffice)
     :param doc: path to document
     """
-    cmd = 'libreoffice7.0 --headless --invisible  --convert-to pdf:writer_pdf_Export'.split() + [docPath] + ['--outdir'] + [pdfPath]
+    cmd = 'libreoffice7.0 --headless --invisible  --convert-to pdf:writer_pdf_Export'.split() + [docPath] + [
+        '--outdir'] + [pdfPath]
     print(cmd)
     p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     p.wait(timeout=30)
     stdout, stderr = p.communicate()
     if stderr:
         raise subprocess.SubprocessError(stderr)
+
+
 # def doc2pdf_linux(docPath, pdfPath):
 #     """
 #     convert a doc/docx document to pdf format (linux only, requires libreoffice)
@@ -940,12 +962,12 @@ def doc2pdf_linux(docPath, pdfPath):
 #     if stderr:
 #         raise subprocess.SubprocessError(stderr)
 
-def question_dict_to_question(question,question_dict):
+def question_dict_to_question(question, question_dict):
     # question = Question()#TODO delete
     question.title = question_dict['title']
     print(question_dict)
-    question.direction = question_dict['direction']
-    question.is_must_answer=question_dict['must']
+    question.direction = question_dict['description']
+    question.is_must_answer = question_dict['must']
     question.type = question_dict['type']
     # qn_id =  question_dict['qn_id']
     # question.survey_id = Survey.objects.get(survey_id=qn_id)
@@ -962,9 +984,8 @@ def question_dict_to_question(question,question_dict):
     # print("options") ,print(options)
     print(option_list)
 
-
     for item in option_list:
-        print("item",end=" ")
+        print("item", end=" ")
         print(item)
         content = item['title']
         sequence = item['id']
@@ -998,6 +1019,10 @@ def save_qn_keep_history(request):
         if survey.description == '':
             survey.description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
         survey.type = req['type']
+        if req['type'] == '2':
+            # 如果问卷是考试问卷
+            survey.finished_time =req['finished_time']
+
         survey.save()
         question_list = req['questions']
 
@@ -1028,13 +1053,18 @@ def save_qn_keep_history(request):
                 question_dict['question_id'] = question_dict['question_id']
             except:
                 question_dict['question_id'] = 0
+            refer = ''
+            point = 0
+            if req['type'] == '2':
+                refer = req['refer']
+                point = req['point']
 
             if question_dict['question_id'] == 0:
-                create_question_in_save(question_dict['title'], question_dict['direction'], question_dict['must']
+                create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
                                         , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
                                         score=question_dict['score'],
                                         options=question_dict['options'],
-                                        sequence=question_dict['id']
+                                        sequence=question_dict['id'],refer=refer,point=point
                                         )
                 # 添加问题
 
@@ -1044,6 +1074,7 @@ def save_qn_keep_history(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
+
 
 @csrf_exempt
 def get_answer_from_submit(request):
@@ -1061,7 +1092,7 @@ def get_answer_from_submit(request):
                 response = {'status_code': 2, 'message': '答卷不存在'}
                 return JsonResponse(response)
 
-            #TODO
+            # TODO
             # if request.session['username'] != username:
             #     response = {'status_code': 0, 'message': '没有访问权限'}
             #     return JsonResponse(response)
@@ -1091,7 +1122,7 @@ def get_answer_from_submit(request):
                 item['question_id'] = answer.question_id.question_id
                 item['submit_id'] = id
                 answers.append(item)
-            #TODO
+            # TODO
             response['answers'] = answers
             return JsonResponse(response)
 
@@ -1101,7 +1132,6 @@ def get_answer_from_submit(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
-
 
 
 # 当天回收，当周，总税收，前五天的返回时间返回日期
@@ -1118,7 +1148,7 @@ def get_qn_recycling_num(request):
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
             username = qn.username
-            #TODO
+            # TODO
             # if request.session['username'] != username:
             #     response = {'status_code': 0, 'message': '没有访问权限'}
             #     return JsonResponse(response)
@@ -1135,19 +1165,19 @@ def get_qn_recycling_num(request):
                 print(the_day)
                 day_list.append(the_day)
             print(today)
-            num_day = len(Submit.objects.filter(survey_id=qn,submit_time__gte=today))
-            num_week = len(Submit.objects.filter(survey_id=qn,submit_time__gte=a_week_ago))
+            num_day = len(Submit.objects.filter(survey_id=qn, submit_time__gte=today))
+            num_week = len(Submit.objects.filter(survey_id=qn, submit_time__gte=a_week_ago))
 
-            response['num_week'] =num_week
+            response['num_week'] = num_week
             response['num_day'] = num_day
             response['num_all'] = num_all
 
             dates = []
             nums = []
-            for i in range(4,-1,-1):
+            for i in range(4, -1, -1):
                 before = today - datetime.timedelta(days=i)
-                after = today - datetime.timedelta(days=i-1)
-                num = len(Submit.objects.filter(survey_id=qn,submit_time__gte=before,submit_time__lte=after))
+                after = today - datetime.timedelta(days=i - 1)
+                num = len(Submit.objects.filter(survey_id=qn, submit_time__gte=before, submit_time__lte=after))
                 nums.append(num)
                 date_str = before.strftime("%m.%d")
                 if date_str[0] == '0':
@@ -1164,6 +1194,7 @@ def get_qn_recycling_num(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
 
 @csrf_exempt
 def delete_submit(request):
@@ -1200,6 +1231,7 @@ def delete_submit(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def get_qn_all_submit(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -1221,9 +1253,11 @@ def get_qn_all_submit(request):
             print(question_sum)
             submits = []
             submit_list = Submit.objects.filter(survey_id=qn.survey_id)
+            i = 1
             for submit in submit_list:
                 item = {}
-                item['submit_id'] = submit.submit_id
+                item['num'] = i
+                i += 1
                 item['submit_id'] = submit.submit_id
                 item['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
                 item['username'] = submit.username
@@ -1233,7 +1267,7 @@ def get_qn_all_submit(request):
 
                 answer_num = len(Answer.objects.filter(submit_id=submit))
                 item['answer_num'] = answer_num
-                item['answer_percent'] = int((float(answer_num)/question_sum)*100)
+                item['answer_percent'] = str(int((float(answer_num) / question_sum) * 100)) + '%'
                 submits.append(item)
 
             response['submits'] = submits
@@ -1246,45 +1280,6 @@ def get_qn_all_submit(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
-from utils.toHash import hash_code
-import random
-@csrf_exempt
-def change_code(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        survey_form = SurveyIdForm(request.POST)
-        if survey_form.is_valid():
-            id = survey_form.cleaned_data.get('qn_id')
-            try:
-                qn = Survey.objects.get(survey_id=id)
-            except:
-                response = {'status_code': 2, 'message': '问卷不存在'}
-                return JsonResponse(response)
-            #TODO
-            # username = qn.username
-            # if request.session['username'] != username:
-            #     response = {'status_code': 0, 'message': '没有访问权限'}
-            #     return JsonResponse(response)
-
-            if qn.share_url == '':
-                response = {'status_code': 3, 'message': '尚未存在分享链接'}
-                return JsonResponse(response)
-            raw_code = hash_code(qn.username, str(id))
-            code = ""
-            raw_code_len = len(raw_code)
-            for i in range(20):
-                code += raw_code[random.randint(0,raw_code_len-1)]
-            qn.share_url = code
-            qn.save()
-
-            return JsonResponse(response)
-
-        else:
-            response = {'status_code': -1, 'message': 'invalid form'}
-            return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': '请求错误'}
-        return JsonResponse(response)
 
 @csrf_exempt
 def cross_analysis(request):
@@ -1301,39 +1296,62 @@ def cross_analysis(request):
                 response = {'status_code': 2, 'message': '问题不存在'}
                 return JsonResponse(response)
             qn = question_1.survey_id
-            num_list = [[int(0) for x in range(0, question_1.option_num++7)] for y in range(0, question_2.option_num+7)]
+            num_list = [[int(0) for x in range(0, question_1.option_num + +7)] for y in
+                        range(0, question_2.option_num + 7)]
             submit_list = Submit.objects.filter(survey_id=qn)
             option_list1 = Option.objects.filter(question_id=question_1)
             option_list2 = Option.objects.filter(question_id=question_2)
             for option in option_list1:
-                print(option.content,end=" ")
+                print(option.content, end=" ")
             print()
             for option in option_list2:
-                print(option.content,end=" ")
+                print(option.content, end=" ")
 
             # for submit in submit_list:
             #
             #     answer_list = Answer.objects.filter(submit_id=submit)
             #     i = 1; j = 1;
 
-            i=1
-            for option in option_list1:
-                # answer_list = Answer.objects.all()
-                answers = []
-                for answer in Answer.objects.all():
-                    if answer.question_id.survey_id == question_1.survey_id:
-                        answers.append(answer)
-                for answer in answers:
-                    if answer.answer.find(option.content) >= 0:
-                        # submit = answer.submit_id
-                        answer_q2_list = Answer.objects.filter(submit_id=answer.submit_id,question_id=question_2)
-                        for answer_q2 in answer_q2_list:
-                            j = 1
-                            for oprion_q2 in option_list2:
-                                if answer_q2.answer.find(oprion_q2.content) >= 0:
-                                    num_list[i][j] += 1
-                                j += 1
-                i+=1
+            # i=1
+            # for option in option_list1:
+            #     # answer_list = Answer.objects.all()
+            #     answers = []
+            #     for answer in Answer.objects.all():
+            #         if answer.question_id.survey_id == question_1.survey_id:
+            #             answers.append(answer)
+            #     for answer in answers:
+            #         if answer.answer.find(option.content) >= 0:
+            #             # submit = answer.submit_id
+            #             answer_q2_list = Answer.objects.filter(submit_id=answer.submit_id,question_id=question_2)
+            #             for answer_q2 in answer_q2_list:
+            #                 j = 1
+            #                 for oprion_q2 in option_list2:
+            #                     if answer_q2.answer.find(oprion_q2.content) >= 0:
+            #                         num_list[i][j] += 1
+            #                     j += 1
+            #     i+=1
+
+            submit_list = Submit.objects.filter(survey_id=qn)
+            for submit in submit_list:
+                answer1 = Answer.objects.get(submit_id=submit, question_id=question_1)
+                answer2 = Answer.objects.get(submit_id=submit, question_id=question_2)
+                selection_x = []
+                selection_y = []
+
+                i = 1
+                for option in option_list1:
+                    if answer1.answer.find(option.content) >= 0:
+                        selection_x.append(i)
+                    i += 1
+
+                j = 1
+                for option in option_list2:
+                    if answer2.answer.find(option.content) >= 0:
+                        selection_y.append(j)
+                    j += 1
+                for i in selection_x:
+                    for j in selection_y:
+                        num_list[i][j] += 1
 
             tableData = []
             tableHead = []
@@ -1341,38 +1359,37 @@ def cross_analysis(request):
             item['column_name'] = "column_0"
             item['column_comment'] = "子问题"
             tableHead.append(item)
-            j=1
+            j = 1
             for option in option_list2:
                 item = {}
                 item['column_name'] = "column_{}".format(j)
                 item['column_comment'] = option.content
                 tableHead.append(item)
-                j+=1
-
+                j += 1
 
             # tableData.append(item)
             i = 1
             for option in option_list1:
                 item = {}
                 sum = 0
-                for kk in range(len(option_list2)+1):
+                for kk in range(len(option_list2) + 1):
                     sum += num_list[i][kk]
                 item['column_0'] = option.content
-                for j in range(1,len(option_list2)+1):
+                for j in range(1, len(option_list2) + 1):
                     recycling_num = qn.recycling_num
                     if recycling_num == 0:
                         recycling_num = 1
                     if sum == 0:
                         ret = "0(0%)"
                     else:
-                        ret = str(num_list[i][j]) + "("+str(int(num_list[i][j]*100/sum))+"%)"
+                        ret = str(num_list[i][j]) + "(" + str(int(num_list[i][j] * 100 / sum)) + "%)"
 
                     item['column_{}'.format(j)] = ret
                 i += 1
                 tableData.append(item)
             response['tableHead'] = tableHead
             response['tableData'] = tableData
-            # response['num_list'] = num_list
+            response['num_list'] = num_list
             return JsonResponse(response)
 
         else:
@@ -1381,6 +1398,7 @@ def cross_analysis(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
 
 @csrf_exempt
 def get_qn_question(request):
@@ -1404,16 +1422,16 @@ def get_qn_question(request):
             questions = []
             for question in question_list:
 
-                if question.type in ['radio','checkbox']:
+                if question.type in ['radio', 'checkbox']:
                     item = {}
                     item['value1'] = item['value2'] = i
-                    i+=1
+                    i += 1
                     item['label'] = question.title
                     item['question_id'] = question.question_id
                     questions.append(item)
             response['questions'] = questions
 
-            return  JsonResponse(response)
+            return JsonResponse(response)
 
 
         else:
@@ -1423,15 +1441,85 @@ def get_qn_question(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
-# @csrf_exempt
-# def change_user_password(request):
-#     try:
-#         user_list = User.objects.all()
-#         for user in user_list:
-#             password = user.password
-#             username = user.username
-#             user.password = hash_code(password)
-#             user.save()
-#         return JsonResponse({'status_code':1})
-#     except:
-#         return JsonResponse({'status_code': 0})
+
+@csrf_exempt
+def submit_reporter(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            print("用户请求查看问卷 " + str(id) + " 的数据")
+            question_list = Question.objects.filter(survey_id=id)
+            questions = []
+            for question in question_list:
+                item = {}
+                item['id'] = question.sequence
+                item['title'] = question.title
+                item['type'] = question.type
+                item['row'] = question.raw
+                item['score'] = question.score
+                item['must'] = question.is_must_answer
+                answer_list = Answer.objects.filter(question_id=question)
+                option_list = Option.objects.filter(question_id=question)
+                option_contnet_list = []
+                for option in option_list:
+                    option_contnet_list.append(option.content)
+                options = []
+                if item['type'] in ['checkbox', 'radio']:
+                    option_list = Option.objects.filter(question_id=question)
+                    for option in option_list:
+                        dict = {}
+                        dict['id'] = option.order
+                        dict['title'] = option.content
+                        dict['choosed'] = 0
+                        options.append(dict)
+
+                    for answer in answer_list:
+                        i=0
+                        for option_title in option_contnet_list:
+                            if answer.answer.find(option_title)>=0:
+                                options[i]['choosed'] += 1
+                            i += 1
+
+
+                elif item['type'] == 'text':
+                    tableData = []
+                    num = 1
+                    for answer in answer_list:
+                        dict = {}
+                        dict['num'] = num
+                        dict['answer'] = answer.answer
+                        tableData.append(dict)
+                        num += 1
+                    item['tableData'] = tableData
+
+                elif item['type'] == 'mark':
+                    options= []
+
+                    for i in range(1,question.score+1):
+                        dict = {}
+                        dict['title'] = i
+                        dict['choosed'] = 0
+                        options.append(dict)
+                    for answer in answer_list:
+                        try:
+                            score = int(answer.answer)
+                        except:
+                            return JsonResponse({'status_code':5,'message':'得分不是整数'})
+                        options[score-1]['choosed'] += 1
+                    item['options'] = options
+
+                item['options'] = options
+                questions.append(item)
+                print('success')
+                response['questions'] = questions
+            return JsonResponse(response)
+
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)

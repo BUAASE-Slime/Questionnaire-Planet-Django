@@ -1,15 +1,15 @@
+import random
+
 from django.conf import settings
 from django.http import JsonResponse
 import re
 import datetime
 import pytz
 from django.views.decorators.csrf import csrf_exempt
-from drf_yasg import openapi
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
 from userinfo.models import ConfirmString
-from utils.sendEmail import make_confirm_string, send_email_confirm
+from utils.sendEmail import *
 from userinfo.models import User
 
 from .form import *
@@ -19,26 +19,11 @@ utc = pytz.UTC
 
 # Create your views here.
 
-class _Params:
-    USERNAME = openapi.Parameter('username', openapi.TYPE_STRING, description='用户名', type=openapi.TYPE_STRING)
-    PASSWORD = openapi.Parameter('password', openapi.TYPE_STRING, description='密码', type=openapi.TYPE_STRING)
-    PASSWORD1 = openapi.Parameter('password1', openapi.TYPE_STRING, description='密码', type=openapi.TYPE_STRING)
-    PASSWORD2 = openapi.Parameter('password2', openapi.TYPE_STRING, description='确认密码', type=openapi.TYPE_STRING)
-    EMAIL = openapi.Parameter('email', openapi.TYPE_STRING, description='邮箱地址', type=openapi.TYPE_STRING)
-    CODE = openapi.Parameter('code', openapi.TYPE_STRING, description='邮箱验证码', type=openapi.TYPE_STRING)
-
-
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['用户登录注册相关'],
-                     operation_summary='登录',
-                     responses={200: '登录成功', 401: '用户重复登录', 402: '用户名不存在', 403: '密码错误', 404: '用户未经过邮箱确认', 405: '表单格式错误，即用户名或密码不符合规则'},
-                     manual_parameters=[_Params.USERNAME, _Params.PASSWORD]
-                     )
 @api_view(['POST'])
 def login(request):
     if request.session.get('is_login'):  # login repeatedly not allowed
-        return JsonResponse({'status_code': 401})
+        return JsonResponse({'status_code': 2})
 
     login_form = LoginForm(request.POST)
 
@@ -49,34 +34,26 @@ def login(request):
         try:
             user = User.objects.get(username=username)
         except:
-            return JsonResponse({'status_code': 402})
+            return JsonResponse({'status_code': 3})
 
-        if user.password == password:
+        if user.password == hash_code(password):
             request.session['is_login'] = True
             request.session['username'] = username
 
-            print(username)
-            print(request.session['username'])
+            print(username + " 登录成功")
 
             if not user.has_confirmed:
-                return JsonResponse({'status_code': 404})
+                return JsonResponse({'status_code': 5})
 
-            return JsonResponse({'status_code': 200})
+            return JsonResponse({'status_code': 1})
 
         else:
-            return JsonResponse({'status_code': 403})
+            return JsonResponse({'status_code': 4})
 
-    return JsonResponse({'status_code': 405})
+    return JsonResponse({'status_code': -1})
 
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['用户登录注册相关'],
-                     operation_summary='注册',
-                     responses={200: '注册成功', 401: '用户名已存在', 402: '邮箱已注册或不可用', 403: '密码不符合规则，至少同时包含字母和数字，且长度为 8-18', 404: '两次输入的密码不同', 405: '邮件验证码发送失败', 406: '表单格式错误'},
-                     manual_parameters=[_Params.USERNAME, _Params.EMAIL, _Params.PASSWORD1, _Params.PASSWORD2]
-                     )
-@api_view(['POST'])
 def register(request):
     register_form = RegisterForm(request.POST)
 
@@ -88,23 +65,23 @@ def register(request):
 
         same_name_user = User.objects.filter(username=username)
         if same_name_user:
-            return JsonResponse({'status_code': 401})
+            return JsonResponse({'status_code': 2})
 
         same_email_user = User.objects.filter(email=email)
         if same_email_user:
-            return JsonResponse({'status_code': 402})
+            return JsonResponse({'status_code': 3})
 
         # 检测密码不符合规范：8-18，英文字母+数字
         if not re.match('^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{8,18}$', password1):
-            return JsonResponse({'status_code': 403})
+            return JsonResponse({'status_code': 4})
 
         if password1 != password2:
-            return JsonResponse({'status_code': 404})
+            return JsonResponse({'status_code': 5})
 
         # 成功
         new_user = User()
         new_user.username = username
-        new_user.password = password1
+        new_user.password = hash_code(password1)
         new_user.email = email
         new_user.save()
 
@@ -116,21 +93,15 @@ def register(request):
             send_email_confirm(email, code)
         except:
             new_user.delete()
-            return JsonResponse({'status_code': 405})
+            return JsonResponse({'status_code': 6})
 
-        return JsonResponse({'status_code': 200})
+        return JsonResponse({'status_code': 1})
 
     else:
-        return JsonResponse({'status_code': 406})
+        return JsonResponse({'status_code': -1})
 
 
 @csrf_exempt
-@swagger_auto_schema(method='get',
-                     operation_summary='登出',
-                     tags=['用户登录注册相关'],
-                     responses={200: '退出登录成功', 401: '用户未登录'},
-                     )
-@api_view(['GET'])
 def logout(request):
     if not request.session.get('is_login', None):
         return JsonResponse({'status_code': 401})
@@ -141,88 +112,127 @@ def logout(request):
     return JsonResponse({'status_code': 200})
 
 
-
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     operation_summary='邮箱验证',
-                     tags=['用户登录注册相关'],
-                     operation_description='根据网址路径的验证码，验证用户邮箱',
-                     responses={200: '验证成功', 401: '验证码错误', 402: '验证码已过期，要求用户重新注册'},
-                     manual_parameters=[_Params.CODE]
-                     )
-@api_view(['POST'])
 def user_confirm(request):
     if request.method == 'POST':
         code = request.POST.get('code')  # get code from url (?code=..)
         try:
             confirm = ConfirmString.objects.get(code=code)
         except:
-            return JsonResponse({'status_code': 401})
+            return JsonResponse({'status_code': 2})
 
         c_time = confirm.c_time.replace(tzinfo=utc)
         now = datetime.datetime.now().replace(tzinfo=utc)
         if now > c_time + datetime.timedelta(settings.CONFIRM_DAYS):
             confirm.user.delete()
-            return JsonResponse({'status_code': 402})
+            return JsonResponse({'status_code': 3})
         else:
             confirm.user.has_confirmed = True
             confirm.user.save()
             confirm.delete()
-            return JsonResponse({'status_code': 200})
+            return JsonResponse({'status_code': 1})
 
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     operation_summary='重新发送验证邮件',
-                     tags=['用户登录注册相关'],
-                     operation_description='已注册用户但未经过邮箱验证，会跳转到一个页面，用户可在该页面上选择重新发送邮件',
-                     responses={200: '重新发送验证邮件成功', 401: '用户未登录', 402: '用户已验证，无需重复验证', 403:
-                                '邮件发送失败'},
-                     manual_parameters=[_Params.CODE]
-                     )
-@api_view(['POST'])
-def unverified_email(request):
+def send_unverified_email(request):
     try:
         this_user = User.objects.get(username=request.session['username'])
     except:
-        return JsonResponse({'status_code': 401})
+        return JsonResponse({'status_code': 2})
 
     if this_user.has_confirmed:
-        return JsonResponse({'status_code': 402})
+        return JsonResponse({'status_code': 3})
 
     try:
         code = ConfirmString.objects.get(user_id=this_user.id).code
         send_email_confirm(this_user.email, code)
     except:
         this_user.delete()
-        return JsonResponse({'status_code': 403})
+        return JsonResponse({'status_code': 4})
 
-    return JsonResponse({'status_code': 200})
-
+    return JsonResponse({'status_code': 1})
 
 
 @csrf_exempt
-def change_passwords(request):
-    response = {'status_code': 1, 'message': 'success'}
+def change_email(request):
+    email = request.POST.get("email")
+    code = request.POST.get("code")
+
+    if User.objects.filter(email=email):
+        return JsonResponse({'status_code': 4})
+
+    try:
+        confirm = ConfirmString.objects.get(code=code)
+    except:
+        return JsonResponse({'status_code': 2})
+
+    c_time = confirm.c_time.replace(tzinfo=utc)
+    now = datetime.datetime.now().replace(tzinfo=utc)
+    if now > c_time + datetime.timedelta(settings.CONFIRM_DAYS):
+        return JsonResponse({'status_code': 3})
+    else:
+        confirm.user.has_confirmed = True
+        confirm.user.email = email
+        confirm.user.save()
+        confirm.delete()
+        return JsonResponse({'status_code': 1})
+
+
+@csrf_exempt
+def send_code(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+
+        if User.objects.filter(email=email):
+            return JsonResponse({'status_code': 4})
+
+        user = User.objects.get(username=request.session.get('username'))
+        code = ""
+        for i in range(6):
+            ch = chr(random.randrange(ord('0'), ord('9') + 1))
+            code += ch
+
+        if ConfirmString.objects.filter(user=user):
+            cs = ConfirmString.objects.get(user=user)
+            cs.delete()
+
+        ConfirmString.objects.create(code=code, user=user, )
+        print(user.username + "申请更改邮箱地址，生成随机码为 " + code)
+
+        try:
+            send_email_change_confirm(email=email, code=code)
+            return JsonResponse({'status_code': 1})
+        except:
+            return JsonResponse({'status_code': 2})
+    return JsonResponse({'status_code': 3})
+
+
+@csrf_exempt
+def change_password(request):
     if request.method == 'POST':
         password_form = ChangePasswordForm(request.POST)
         if password_form.is_valid():
             try:
                 this_user = User.objects.get(username=request.session['username'])
             except:
-                return JsonResponse({'status_code': 401})
+                return JsonResponse({'status_code': 0})
             old_password = password_form.cleaned_data.get('old_password')
             new_password_1 = password_form.cleaned_data.get('new_password_1')
             new_password_2 = password_form.cleaned_data.get('new_password_2')
+            if this_user.password != hash_code(old_password):
+                return JsonResponse({'status_code': 4})
             if new_password_1 != new_password_2:
-                response = {'status_code': 402, 'message': '两次输入的密码不同'}
+                response = {'status_code': 2, 'message': '两次输入的密码不同'}
                 return JsonResponse(response)
+            # 检测密码不符合规范：8-18，英文字母+数字
+            if not re.match('^(?![0-9]+$)(?![a-zA-Z]+$)[0-9A-Za-z]{8,18}$', new_password_1):
+                return JsonResponse({'status_code': 5})
             if new_password_1 == old_password:
-                response = {'status_code': 403, 'message': '新旧密码相同'}
+                response = {'status_code': 3, 'message': '新旧密码相同'}
                 return JsonResponse(response)
-            this_user.password = new_password_1
+            this_user.password = hash_code(new_password_1)
             this_user.save()
-            return JsonResponse({'status_code': 200, 'message': 'success'})
+            return JsonResponse({'status_code': 1, 'message': 'success'})
 
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
@@ -233,27 +243,35 @@ def change_passwords(request):
 
 
 @csrf_exempt
-def change_email(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        email_form = ChangeEmailForm(request.POST)
-        if email_form.is_valid():
-            try:
-                this_user = User.objects.get(username=request.session['username'])
-            except:
-                return JsonResponse({'status_code': 401})
-            email = email_form.cleaned_data.get('email')
-            if email == this_user.email:
-                response = {'status_code': 403, 'message': '新旧邮箱相同'}
-                return JsonResponse(response)
-            this_user.has_confirmed = False
-            this_user.email = email
-            this_user.save()
-            return JsonResponse({'status_code': 200, 'message': 'success'})
+def get_userinfo(request):
+    if not request.session.get('is_login'):
+        return JsonResponse({'status_code': 3})
+    username = request.session.get('username')
+    print(username + " 请求进入账户设置页面")
+    try:
+        user = User.objects.get(username=username)
+    except:
+        print(username + " 进入账户设置页面失败，将清除前端登录信息")
+        return JsonResponse({'status_code': 2})
+    print(user.username + " 成功进入账户设置页面")
+    return JsonResponse({'status_code': 1, 'username': user.username, 'is_confirmed': user.has_confirmed, 'email': user.email})
 
-        else:
-            response = {'status_code': -1, 'message': 'invalid form'}
-            return JsonResponse(response)
+
+@csrf_exempt
+def confirm_userinfo(request):
+    username = request.POST.get('username')
+    print(username + " 请求验证登录信息")
+    try:
+        username_backend = request.session['username']
+        print("后端存储用户名为 " + username_backend + ", 前端存储用户名为 " + username)
+        if username_backend != username:
+            print(username + " 验证登录信息失败，将强制退出登录")
+            request.session.flush()
+            return JsonResponse({'status_code': 2})
+    except:
+        print(username + " 验证登录信息失败，将强制退出登录")
+        request.session.flush()
+        return JsonResponse({'status_code': 2})
     else:
-        response = {'status_code': -2, 'message': '请求错误'}
-        return JsonResponse(response)
+        print(username + " 验证登录信息成功")
+        return JsonResponse({'status_code': 1})

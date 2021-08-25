@@ -1,11 +1,8 @@
 import json
 
 import pytz
-from drf_yasg.openapi import *
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework.decorators import api_view
-from drf_yasg import openapi
 import datetime
+import random
 
 # Create your views here.
 from utils.toHash import hash_code
@@ -18,30 +15,8 @@ from Qn.models import *
 
 utc = pytz.UTC
 
-polygon_view_get_desc = '根据所选参数,获取问卷列表,默认按创建时间倒序'
-polygon_view_get_parm = [
-    Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号', type=TYPE_INTEGER, required=False),
-    Parameter(name='is_deleted', in_=IN_QUERY, description='是否删除', type=TYPE_BOOLEAN, required=False),
-    Parameter(name='title_key', in_=IN_QUERY, description='标题关键词', type=TYPE_STRING, required=False),
-    Parameter(name='username', in_=IN_QUERY, description='发起人用户名', type=TYPE_STRING, required=True),
-    Parameter(name='is_released', in_=IN_QUERY, description='是否发布', type=TYPE_BOOLEAN, required=False),
-    Parameter(name='is_collected', in_=IN_QUERY, description='是否收藏,', type=TYPE_BOOLEAN, required=False),
-    Parameter(name='order_item', in_=IN_QUERY, description='排序项,created_time-创建时间,release_time-发布时间,recycling_num-回收量',
-              type=TYPE_STRING, required=False),
-    Parameter(name='order_type', in_=IN_QUERY, description='排序类型,desc-倒序,asc-正序', type=TYPE_STRING, required=False),
-]
-polygon_view_get_resp = {200: '查询成功', 401: '未登录', 402: '查询失败', 403: '用户名不匹配,没有查询权限', 404: '表单不匹配'}
-
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='查询问卷列表',
-                     operation_description=polygon_view_get_desc,
-                     manual_parameters=polygon_view_get_parm,
-                     responses=polygon_view_get_resp
-                     )
-@api_view(['POST'])
 def get_list(request):
     # 检验是否登录
     if not request.session.get('is_login'):
@@ -121,11 +96,6 @@ def get_list(request):
         return JsonResponse({'status_code': 404})
 
 
-class _Params:
-    USERNAME = openapi.Parameter('username', openapi.TYPE_STRING, description='用户名', type=openapi.TYPE_STRING)
-    QN_ID = openapi.Parameter('qn_id', openapi.TYPE_NUMBER, description="问卷id", type=openapi.TYPE_NUMBER)
-
-
 @csrf_exempt
 def all_submittion_count(request):
     if request.method == 'POST':
@@ -148,18 +118,11 @@ def create_option(question, content):
     option.order = question.option_num
     option.save()
 
+
 from django.utils import timezone
 
+
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='统计问卷回收量',
-                     operation_description="返回近五日每天的回收量,周回收量和总回收量",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True), ],
-                     responses=polygon_view_get_resp
-                     )
-@api_view(['POST'])
 def get_recycling_num(request):
     # 检验是否登录
     if not request.session.get('is_login'):
@@ -265,17 +228,6 @@ def get_recycling_num_total(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='查询全部答卷',
-                     operation_description="返回用户的所有答案",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True),
-                                        Parameter(name='username', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_STRING, required=True)],
-                     responses=polygon_view_get_resp
-                     )
-@api_view(['POST'])
 def get_answer(request):
     # 检验是否登录
     global answer_questions
@@ -327,15 +279,6 @@ def get_answer(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='问卷收藏',
-                     operation_description="收藏问卷",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True)],
-                     responses={200: '收藏成功', 401: '未登录', 402: '收藏失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
-                     )
-@api_view(['post'])
 def collect(request):
     # 检查登录情况
     if not request.session.get('is_login'):
@@ -364,15 +307,6 @@ def collect(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='取消收藏',
-                     operation_description="取消收藏",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True)],
-                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
-                     )
-@api_view(['post'])
 def not_collect(request):
     # 检查登录情况
     if not request.session.get('is_login'):
@@ -401,15 +335,6 @@ def not_collect(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='获取问卷码',
-                     operation_description="根据用户的username以及问卷id得到问卷码",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True)],
-                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
-                     )
-@api_view(['post'])
 def get_code(request):
     # 检查登录情况
     if not request.session.get('is_login'):
@@ -428,6 +353,9 @@ def get_code(request):
                 return JsonResponse({'status_code': 403})
         except:
             return JsonResponse({'status_code': 402})
+
+        if survey.is_released:
+            return JsonResponse({'status_code': 406})
 
         # 生成问卷码
         code = hash_code(survey.username, str(survey_id))
@@ -478,14 +406,6 @@ def get_code_existed(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='根据链接获取问卷详细信息',
-                     manual_parameters=[Parameter(name='url', in_=IN_QUERY, description='问卷链接',
-                                                  type=TYPE_INTEGER, required=True)],
-                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
-                     )
-@api_view(['post'])
 def get_survey_from_url(request):
     # 检查登录情况
     if not request.session.get('is_login'):
@@ -551,15 +471,6 @@ def get_survey_from_url(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='获取题目答题情况',
-                     operation_description="根据问卷id获取所有题目的答题情况",
-                     manual_parameters=[Parameter(name='survey_id', in_=IN_QUERY, description='问卷编号',
-                                                  type=TYPE_INTEGER, required=True)],
-                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
-                     )
-@api_view(['post'])
 def get_question_answer(request):
     # 检查登录情况
     if not request.session.get('is_login'):
@@ -595,7 +506,7 @@ def get_question_answer(request):
 
             elif temp['type'] == 'mark':  # 评分
                 max_score = question.score
-                for i in range(1, max_score+1):
+                for i in range(1, max_score + 1):
                     answer_blank = answers.filter(answer=str(i))
                     answer = {'score': i, 'num': len(answer_blank)}
                     temp['scores'].append(answer)
@@ -638,12 +549,12 @@ def save_qn_answer(request):
                 answer_str = str(item['answer'])
 
                 # answer_str.replace(KEY_STR, ";")
-                the_answer = ";".join(str(i) for i in answer_str.split(KEY_STR))
-                print(the_answer)
+                # the_answer = ";".join(str(i) for i in answer_str.split(KEY_STR))
+                # print(the_answer)
                 print(answer_str.split(KEY_STR))
                 print(answer_str)
                 answer = Answer(question_id_id=item['question_id'], submit_id_id=submit.submit_id,
-                            answer=the_answer, type=item['type'])
+                            answer=answer_str, type=item['type'])
                 if username:
                     answer.username = username
                 answer.save()
@@ -651,4 +562,43 @@ def save_qn_answer(request):
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
+def change_code(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            # TODO
+            # username = qn.username
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+
+            if qn.share_url == '':
+                response = {'status_code': 3, 'message': '尚未存在分享链接'}
+                return JsonResponse(response)
+            raw_code = hash_code(qn.username, str(id))
+            code = ""
+            raw_code_len = len(raw_code)
+            for i in range(20):
+                code += raw_code[random.randint(0, raw_code_len - 1)]
+            qn.share_url = code
+            qn.save()
+
+            return JsonResponse({'status_code': 1, 'code': code})
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
