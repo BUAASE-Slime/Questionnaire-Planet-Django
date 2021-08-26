@@ -218,8 +218,8 @@ def delete_survey_real(request):
 def get_survey_details(request):
     response = {'status_code': 1, 'message': 'success'}
     this_username = request.session.get('username')
-    # if not this_username:
-    #     return JsonResponse({'status_code': 0})
+    if not this_username:
+        return JsonResponse({'status_code': 0})
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
