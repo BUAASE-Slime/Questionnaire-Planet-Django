@@ -480,3 +480,5 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         sequence = item['id']
         create_option(question, content, sequence)
     question.save()
+
+
