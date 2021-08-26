@@ -162,6 +162,7 @@ def get_qn_data(qn_id):
         temp['id'] = item.sequence  # 按照前端的题目顺序
         temp['options'] = [{'id':1,'title':""}]
         temp['answer'] = item.right_answer
+        temp['isVote'] = item.isVote
         if temp['type'] in ['radio', 'checkbox','judge']:
             temp['options'] = []
             # 单选题或者多选题有选项
@@ -204,6 +205,7 @@ def delete_survey_real(request):
             survey.delete()
             # 是否真的删掉呢
             return JsonResponse(response)
+
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
@@ -329,7 +331,7 @@ def create_option(question, content, sequence):
 
 
 
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point):
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point,isVote):
     question = Question()
     try:
         question.title = title
@@ -343,6 +345,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         question.sequence = sequence
         question.point = point
         question.right_answer =refer
+        question.isVote = isVote
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
         return JsonResponse(response)
@@ -868,6 +871,8 @@ def question_dict_to_question(question, question_dict):
     if question.survey_id.type == '2':
         question.right_answer = question_dict['refer']
         question.point = question_dict['point']
+    elif question.survey_id.type == '3':
+        question.isVote = question_dict['isVote']
 
     option_list_delete = Option.objects.filter(question_id=question)
     for option in option_list_delete:
@@ -954,17 +959,20 @@ def save_qn_keep_history(request):
                 question_dict['question_id'] = 0
             refer = ''
             point = 0
+            isVote = False
             if req['type'] == '2':
                 refer = question_dict['refer']
                 point = question_dict['point']
                 print("this question point  = "+str(question_dict['point']))
 
+            elif req['type'] == '3':
+                isVote = question_dict['isVote']
             if question_dict['question_id'] == 0:
                 create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
                                         , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
                                         score=question_dict['score'],
                                         options=question_dict['options'],
-                                        sequence=question_dict['id'],refer=refer,point=point
+                                        sequence=question_dict['id'],refer=refer,point=point,isVote=isVote
                                         )
                 # 添加问题
 
@@ -1283,7 +1291,7 @@ def cross_analysis(request):
             tableHead = []
             item = {}
             item['column_name'] = "column_0"
-            item['column_comment'] = "x/y"
+            item['column_comment'] = "x\y"
             tableHead.append(item)
             j = 1
             for option in option_list2:

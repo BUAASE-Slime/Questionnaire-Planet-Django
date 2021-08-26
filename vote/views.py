@@ -53,3 +53,8 @@ def save_qn_vote(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
+
+@csrf_exempt
+def ret_vote_answer(request):
+
+    pass
