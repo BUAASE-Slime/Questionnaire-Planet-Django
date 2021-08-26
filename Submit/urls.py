@@ -1,6 +1,7 @@
 from django.conf.urls.static import static
 from django.urls import path
 from .views import *
+from .no_use_func import *
 urlpatterns = [
 
     path('delete/qn/recover',recover_survey_from_delete),
