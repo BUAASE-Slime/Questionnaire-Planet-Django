@@ -205,6 +205,9 @@ def delete_survey_real(request):
             survey.delete()
             # 是否真的删掉呢
             return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
 
     else:
         response = {'status_code': -2, 'message': '请求错误'}
@@ -230,8 +233,12 @@ def get_survey_details(request):
 
             # if survey.username != this_username:
             #     return JsonResponse({'status_code': 0})
+            if survey.finished_time is not None and survey.finished_time < datetime.datetime.now():
+                response = {'status_code': 666, 'message': '问卷已经超过截止时间'}
+                return JsonResponse(response)
 
             response = get_qn_data(id)
+
 
             return JsonResponse(response)
         else:
@@ -252,6 +259,9 @@ def get_survey_details_by_others(request):
             survey = Survey.objects.get(share_url=code)
         except:
             response = {'status_code': 2, 'message': '问卷不存在'}
+            return JsonResponse(response)
+        if survey.finished_time is not None and survey.finished_time < datetime.datetime.now():
+            response = {'status_code': 666, 'message': '问卷已经超过截止时间'}
             return JsonResponse(response)
         if survey.is_released and not survey.is_deleted:
             response = get_qn_data(survey.survey_id)
