@@ -311,6 +311,8 @@ def create_qn(request):
             type = new_qn_form.cleaned_data.get('type')
 
             description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
+            if type == '2':
+                description = "这里是考试问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
 
             try:
                 user = User.objects.get(username=username)
@@ -324,6 +326,8 @@ def create_qn(request):
 
             if title == '':
                 title = "默认标题"
+                if type == '2':
+                    title = "默认标题"
 
             try:
                 survey = Survey(username=username, title=title, type=type, description=description, question_num=0,
@@ -1025,7 +1029,8 @@ def save_qn_keep_history(request):
         survey.type = req['type']
         if req['type'] == '2':
             # 如果问卷是考试问卷
-            survey.finished_time =req['finished_time']
+            #TODO 正常发问卷的截止时间
+            survey.finished_time = req['finished_time']
 
         survey.save()
         question_list = req['questions']
