@@ -127,6 +127,19 @@ def write_exam_to_excel(qn_id):
         sht1.write(0, 2 + i, str(i-info_num) + "、" + question.title+" ("+str(question.point)+"分)")
         i += 1
     sht1.write(0, 2 + i, "总分")
+    pattern_green = xlwt.Pattern()  # Create the Pattern
+    pattern_green.pattern = xlwt.Pattern.SOLID_PATTERN  # May be: NO_PATTERN, SOLID_PATTERN, or 0x00 through 0x12
+    pattern_green.pattern_fore_colour = 3
+    # May be: 8 through 63. 0 = Black, 1 = White, 2 = Red, 3 = Green, 4 = Blue, 5 = Yellow, 6 = Magenta, 7 = Cyan, 16 = Maroon, 17 = Dark Green, 18 = Dark Blue, 19 = Dark Yellow , almost brown), 20 = Dark Magenta, 21 = Teal, 22 = Light Gray, 23 = Dark Gray, the list goes on...
+    style_green = xlwt.XFStyle()  # Create the Pattern
+    style_green.pattern = pattern_green # Add Pattern to Style
+
+    pattern_red = xlwt.Pattern()  # Create the Pattern
+    pattern_red.pattern = xlwt.Pattern.SOLID_PATTERN  # May be: NO_PATTERN, SOLID_PATTERN, or 0x00 through 0x12
+    pattern_red.pattern_fore_colour = 2
+    # May be: 8 through 63. 0 = Black, 1 = White, 2 = Red, 3 = Green, 4 = Blue, 5 = Yellow, 6 = Magenta, 7 = Cyan, 16 = Maroon, 17 = Dark Green, 18 = Dark Blue, 19 = Dark Yellow , almost brown), 20 = Dark Magenta, 21 = Teal, 22 = Light Gray, 23 = Dark Gray, the list goes on...
+    style_red = xlwt.XFStyle()  # Create the Pattern
+    style_red.pattern = pattern_red  # Add Pattern to Style
 
     id = 1
     for submit in submit_list:
@@ -141,7 +154,7 @@ def write_exam_to_excel(qn_id):
             answer_str = (Answer.objects.get(submit_id=submit, question_id=question)).answer
             sht1.write(id, 2 + question_num, answer_str)
             question_num += 1
-        for question in question_list:
+        for question in questions:
             answer_str = ""
             try:
                 answer = Answer.objects.get(submit_id=submit, question_id=question)
@@ -150,10 +163,15 @@ def write_exam_to_excel(qn_id):
                 answer_str = ""
             if question.type == 'checkbox':
                 answer_str = answer_str.replace(KEY_STR,';')
+            if answer.answer == question.right_answer:
+                style = style_green
+            else:
+                style = style_red
 
-            sht1.write(id, 2 + question_num, answer_str)
+            sht1.write(id, 2 + question_num, answer_str,style)
 
             question_num += 1
+        sht1.write(id, 2 + question_num, submit.score)
 
         id += 1
     save_path = djangoProject.settings.MEDIA_ROOT + "\Document\\"
