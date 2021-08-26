@@ -29,6 +29,7 @@ urlpatterns = [
     path('api/qs/qn/', include(('Qn.urls', 'Qn'))),
     path('api/qs/sm/', include(('Submit.urls', 'Submit'))),
     path('api/qs/all_count/submit', Qn.views.all_submittion_count),
+    path('api/qs/sp/', include(('signup.urls', 'signup'))),
 
     url(r'media/(?P<path>.*)',serve,{'document_root':settings.MEDIA_ROOT}),
 
