@@ -777,7 +777,7 @@ def pdf_document(request):
 
 import xlwt
 
-
+from Qn.views import KEY_STR
 def write_submit_to_excel(qn_id):
     qn = Survey.objects.get(survey_id=qn_id)
     submit_list = Submit.objects.filter(survey_id=qn)
@@ -812,6 +812,9 @@ def write_submit_to_excel(qn_id):
                 answer_str = answer.answer
             except:
                 answer_str = ""
+            if question.type == 'checkbox':
+                answer_str = answer_str.replace(KEY_STR,';')
+
             sht1.write(id, 2 + question_num, answer_str)
 
             question_num += 1
@@ -838,9 +841,9 @@ def export_excel(request):
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
             username = qn.username
-            if request.session['username'] != username:
-                response = {'status_code': 0, 'message': '没有访问权限'}
-                return JsonResponse(response)
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
             try:
                 submit_list = Submit.objects.filter(survey_id=qn)
                 # 找不到问卷提交
@@ -1084,6 +1087,15 @@ def save_qn_keep_history(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
+# def get_question_detail(question):
+#     question =Question()
+#     #TODO delete question
+#     dic = {}
+#     dic['id'] = question.sequence
+#     dic['sequence'] = question.sequence
+#     dic['title'] = question.title
+#     dic['description'] = question.direction
+
 
 @csrf_exempt
 def get_answer_from_submit(request):
@@ -1100,7 +1112,10 @@ def get_answer_from_submit(request):
             except:
                 response = {'status_code': 2, 'message': '答卷不存在'}
                 return JsonResponse(response)
-
+            qn = submit.survey_id
+            qn_dict = get_qn_data(qn.survey_id)
+            questions = qn_dict['questions']
+            response['questions'] = questions
             # TODO
             # if request.session['username'] != username:
             #     response = {'status_code': 0, 'message': '没有访问权限'}
