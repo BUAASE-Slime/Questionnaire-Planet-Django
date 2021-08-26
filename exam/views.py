@@ -487,7 +487,6 @@ def save_exam_answer(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         req = json.loads(request.body)
-        title = req['title']
         qn_id = req['qn_id']# 获取问卷信息
         answer_list = req['answers']
         username = request.session.get('username')
@@ -498,7 +497,7 @@ def save_exam_answer(request):
 
         survey = Survey.objects.get(survey_id=qn_id)
 
-        if datetime.datetime.now() > survey.finished_time:
+        if survey.finished_time is not None and datetime.datetime.now() > survey.finished_time:
             response = {'status_code': 5, 'message': '考试已结束，不允许提交'}
             return JsonResponse(response)
 
@@ -509,11 +508,11 @@ def save_exam_answer(request):
         all_score = 0
         for answer_dict in answer_list:
             question = Question.objects.get(question_id=answer_dict['question_id'])
-            answer = Answer(anwer=answer_dict['ans'],username=username,
+            answer = Answer(answer=answer_dict['answer'],username=username,
                             type = answer_dict['type'],question_id=question,submit_id=submit,
                             )
             answer.save()
-            if answer_dict['ans'] == question.right_answer:
+            if answer_dict['answer'] == question.right_answer:
                 answer.score = question.point
             else:
                 answer.score = 0
