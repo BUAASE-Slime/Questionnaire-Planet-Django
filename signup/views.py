@@ -133,9 +133,9 @@ def create_qn_signup(request):
                              {"id": 2, "type": "text", "title": "你的手机号是：",
                               "must": True, "description": '', "row": 1, "score": 0, "options": []}]
 
-                options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 5, "remain": 3},
-                           {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 5, "remain": 2},
-                           {"hasNumLimit": True, "title": "学习委员", "id": 3, "supply": 5, "remain": 4}]
+                options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 10, "remain": 10},
+                           {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 10, "remain": 10},
+                           {"hasNumLimit": True, "title": "学习委员", "id": 3, "supply": 10, "remain": 10}]
 
                 questions.append({"id": 3, "type": "radio", "title": "您想要竞选的职位是：",
                                   "must": True, "description": '', "row": 1, "score": 0, "options": options})
@@ -159,18 +159,26 @@ def save_qn(request):
         print(req)
         qn_id = req['qn_id']
         try:
-            question_list = Question.objects.filter(survey_id=qn_id)
+            survey = Survey.objects.get(survey_id=qn_id)
         except:
             response = {'status_code': 3, 'message': '问卷不存在'}
             return JsonResponse(response)
-        for question in question_list:
-            question.delete()
+        submit_list = Submit.objects.filter(survey_id=qn_id)
+        for submit in submit_list:
+            submit.is_valid = False
+            submit.save()
 
-        survey = Survey.objects.get(survey_id=qn_id)
+        questions = Question.objects.filter(survey_id=survey)
+
         survey.username = req['username']
         survey.title = req['title']
+        if survey.title == '':
+            survey.title = "默认标题"
         survey.description = req['description']
+        if survey.description == '':
+            survey.description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
         survey.type = req['type']
+
         survey.save()
         question_list = req['questions']
 
@@ -179,24 +187,50 @@ def save_qn(request):
             return JsonResponse({'status_code': 0})
 
         # 报名问卷
-        option_type = 0
         if req['type'] == '4':
             survey.max_recycling = req['max_recycling']
             survey.save()
-            option_type = 1
 
-        # TODO
+        for question in questions:
+            num = 0
+            for question_dict in question_list:
+                if question_dict['question_id'] == question.question_id:
+                    # 旧问题在新问题中有 更新问题
+                    question_dict_to_question(question, question_dict)
+                    num = 1
+                    break
+
+            if num == 0:
+                question.delete()
+
+        for question_dict in question_list:
+            try:
+                question_dict['question_id'] = question_dict['question_id']
+            except:
+                question_dict['question_id'] = 0
+            refer = ''
+            point = 0
+            if req['type'] == '2':
+                refer = question_dict['refer']
+                point = question_dict['point']
+                print("this question point  = " + str(question_dict['point']))
+
+            if question_dict['question_id'] == 0:
+                create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
+                                        , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
+                                        score=question_dict['score'],
+                                        options=question_dict['options'],
+                                        sequence=question_dict['id'], refer="", point=0
+                                        )
+
         question_num = 0
+
+        survey.save()
+        question_list = Question.objects.filter(survey_id=survey)
         for question in question_list:
             question_num += 1
-            create_question_in_save(question['title'], question['description'], question['must']
-                                    , question['type'], qn_id=req['qn_id'], raw=question['row'],
-                                    score=question['score'],
-                                    options=question['options'],
-                                    sequence=question['id'], refer="", point=0, option_type=option_type
-                                    )
-
         survey.question_num = question_num
+        print("保存成功，该问卷的问题数目为：" + str(question_num))
         survey.save()
         return JsonResponse(response)
     else:
@@ -204,8 +238,7 @@ def save_qn(request):
 
 
 @csrf_exempt
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence, refer, point,
-                            option_type):
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence, refer, point):
     question = Question()
     try:
         question.title = title
@@ -232,7 +265,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         has_num_limit = False
         num_limit = 0
         remain_num = 0
-        if option_type == 1:
+        if question.survey_id.type == '4':
             has_num_limit = item['hasNumLimit']
             num_limit = item['supply']
             remain_num = item['remain']
@@ -252,3 +285,46 @@ def create_option(question, content, sequence, has_num_limit, num_limit, remain_
     option.num_limit = num_limit
     option.remain_num = remain_num
     option.save()
+
+
+@csrf_exempt
+def question_dict_to_question(question, question_dict):
+    # question = Question()#TODO delete
+    question.title = question_dict['title']
+    print(question_dict)
+    question.direction = question_dict['description']
+    question.is_must_answer = question_dict['must']
+    question.type = question_dict['type']
+    # qn_id =  question_dict['qn_id']
+    # question.survey_id = Survey.objects.get(survey_id=qn_id)
+    question.raw = question_dict['row']
+    question.score = question_dict['score']
+    options = question_dict['options']
+    question.sequence = question_dict['id']
+
+    if question.survey_id.type == '2':
+        question.right_answer = question_dict['refer']
+        question.point = question_dict['point']
+
+    option_list_delete = Option.objects.filter(question_id=question)
+    for option in option_list_delete:
+        option.delete()
+    option_list = options
+    # option_list = option_set[0]
+    # print("options") ,print(options)
+    print(option_list)
+
+    for item in option_list:
+        print("item", end=" ")
+        print(item)
+        content = item['title']
+        sequence = item['id']
+        has_num_limit = False
+        num_limit = 0
+        remain_num = 0
+        if question.survey_id.type == '4':
+            has_num_limit = item['hasNumLimit']
+            num_limit = item['supply']
+            remain_num = item['remain']
+        create_option(question, content, sequence, has_num_limit, num_limit, remain_num)
+    question.save()
