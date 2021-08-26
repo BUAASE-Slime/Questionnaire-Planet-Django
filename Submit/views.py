@@ -171,11 +171,13 @@ def get_qn_data(qn_id):
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
 
-        elif temp['type'] in ['mark','text']:  # TODO 填空题或者其他
+        elif temp['type'] in ['mark','text','info','name','stuId','class','school']: 
             item = {}
             item['id'] = 1
             item['title'] = ""
             temp['options'].append(item)
+        elif temp['type'] == 'info':
+            pass
 
         questions.append(temp)
         print(questions)
@@ -350,7 +352,6 @@ def create_qn(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
-
 @csrf_exempt
 def create_option(question, content, sequence):
     option = Option()
@@ -403,49 +404,6 @@ def create_question(request):
         return JsonResponse(response)
 
 
-@csrf_exempt
-def save_qn(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        req = json.loads(request.body)
-        print(req)
-        qn_id = req['qn_id']
-        try:
-            question_list = Question.objects.filter(survey_id=qn_id)
-        except:
-            response = {'status_code': 3, 'message': '问卷不存在'}
-            return JsonResponse(response)
-        for question in question_list:
-            question.delete()
-
-        survey = Survey.objects.get(survey_id=qn_id)
-        survey.username = req['username']
-        survey.title = req['title']
-        survey.description = req['description']
-        survey.type = req['type']
-        survey.save()
-        question_list = req['questions']
-
-        if request.session.get("username") != req['username']:
-            request.session.flush()
-            return JsonResponse({'status_code': 0})
-
-        # TODO
-        question_num = 0
-        for question in question_list:
-            question_num += 1
-            create_question_in_save(question['title'], question['description'], question['must']
-                                    , question['type'], qn_id=req['qn_id'], raw=question['row'],
-                                    score=question['score'],
-                                    options=question['options'],
-                                    sequence=question['id'],
-                                    )
-
-        survey.question_num = question_num
-        survey.save()
-        return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': 'invalid http method'}
 
 
 def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point):
@@ -775,7 +733,6 @@ def pdf_document(request):
 
             return JsonResponse(response)
 
-
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
             return JsonResponse(response)
@@ -1029,7 +986,7 @@ def save_qn_keep_history(request):
         except:
             response = {'status_code': 3, 'message': '问卷不存在'}
             return JsonResponse(response)
-        submit_list =  Survey.objects.filter(survey_id=qn_id)
+        submit_list =  Submit.objects.filter(survey_id=qn_id)
         for submit in submit_list:
             submit.is_valid = False
             submit.save()
@@ -1047,12 +1004,13 @@ def save_qn_keep_history(request):
             # 如果问卷是考试问卷
             #TODO 正常发问卷的截止时间
             survey.finished_time = req['finished_time']
+            survey.description = "这里是一份考卷，您可以在此处编写关于本考卷的简介，帮助考生了解这份考卷"
 
         survey.save()
         question_list = req['questions']
 
 
-
+        #TODO
         # if request.session.get("username") != req['username']:
         #     request.session.flush()
         #     return JsonResponse({'status_code': 0})
@@ -1069,12 +1027,7 @@ def save_qn_keep_history(request):
             if num == 0:
                 question.delete()
         for question_dict in question_list:
-            # num = 1
-            # for question in questions:
-            #     if question_dict['question_id'] != 0:
-            #         break
-            #     num += 1
-            # if num == len(questions):
+
             try:
                 question_dict['question_id'] = question_dict['question_id']
             except:
