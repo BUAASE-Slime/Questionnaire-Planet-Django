@@ -171,8 +171,11 @@ def get_qn_data(qn_id):
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
 
-        else:  # TODO 填空题或者其他
-            pass
+        elif temp['type'] in ['mark','text']:  # TODO 填空题或者其他
+            item = {}
+            item['id'] = 1
+            item['title'] = ""
+            temp['options'].append(item)
 
         questions.append(temp)
         print(questions)
