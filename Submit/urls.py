@@ -3,6 +3,7 @@ from django.urls import path
 from .views import *
 from .no_use_func import *
 from exam.views import *
+from vote.views import ret_vote_answer
 urlpatterns = [
 
     path('delete/qn/recover',recover_survey_from_delete),
@@ -44,5 +45,5 @@ urlpatterns = [
     path('get/qn/question/analysis',get_qn_question),
     path('get/qn/stat_analysis',submit_reporter),
 
-
+    path('get/vote/current_situation',ret_vote_answer)
 ]
