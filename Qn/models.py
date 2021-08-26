@@ -70,6 +70,10 @@ class Option(models.Model):
     #从1递增
     content = models.CharField(max_length=128,verbose_name="内容")
     question_id  = models.ForeignKey(Question, on_delete=models.CASCADE,verbose_name="问题编号")
+    num_limit = models.PositiveIntegerField(default=0,verbose_name="最大额度")
+    remain_num = models.PositiveIntegerField(default=0,verbose_name="剩余额度")
+    has_num_limit = models.BooleanField(default=False, verbose_name="是否有额度限制")
+
 
 class Submit(models.Model):
     submit_id = models.AutoField(primary_key=True,verbose_name="提交编号")
