@@ -481,4 +481,17 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         create_option(question, content, sequence)
     question.save()
 
+def save_exam_answer(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        req = json.loads(request.body)
+        title = req['title']
+        return 0
+    # TODO:
 
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+# def get_exam_submit(request):
+#
