@@ -1034,6 +1034,7 @@ def get_answer_from_submit(request):
             qn_dict = get_qn_data(qn.survey_id)
             questions = qn_dict['questions']
             response['questions'] = questions
+            print(questions)
             # TODO
             # if request.session['username'] != username:
             #     response = {'status_code': 0, 'message': '没有访问权限'}
@@ -1066,6 +1067,7 @@ def get_answer_from_submit(request):
                 answers.append(item)
             # TODO
             response['answers'] = answers
+            print(answers)
             return JsonResponse(response)
 
         else:
@@ -1311,7 +1313,7 @@ def cross_analysis(request):
             tableHead = []
             item = {}
             item['column_name'] = "column_0"
-            item['column_comment'] = "x\y"
+            item['column_comment'] = "X \ Y"
             tableHead.append(item)
             j = 1
             for option in option_list2:
