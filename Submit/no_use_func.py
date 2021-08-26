@@ -1,10 +1,12 @@
+from .forms import *
 
-
-
-
+from django.http import JsonResponse
+from .views import create_option,create_question_in_save
 from django.views.decorators.csrf import csrf_exempt
 from .forms import *
+from Qn.form import *
 from Qn.models import *
+import json
 
 
 
@@ -93,3 +95,83 @@ def save_qn(request):
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
+
+
+@csrf_exempt
+def delete_question(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        question_form = QuestionIdForm(request.POST)
+        if question_form.is_valid():
+            id = question_form.cleaned_data.get('question_id')
+            try:
+                question = Question.objects.get(question_id=id)
+            except:
+                response = {'status_code': -1, 'message': '题目不存在'}
+                return JsonResponse(response)
+            question.delete()
+            # 是否真的删掉呢
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
+def delete_option(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        option_form = OptionIdForm(request.POST)
+        if option_form.is_valid():
+            id = option_form.cleaned_data.get('option_id')
+            try:
+                option = Option.objects.get(option_id=id)
+            except:
+                response = {'status_code': -1, 'message': '选项不存在'}
+                return JsonResponse(response)
+            option.delete()
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+#  title direction is_must_answer type qn_id options:只传option的title字符串使用特殊字符例如 ^%之类的隔开便于传输
+@csrf_exempt
+def create_question(request):
+    # TODO 完善json。dump
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        new_question_form = CreateNewQuestionForm(request.POST)
+        if new_question_form.is_valid():
+            question = Question()
+            try:
+                question.title = new_question_form.cleaned_data.get('title')
+                question.direction = new_question_form.cleaned_data.get('description')
+                question.is_must_answer = new_question_form.cleaned_data.get('must')
+                question.type = new_question_form.cleaned_data.get('type')
+                survey_id = new_question_form.cleaned_data.get('qn_id')
+                question.survey_id = Survey.objects.get(survey_id=survey_id)
+                question.raw = new_question_form.cleaned_data.get('row')
+                question.score = new_question_form.cleaned_data.get('score')
+
+                option_str = new_question_form.cleaned_data.get('options')
+            except:
+                response = {'status_code': -3, 'message': '后端炸了'}
+                return JsonResponse(response)
+            KEY = "^_^_^"
+            option_list = option_str.split(KEY)
+            for item in option_list:
+                create_option(question, item)
+            question.save()
+            response['option_num'] = len(option_list)
+
+            return JsonResponse(response)
+
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
+
