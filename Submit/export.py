@@ -31,11 +31,17 @@ def paper_to_docx(qn_id):
     document.add_heading(survey.title, 0)
 
 
-    paragraph = document.add_paragraph().add_run(survey.description, style='Song')
-    introduction = "本考卷已经收集了" + str(survey.recycling_num) + "份，共计" + str(survey.question_num) + "个问题"
+    paragraph = document.add_paragraph().add_run("考试介绍： "+survey.description, style='Song')
+    sum_score = 0
+    questions = Question.objects.filter(survey_id=survey)
+    for question in questions:
+        sum_score += question.point
+    introduction = "考试须知：本考卷共计" + str(survey.question_num) + "个问题，总分共计 "+str(sum_score)+"分"
+
     paragraph = document.add_paragraph().add_run(introduction, style='Song')
 
-
+    warning = "此外本场考试的截止时间为：" + str(survey.finished_time) + "注意不要在考试截止时间后提交试卷！！"
+    document.add_paragraph().add_run(warning, style='Song')
     questions = Question.objects.filter(survey_id=survey)
     i = 1
     for question in questions:
