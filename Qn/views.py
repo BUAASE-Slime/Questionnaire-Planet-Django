@@ -14,7 +14,7 @@ from Qn.form import CollectForm
 from Qn.models import *
 
 utc = pytz.UTC
-
+KEY_STR = "-<^-^>-"
 
 @csrf_exempt
 def get_list(request):
@@ -545,7 +545,7 @@ def save_qn_answer(request):
         for item in answer_list:
             if item['answer']:
                 print(item['answer'])
-                KEY_STR = "-<^-^>-"
+
                 answer_str = str(item['answer'])
 
                 # answer_str.replace(KEY_STR, ";")
