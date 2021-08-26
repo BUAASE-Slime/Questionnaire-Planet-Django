@@ -233,9 +233,8 @@ def get_survey_details(request):
 
             # if survey.username != this_username:
             #     return JsonResponse({'status_code': 0})
-            if survey.finished_time is not None and survey.finished_time < datetime.datetime.now():
-                response = {'status_code': 666, 'message': '问卷已经超过截止时间'}
-                return JsonResponse(response)
+            
+
 
             response = get_qn_data(id)
 
@@ -263,6 +262,15 @@ def get_survey_details_by_others(request):
         if survey.finished_time is not None and survey.finished_time < datetime.datetime.now():
             response = {'status_code': 666, 'message': '问卷已经超过截止时间'}
             return JsonResponse(response)
+        if survey.type in ['2', '3', '4']:
+            username = request.session.get('username')
+            if username is not None:
+                try:
+                    submit = Submit.objects.get(username=username, survey_id=survey)
+                    response = {'status_code': 888, 'message': '您已填写问卷'}
+                    return JsonResponse(response)
+                except:
+                    pass
         if survey.is_released and not survey.is_deleted:
             response = get_qn_data(survey.survey_id)
             return JsonResponse(response)
@@ -755,8 +763,10 @@ def export_excel(request):
             if len(submit_list) == 0:
                 response = {'status_code': 3, 'message': '该问卷暂无提交，无法导出'}
                 return JsonResponse(response)
-
-            excel_name = write_submit_to_excel(id)
+            if qn.type == '2':
+                excel_name = write_exam_to_excel(id)
+            else:#TODO 其他类型
+                excel_name = write_submit_to_excel(id)
 
             response['excel_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + excel_name
             qn.excel_url = response['excel_url']
