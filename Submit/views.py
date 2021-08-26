@@ -737,7 +737,7 @@ from docx2pdf import convert
 def qn_to_pdf(qn_id):
     qn = Survey.objects.get(survey_id=qn_id)
     if qn.type == '2':
-        document, _, docx_title, docx_path = paper_to_docx(id)
+        document, _, docx_title, docx_path = paper_to_docx(qn_id)
     else:
         document, _, docx_title, docx_path = qn_to_docx(qn_id)
     input_file = docx_path + docx_title
