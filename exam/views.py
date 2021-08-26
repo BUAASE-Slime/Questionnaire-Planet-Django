@@ -472,7 +472,6 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
         return JsonResponse(response)
-    KEY = "^_^_^"
 
     option_list = options
     for item in option_list:

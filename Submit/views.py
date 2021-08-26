@@ -162,7 +162,7 @@ def get_qn_data(qn_id):
         temp['id'] = item.sequence  # 按照前端的题目顺序
         temp['options'] = [{'id':1,'title':""}]
         temp['answer'] = item.right_answer
-        if temp['type'] in ['radio', 'checkbox']:
+        if temp['type'] in ['radio', 'checkbox','judge']:
             temp['options'] = []
             # 单选题或者多选题有选项
             option_list = Option.objects.filter(question_id=item.question_id)
@@ -261,43 +261,6 @@ def get_survey_details_by_others(request):
         return JsonResponse(response)
 
 
-@csrf_exempt
-def delete_question(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        question_form = QuestionIdForm(request.POST)
-        if question_form.is_valid():
-            id = question_form.cleaned_data.get('question_id')
-            try:
-                question = Question.objects.get(question_id=id)
-            except:
-                response = {'status_code': -1, 'message': '题目不存在'}
-                return JsonResponse(response)
-            question.delete()
-            # 是否真的删掉呢
-            return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': '请求错误'}
-        return JsonResponse(response)
-
-
-@csrf_exempt
-def delete_option(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        option_form = OptionIdForm(request.POST)
-        if option_form.is_valid():
-            id = option_form.cleaned_data.get('option_id')
-            try:
-                option = Option.objects.get(option_id=id)
-            except:
-                response = {'status_code': -1, 'message': '选项不存在'}
-                return JsonResponse(response)
-            option.delete()
-            return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': '请求错误'}
-        return JsonResponse(response)
 
 
 # username title description type
@@ -362,45 +325,6 @@ def create_option(question, content, sequence):
     option.save()
 
 
-#  title direction is_must_answer type qn_id options:只传option的title字符串使用特殊字符例如 ^%之类的隔开便于传输
-@csrf_exempt
-def create_question(request):
-    # TODO 完善json。dump
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        new_question_form = CreateNewQuestionForm(request.POST)
-        if new_question_form.is_valid():
-            question = Question()
-            try:
-                question.title = new_question_form.cleaned_data.get('title')
-                question.direction = new_question_form.cleaned_data.get('description')
-                question.is_must_answer = new_question_form.cleaned_data.get('must')
-                question.type = new_question_form.cleaned_data.get('type')
-                survey_id = new_question_form.cleaned_data.get('qn_id')
-                question.survey_id = Survey.objects.get(survey_id=survey_id)
-                question.raw = new_question_form.cleaned_data.get('row')
-                question.score = new_question_form.cleaned_data.get('score')
-
-                option_str = new_question_form.cleaned_data.get('options')
-            except:
-                response = {'status_code': -3, 'message': '后端炸了'}
-                return JsonResponse(response)
-            KEY = "^_^_^"
-            option_list = option_str.split(KEY)
-            for item in option_list:
-                create_option(question, item)
-            question.save()
-            response['option_num'] = len(option_list)
-
-            return JsonResponse(response)
-
-        else:
-            response = {'status_code': -1, 'message': 'invalid form'}
-            return JsonResponse(response)
-
-    else:
-        response = {'status_code': -2, 'message': 'invalid http method'}
-        return JsonResponse(response)
 
 
 
@@ -848,7 +772,7 @@ def duplicate_qn(request):
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
             new_qn = Survey(title=qn.title+"-副本", description=qn.description, question_num=qn.question_num, recycling_num=0,
-                            username=qn.username, type=qn.type)
+                            username=qn.username, type=qn.type,max_recycling=qn.max_recycling)
 
             new_qn.save()
             new_qn_id = new_qn.survey_id
@@ -858,7 +782,8 @@ def duplicate_qn(request):
                                         is_must_answer=question.is_must_answer,
                                         sequence=question.sequence, option_num=question.option_num,
                                         score=question.score, raw=question.raw,
-                                        type=question.type, survey_id=new_qn)
+                                        type=question.type, survey_id=new_qn,right_answer=question.right_answer,
+                                        point=question.point)
                 new_question.save()
                 options = Option.objects.filter(question_id=question)
 
@@ -925,18 +850,6 @@ def doc2pdf_linux(docPath, pdfPath):
     if stderr:
         raise subprocess.SubprocessError(stderr)
 
-
-# def doc2pdf_linux(docPath, pdfPath):
-#     """
-#     convert a doc/docx document to pdf format (linux only, requires libreoffice)
-#     :param doc: path to document
-#     """
-#     cmd = 'libreoffice7.0  --headless --convert-to pdf'.split() + [docPath] + ['--outdir'] + [pdfPath]
-#     p = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-#     p.wait(timeout=30)
-#     stdout, stderr = p.communicate()
-#     if stderr:
-#         raise subprocess.SubprocessError(stderr)
 
 def question_dict_to_question(question, question_dict):
     # question = Question()#TODO delete
@@ -1069,14 +982,7 @@ def save_qn_keep_history(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
-# def get_question_detail(question):
-#     question =Question()
-#     #TODO delete question
-#     dic = {}
-#     dic['id'] = question.sequence
-#     dic['sequence'] = question.sequence
-#     dic['title'] = question.title
-#     dic['description'] = question.direction
+
 
 
 @csrf_exempt
@@ -1315,7 +1221,7 @@ def cross_analysis(request):
             print()
             for option in option_list2:
                 print(option.content, end=" ")
-
+            # 臭代码，留此羞ly这个算法菜鸡
             # for submit in submit_list:
             #
             #     answer_list = Answer.objects.filter(submit_id=submit)
