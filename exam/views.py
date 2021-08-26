@@ -497,6 +497,11 @@ def save_exam_answer(request):
             return JsonResponse(response)
 
         survey = Survey.objects.get(survey_id=qn_id)
+
+        if datetime.datetime.now() > survey.finished_time:
+            response = {'status_code': 5, 'message': '考试已结束，不允许提交'}
+            return JsonResponse(response)
+
         survey.recycling_num += 1
         survey.save()
         submit = Submit(username=username, survey_id=survey,score=0)
