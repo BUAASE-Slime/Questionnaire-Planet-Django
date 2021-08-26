@@ -205,6 +205,9 @@ def delete_survey_real(request):
             survey.delete()
             # 是否真的删掉呢
             return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
 
     else:
         response = {'status_code': -2, 'message': '请求错误'}
