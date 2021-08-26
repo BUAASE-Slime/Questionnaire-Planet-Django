@@ -1,5 +1,6 @@
 from django.shortcuts import render
 import json
+import time
 
 import pytz
 from drf_yasg.openapi import *
@@ -46,43 +47,52 @@ def change_signup_max(request):
 
 
 @csrf_exempt
-def save_ans_signup(request):
+def save_signup_answer(request):
     response = {'status_code': 1, 'message': 'success'}
-    username = request.session.get('username')
     if request.method == 'POST':
         req = json.loads(request.body)
-        # print(req)
-        qn_id = req['qn_id']
+        qn_id = req['qn_id']  # 获取问卷信息
+        answer_list = req['answers']
+        username = request.session.get('username')
+        if username is None:
+            username = ''
 
-        survey = Survey.objects.get(survey_id=qn_id, is_deleted=False)
+        survey = Survey.objects.get(survey_id=qn_id)
+        if survey.is_deleted:
+            return JsonResponse(response={'status_code': 2, 'message': '问卷已删除'})
+
+        if time.mktime(survey.finished_time.timetuple()) < time.time():
+            return JsonResponse({'status_code': -1, 'message': '超过截止时间'})
+
+        if Submit.objects.filter(survey_id=survey, username=username):
+            return JsonResponse({'status_code': 3, 'message': '已提交过问卷'})
+
+        if not survey.is_released:
+            return JsonResponse({'status_code': 4, 'message': '问卷未发布'})
+
         if survey.recycling_num >= survey.max_recycling:
-            response = {'status_code': 5, 'message': '报名数已满，无法报名'}
-            return JsonResponse(response)
+            return JsonResponse({'status_code': 5, 'message': '人数已满'})
 
         survey.recycling_num = survey.recycling_num + 1
         survey.save()
 
-        submit = Submit(survey_id=survey)
-
-        if username == '' or username is None:
-            response = {'status_code': 4, 'message': '报名需要用户登录，请登录'}
-            return JsonResponse(response)
-
-        if username:
-            submit.username = username
+        submit = Submit(username=username, survey_id=survey, score=0)
         submit.save()
+        for answer_dict in answer_list:
+            question = Question.objects.get(question_id=answer_dict['question_id'])
+            answer = Answer(answer=answer_dict['ans'], username=username,
+                            type=answer_dict['type'], question_id=question, submit_id=submit)
+            if question.type in ["radio", "checkbox"]:
+                option = Option.objects.get(content=answer_dict['ans'])
+                option.remain_num = option.remain_num - 1
+                option.save()
 
-        answer_list = req['answers']
-        for item in answer_list:
-            answer = Answer(question_id_id=item['question_id'], submit_id_id=submit.submit_id,
-                            answer=item['answer'], type=item['type'])
-            if username:
-                answer.username = username
             answer.save()
 
         return JsonResponse(response)
+
     else:
-        response = {'status_code': -2, 'message': 'invalid http method'}
+        response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
 
@@ -130,9 +140,11 @@ def create_qn_signup(request):
             # 报名问卷问题模板
             if type == '4':
                 questions = [{"id": 1, "type": "text", "title": "你的姓名是：",
-                              "must": True, "description": '', "row": 1, "score": 0, "options": [{'id': 1, 'title': ""}]},
+                              "must": True, "description": '', "row": 1, "score": 0,
+                              "options": [{'id': 1, 'title': ""}]},
                              {"id": 2, "type": "text", "title": "你的手机号是：",
-                              "must": True, "description": '', "row": 1, "score": 0, "options": [{'id': 1, 'title': ""}]}]
+                              "must": True, "description": '', "row": 1, "score": 0,
+                              "options": [{'id': 1, 'title': ""}]}]
 
                 options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 10, "remain": 10},
                            {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 10, "remain": 10},
