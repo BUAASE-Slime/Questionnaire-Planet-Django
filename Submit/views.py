@@ -939,9 +939,11 @@ def save_qn_keep_history(request):
         survey.type = req['type']
         try:
             req['finished_time'] = req['finished_time']
-            survey.finished_time = req['finished_time']
+            print("问卷截止时间为 " + req['finished_time'])
+            if req['finished_time'] is not None and req['finished_time'] != '':
+                survey.finished_time = req['finished_time']
         except:
-            req['finished_time'] = None
+           pass
         
         if req['type'] == '2':
             # 如果问卷是考试问卷
