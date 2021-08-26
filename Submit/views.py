@@ -1210,7 +1210,16 @@ def cross_analysis(request):
             except:
                 response = {'status_code': 2, 'message': '问题不存在'}
                 return JsonResponse(response)
+            question1 = {}
+            question2 = {}
             qn = question_1.survey_id
+            qn_json = get_qn_data(qn.survey_id)
+            for question_dict in qn_json['questions']:
+                if question_dict['question_id'] == question_id_1:
+                    question1 = question_dict
+                if question_dict['question_id'] == question_id_2:
+                    question2 = question_dict
+
             num_list = [[int(0) for x in range(0, question_1.option_num + +7)] for y in
                         range(0, question_2.option_num + 7)]
             submit_list = Submit.objects.filter(survey_id=qn)
@@ -1272,7 +1281,7 @@ def cross_analysis(request):
             tableHead = []
             item = {}
             item['column_name'] = "column_0"
-            item['column_comment'] = "子问题"
+            item['column_comment'] = "x/y"
             tableHead.append(item)
             j = 1
             for option in option_list2:
@@ -1281,6 +1290,7 @@ def cross_analysis(request):
                 item['column_comment'] = option.content
                 tableHead.append(item)
                 j += 1
+            tableHead.append({'column_name':"column_{}".format(j),'column_comment':"小计"})
 
             # tableData.append(item)
             i = 1
@@ -1300,11 +1310,14 @@ def cross_analysis(request):
                         ret = str(num_list[i][j]) + "(" + str(int(num_list[i][j] * 100 / sum)) + "%)"
 
                     item['column_{}'.format(j)] = ret
+                item['column_{}'.format(len(option_list2) + 1)] = sum
                 i += 1
                 tableData.append(item)
             response['tableHead'] = tableHead
             response['tableData'] = tableData
-            response['num_list'] = num_list
+            # response['num_list'] = num_list
+            response['question1'] = question1
+            response['question2'] = question2
             return JsonResponse(response)
 
         else:
