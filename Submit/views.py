@@ -5,13 +5,12 @@ import json
 from io import BytesIO
 
 import pytz
-
 # Create your views here.
 from .forms import *
 import datetime
 from Qn.form import *
 from Qn.models import *
-
+from .export import *
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -321,8 +320,8 @@ def create_qn(request):
                 response = {'status_code': 2, 'message': '用户不存在'}
                 return JsonResponse(response)
 
-            if request.session.get('username') != username:
-                return JsonResponse({'status_code': 2})
+            # if request.session.get('username') != username:
+            #     return JsonResponse({'status_code': 2})
 
             if title == '':
                 title = "默认标题"
@@ -611,8 +610,11 @@ def TestDocument(request):
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
+            if survey.type == '2':
+                document, f, docx_title, _ = paper_to_docx(id)
 
-            document, f, docx_title, _ = qn_to_docx(id)
+            else: # TODO
+                document, f, docx_title, _ = qn_to_docx(id)
 
             response['filename'] = docx_title
             response['docx_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + docx_title
@@ -730,7 +732,11 @@ from docx2pdf import convert
 
 
 def qn_to_pdf(qn_id):
-    document, _, docx_title, docx_path = qn_to_docx(qn_id)
+    qn = Survey.objects.get(survey_id=qn_id)
+    if qn.type == '2':
+        document, _, docx_title, docx_path = paper_to_docx(id)
+    else:
+        document, _, docx_title, docx_path = qn_to_docx(qn_id)
     input_file = docx_path + docx_title
     out_file = docx_path + docx_title.replace('.docx', '.pdf')
     pdf_title = docx_title.replace('.docx', '.pdf')
@@ -1069,8 +1075,8 @@ def save_qn_keep_history(request):
             refer = ''
             point = 0
             if req['type'] == '2':
-                refer = req['refer']
-                point = req['point']
+                refer = question_dict['refer']
+                point = question_dict['point']
 
             if question_dict['question_id'] == 0:
                 create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
@@ -1089,6 +1095,7 @@ def save_qn_keep_history(request):
         for question in question_list:
             question_num += 1
         survey.question_num = question_num
+        print("保存成功，该问卷的问题数目为："+str(question_num))
         survey.save()
 
         return JsonResponse(response)
