@@ -1039,6 +1039,7 @@ def save_qn_keep_history(request):
         question_list = req['questions']
 
 
+
         # if request.session.get("username") != req['username']:
         #     request.session.flush()
         #     return JsonResponse({'status_code': 0})
@@ -1081,7 +1082,15 @@ def save_qn_keep_history(request):
                 # 添加问题
 
 
+        question_num = 0
+
         survey.save()
+        question_list = Question.objects.filter(survey_id=survey)
+        for question in question_list:
+            question_num += 1
+        survey.question_num = question_num
+        survey.save()
+
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
