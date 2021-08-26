@@ -49,8 +49,9 @@ class Question(models.Model):
     sequence = models.IntegerField(default=0,verbose_name="题目顺序")
     option_num = models.PositiveIntegerField(default=0,verbose_name="选项数目")
 
-    score = models.PositiveIntegerField(default=0,verbose_name="得分")
+    score = models.PositiveIntegerField(default=0,verbose_name="打分最高分")
     raw = models.PositiveIntegerField(default=1, verbose_name="行数")
+    point = models.PositiveIntegerField(default=0,verbose_name="问题得分")
     TYPE_CHOICES = [
         (0, '单选'),
         (1, '多选'),

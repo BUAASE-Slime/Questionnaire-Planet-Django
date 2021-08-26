@@ -159,7 +159,7 @@ def get_qn_data(qn_id):
         temp['sequence'] = item.sequence
         temp['option_num'] = item.option_num
         temp['refer'] = item.right_answer
-        temp['point'] = item.score
+        temp['point'] = item.point
         temp['id'] = item.sequence  # 按照前端的题目顺序
         temp['options'] = []
         temp['answer'] = item.right_answer
@@ -458,7 +458,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         question.raw = raw
         question.score = score
         question.sequence = sequence
-        question.score = point
+        question.point = point
         question.right_answer =refer
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
