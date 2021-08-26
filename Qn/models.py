@@ -62,12 +62,12 @@ class Question(models.Model):
     type = models.CharField(max_length=256,verbose_name="问题类型",default='radio')
     right_answer = models.CharField(max_length=256,verbose_name="正确答案",default='')
 
-    isVote = models.BooleanField(default=False,verbose_name="是投票题")
+    isVote = models.BooleanField(default=False, verbose_name="是投票题")
 
-    has_image = models.BooleanField(default=False,verbose_name="包含图片")
-    has_video = models.BooleanField(default=False,verbose_name="包含视频")
-    image_url = models.URLField(verbose_name="图片链接",default='')
-    video_url = models.URLField(verbose_name="视频链接",default='')
+    has_image = models.BooleanField(default=False, verbose_name="包含图片")
+    has_video = models.BooleanField(default=False, verbose_name="包含视频")
+    image_url = models.URLField(verbose_name="图片链接", default='')
+    video_url = models.URLField(verbose_name="视频链接", default='')
 
     # radio checkbox 单选题 多选题 text 填空 mark 判断
 class Option(models.Model):
