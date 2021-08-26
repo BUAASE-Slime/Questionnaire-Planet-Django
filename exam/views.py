@@ -20,6 +20,7 @@ from django.views.decorators.csrf import csrf_exempt
 from Qn.models import *
 
 
+
 @csrf_exempt
 @swagger_auto_schema(method='post',
                      tags=['问卷相关'],
@@ -481,4 +482,30 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         create_option(question, content, sequence)
     question.save()
 
+def save_exam_answer(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        req = json.loads(request.body)
+        title = req['title']
+        qn_id = req['qn_id']# 获取问卷信息
+        answer_list = req['answers']
+        username = request.session.get('username')
+        if username is None:
+            username = ''
 
+        survey = Survey.objects.get(survey_id=qn_id)
+        submit = Submit(username=username, survey_id=survey,score=0)
+        submit.save()
+        for answer_dict in answer_list:
+            question = Question.objects.get(question_id=answer_dict['question_id'])
+            answer = Answer(anwer=answer_dict['ans'],username=username,
+                            type = answer_dict['type'],question_id=question,submit_id=submit,
+                            score=answer_dict['score']
+                            )
+            answer.save()
+
+        return JsonResponse(response)
+
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)

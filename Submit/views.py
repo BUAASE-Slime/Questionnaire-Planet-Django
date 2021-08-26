@@ -5,13 +5,12 @@ import json
 from io import BytesIO
 
 import pytz
-
 # Create your views here.
 from .forms import *
 import datetime
 from Qn.form import *
 from Qn.models import *
-
+from .export import *
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
@@ -172,8 +171,11 @@ def get_qn_data(qn_id):
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
 
-        else:  # TODO 填空题或者其他
-            pass
+        elif temp['type'] in ['mark','text']:  # TODO 填空题或者其他
+            item = {}
+            item['id'] = 1
+            item['title'] = ""
+            temp['options'].append(item)
 
         questions.append(temp)
         print(questions)
@@ -321,8 +323,8 @@ def create_qn(request):
                 response = {'status_code': 2, 'message': '用户不存在'}
                 return JsonResponse(response)
 
-            if request.session.get('username') != username:
-                return JsonResponse({'status_code': 2})
+            # if request.session.get('username') != username:
+            #     return JsonResponse({'status_code': 2})
 
             if title == '':
                 title = "默认标题"
@@ -611,8 +613,11 @@ def TestDocument(request):
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
+            if survey.type == '2':
+                document, f, docx_title, _ = paper_to_docx(id)
 
-            document, f, docx_title, _ = qn_to_docx(id)
+            else: # TODO
+                document, f, docx_title, _ = qn_to_docx(id)
 
             response['filename'] = docx_title
             response['docx_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + docx_title
@@ -730,7 +735,11 @@ from docx2pdf import convert
 
 
 def qn_to_pdf(qn_id):
-    document, _, docx_title, docx_path = qn_to_docx(qn_id)
+    qn = Survey.objects.get(survey_id=qn_id)
+    if qn.type == '2':
+        document, _, docx_title, docx_path = paper_to_docx(id)
+    else:
+        document, _, docx_title, docx_path = qn_to_docx(qn_id)
     input_file = docx_path + docx_title
     out_file = docx_path + docx_title.replace('.docx', '.pdf')
     pdf_title = docx_title.replace('.docx', '.pdf')
@@ -777,7 +786,7 @@ def pdf_document(request):
 
 import xlwt
 
-
+from Qn.views import KEY_STR
 def write_submit_to_excel(qn_id):
     qn = Survey.objects.get(survey_id=qn_id)
     submit_list = Submit.objects.filter(survey_id=qn)
@@ -812,6 +821,9 @@ def write_submit_to_excel(qn_id):
                 answer_str = answer.answer
             except:
                 answer_str = ""
+            if question.type == 'checkbox':
+                answer_str = answer_str.replace(KEY_STR,';')
+
             sht1.write(id, 2 + question_num, answer_str)
 
             question_num += 1
@@ -838,9 +850,9 @@ def export_excel(request):
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
             username = qn.username
-            if request.session['username'] != username:
-                response = {'status_code': 0, 'message': '没有访问权限'}
-                return JsonResponse(response)
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
             try:
                 submit_list = Submit.objects.filter(survey_id=qn)
                 # 找不到问卷提交
@@ -984,6 +996,10 @@ def question_dict_to_question(question, question_dict):
     options = question_dict['options']
     question.sequence = question_dict['id']
 
+    if question.survey_id.type == '2':
+        question.right_answer = question_dict['refer']
+        question.point = question_dict['point']
+
     option_list_delete = Option.objects.filter(question_id=question)
     for option in option_list_delete:
         option.delete()
@@ -1036,6 +1052,7 @@ def save_qn_keep_history(request):
         question_list = req['questions']
 
 
+
         # if request.session.get("username") != req['username']:
         #     request.session.flush()
         #     return JsonResponse({'status_code': 0})
@@ -1065,8 +1082,9 @@ def save_qn_keep_history(request):
             refer = ''
             point = 0
             if req['type'] == '2':
-                refer = req['refer']
-                point = req['point']
+                refer = question_dict['refer']
+                point = question_dict['point']
+                print("this question point  = "+str(question_dict['point']))
 
             if question_dict['question_id'] == 0:
                 create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
@@ -1078,11 +1096,29 @@ def save_qn_keep_history(request):
                 # 添加问题
 
 
+        question_num = 0
+
         survey.save()
+        question_list = Question.objects.filter(survey_id=survey)
+        for question in question_list:
+            question_num += 1
+        survey.question_num = question_num
+        print("保存成功，该问卷的问题数目为："+str(question_num))
+        survey.save()
+
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
+
+# def get_question_detail(question):
+#     question =Question()
+#     #TODO delete question
+#     dic = {}
+#     dic['id'] = question.sequence
+#     dic['sequence'] = question.sequence
+#     dic['title'] = question.title
+#     dic['description'] = question.direction
 
 
 @csrf_exempt
@@ -1100,7 +1136,10 @@ def get_answer_from_submit(request):
             except:
                 response = {'status_code': 2, 'message': '答卷不存在'}
                 return JsonResponse(response)
-
+            qn = submit.survey_id
+            qn_dict = get_qn_data(qn.survey_id)
+            questions = qn_dict['questions']
+            response['questions'] = questions
             # TODO
             # if request.session['username'] != username:
             #     response = {'status_code': 0, 'message': '没有访问权限'}
@@ -1269,7 +1308,10 @@ def get_qn_all_submit(request):
                 i += 1
                 item['submit_id'] = submit.submit_id
                 item['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
-                item['username'] = submit.username
+                if submit.username and submit.username != '':
+                    item['username'] = submit.username
+                else:
+                    item['username'] = '匿名用户'
                 item['is_valid'] = submit.is_valid
                 item['score'] = submit.score
                 item['qn_id'] = submit.survey_id.survey_id
