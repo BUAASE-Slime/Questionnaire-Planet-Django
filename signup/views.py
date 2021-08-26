@@ -9,11 +9,12 @@ from drf_yasg import openapi
 import datetime
 
 # Create your views here.
+from Submit.views import produce_time
 from utils.toHash import hash_code
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-from Qn.form import CollectForm, CreateNewQnForm
+from Qn.form import CollectForm, CreateNewQnForm, SurveyIdForm
 from Qn.models import *
 
 utc = pytz.UTC
@@ -129,9 +130,9 @@ def create_qn_signup(request):
             # 报名问卷问题模板
             if type == '4':
                 questions = [{"id": 1, "type": "text", "title": "你的姓名是：",
-                              "must": True, "description": '', "row": 1, "score": 0, "options": []},
+                              "must": True, "description": '', "row": 1, "score": 0, "options": [{'id': 1, 'title': ""}]},
                              {"id": 2, "type": "text", "title": "你的手机号是：",
-                              "must": True, "description": '', "row": 1, "score": 0, "options": []}]
+                              "must": True, "description": '', "row": 1, "score": 0, "options": [{'id': 1, 'title': ""}]}]
 
                 options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 10, "remain": 10},
                            {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 10, "remain": 10},
@@ -328,3 +329,108 @@ def question_dict_to_question(question, question_dict):
             remain_num = item['remain']
         create_option(question, content, sequence, has_num_limit, num_limit, remain_num)
     question.save()
+
+
+@csrf_exempt
+def get_survey_details(request):
+    response = {'status_code': 1, 'message': 'success'}
+    this_username = request.session.get('username')
+    # if not this_username:
+    #     return JsonResponse({'status_code': 0})
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                survey = Survey.objects.get(survey_id=id)
+                print(survey.survey_id)
+            except:
+                response = {'status_code': -2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+
+            # if survey.username != this_username:
+            #     return JsonResponse({'status_code': 0})
+
+            response = get_qn_data(id)
+
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': '问卷id不为整数'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
+
+
+def get_qn_data(qn_id):
+    id = qn_id
+    survey = Survey.objects.get(survey_id=qn_id)
+    response = {'status_code': 1, 'message': 'success'}
+    response['qn_id'] = survey.survey_id
+    response['username'] = survey.username
+    response['title'] = survey.title
+    response['description'] = survey.description
+    response['type'] = survey.type
+
+    response['question_num'] = survey.question_num
+    response['created_time'] = response['release_time'] = response['finished_time'] = ''
+    if produce_time(survey.created_time):
+        response['created_time'] = survey.created_time.strftime("%Y/%m/%d %H:%M")
+    if produce_time(survey.finished_time):
+        response['finished_time'] = survey.finished_time.strftime("%Y/%m/%d %H:%M")
+    if produce_time(survey.release_time):
+        response['release_time'] = survey.release_time.strftime("%Y/%m/%d %H:%M")
+    response['is_released'] = survey.is_released
+    response['is_deleted'] = survey.is_deleted
+    response['is_finished'] = survey.is_finished
+    response['share_url'] = survey.share_url
+    response['docx_url'] = survey.docx_url
+    response['pdf_url'] = survey.pdf_url
+    response['excel_url'] = survey.excel_url
+    response['recycling_num'] = survey.recycling_num
+    response['max_recycling'] = survey.max_recycling
+
+    question_list = Question.objects.filter(survey_id__survey_id=qn_id)
+    questions = []
+    for item in question_list:
+        temp = {}
+        temp['question_id'] = item.question_id
+        temp['row'] = item.raw
+        temp['score'] = item.score
+        temp['title'] = item.title
+        temp['description'] = item.direction
+        temp['must'] = item.is_must_answer
+        temp['type'] = item.type
+        temp['qn_id'] = qn_id
+        temp['sequence'] = item.sequence
+        temp['option_num'] = item.option_num
+        temp['refer'] = item.right_answer
+        temp['point'] = item.point
+        temp['id'] = item.sequence  # 按照前端的题目顺序
+        temp['options'] = [{'id': 1, 'title': ""}]
+        temp['answer'] = item.right_answer
+        if temp['type'] in ['radio', 'checkbox']:
+            temp['options'] = []
+            # 单选题或者多选题有选项
+            option_list = Option.objects.filter(question_id=item.question_id)
+            for option_item in option_list:
+                option_dict = {}
+                option_dict['id'] = option_item.option_id
+                option_dict['title'] = option_item.content
+
+                if survey.type == '4':
+                    option_dict['hasNumLimit'] = option_item.has_num_limit
+                    option_dict['supply'] = option_item.num_limit
+                    option_dict['remain'] = option_item.remain_num
+
+                temp['options'].append(option_dict)
+
+        elif temp['type'] in ['mark', 'text', 'name', 'stuId', 'class', 'school']:
+            pass
+        elif temp['type'] == 'info':
+            pass
+
+        questions.append(temp)
+        print(questions)
+    response['questions'] = questions
+    return response
