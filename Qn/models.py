@@ -10,7 +10,7 @@ class Survey(models.Model):
 
     question_num = models.PositiveIntegerField(default=0,verbose_name="题目数目") # 非负整数
     recycling_num = models.PositiveIntegerField(default=0,verbose_name="回收数目")
-    max_recycling = models.PositiveIntegerField(default=100,verbose_name="最大回收数目")
+    max_recycling = models.PositiveIntegerField(default=999999,verbose_name="最大回收数目")
 
     created_time = models.DateTimeField(auto_now_add=True,verbose_name="创建时间")
     release_time = models.DateTimeField(blank=True,verbose_name="发布时间",null=True)
