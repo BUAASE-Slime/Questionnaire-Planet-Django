@@ -996,6 +996,10 @@ def question_dict_to_question(question, question_dict):
     options = question_dict['options']
     question.sequence = question_dict['id']
 
+    if question.survey_id.type == '2':
+        question.right_answer = question_dict['refer']
+        question.point = question_dict['point']
+
     option_list_delete = Option.objects.filter(question_id=question)
     for option in option_list_delete:
         option.delete()
@@ -1080,6 +1084,7 @@ def save_qn_keep_history(request):
             if req['type'] == '2':
                 refer = question_dict['refer']
                 point = question_dict['point']
+                print("this question point  = "+str(question_dict['point']))
 
             if question_dict['question_id'] == 0:
                 create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
