@@ -10,10 +10,6 @@ import djangoProject.settings
 
 
 
-
-
-
-
 def paper_to_docx(qn_id):
     document = Document()
     survey = Survey.objects.get(survey_id=qn_id)
@@ -97,3 +93,74 @@ def paper_to_docx(qn_id):
     document.save(docx_path + docx_title)
 
     return document, f, docx_title, docx_path
+
+import xlwt
+
+from Qn.views import KEY_STR
+def write_exam_to_excel(qn_id):
+    qn = Survey.objects.get(survey_id=qn_id)
+    submit_list = Submit.objects.filter(survey_id=qn)
+
+    xls = xlwt.Workbook()
+    sht1 = xls.add_sheet("Sheet1")
+
+    sht1.write(0, 0, "序号")
+    sht1.write(0, 1, "提交者用户名")
+    sht1.write(0, 2, "提交时间")
+    question_list = Question.objects.filter(survey_id=qn)
+    question_info_list = []; questions = []
+    for question in question_list:
+        if question.type in ['school','name','class','stuId']:
+            question_info_list.append(question)
+        else:# TODO 都是问题吧？
+            questions.append(question)
+    i = 1
+    for question in question_info_list:
+        sht1.write(0, 2 + i,  question.title)
+        i += 1
+
+    question_num = len(questions)
+    info_num = len(question_info_list)
+    # i = 1
+
+    for question in questions:
+        sht1.write(0, 2 + i, str(i-info_num) + "、" + question.title+" ("+str(question.point)+"分)")
+        i += 1
+    sht1.write(0, 2 + i, "总分")
+
+    id = 1
+    for submit in submit_list:
+        sht1.write(id, 0, id)
+        username = submit.username
+        if username == '' or username is None:
+            username = "匿名用户"
+        sht1.write(id, 1, username)
+        sht1.write(id, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        question_num = 1
+        for question in question_info_list:
+            answer_str = (Answer.objects.get(submit_id=submit, question_id=question)).answer
+            sht1.write(id, 2 + question_num, answer_str)
+            question_num += 1
+        for question in question_list:
+            answer_str = ""
+            try:
+                answer = Answer.objects.get(submit_id=submit, question_id=question)
+                answer_str = answer.answer
+            except:
+                answer_str = ""
+            if question.type == 'checkbox':
+                answer_str = answer_str.replace(KEY_STR,';')
+
+            sht1.write(id, 2 + question_num, answer_str)
+
+            question_num += 1
+
+        id += 1
+    save_path = djangoProject.settings.MEDIA_ROOT + "\Document\\"
+    from .views import IS_LINUX
+    if IS_LINUX:
+        save_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
+    excel_name = qn.title + "问卷的统计信息" + ".xls"
+    xls.save(save_path + excel_name)
+    return excel_name
+
