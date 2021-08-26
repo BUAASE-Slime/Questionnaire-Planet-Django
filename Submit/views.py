@@ -143,6 +143,7 @@ def get_qn_data(qn_id):
     response['recycling_num'] = survey.recycling_num
     response['max_recycling'] = survey.max_recycling
 
+
     question_list = Question.objects.filter(survey_id=qn_id)
     questions = []
     for item in question_list:
@@ -156,6 +157,9 @@ def get_qn_data(qn_id):
         temp['type'] = item.type
         temp['qn_id'] = qn_id
         temp['sequence'] = item.sequence
+        temp['option_num'] = item.option_num
+        temp['refer'] = item.right_answer
+        temp['point'] = item.score
         temp['id'] = item.sequence  # 按照前端的题目顺序
         temp['options'] = []
         temp['answer'] = item.right_answer
@@ -206,8 +210,8 @@ def delete_survey_real(request):
 def get_survey_details(request):
     response = {'status_code': 1, 'message': 'success'}
     this_username = request.session.get('username')
-    if not this_username:
-        return JsonResponse({'status_code': 0})
+    # if not this_username:
+    #     return JsonResponse({'status_code': 0})
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
@@ -219,8 +223,8 @@ def get_survey_details(request):
                 response = {'status_code': -2, 'message': '问卷不存在'}
                 return JsonResponse(response)
 
-            if survey.username != this_username:
-                return JsonResponse({'status_code': 0})
+            # if survey.username != this_username:
+            #     return JsonResponse({'status_code': 0})
 
             response = get_qn_data(id)
 
