@@ -1284,7 +1284,10 @@ def get_qn_all_submit(request):
                 i += 1
                 item['submit_id'] = submit.submit_id
                 item['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
-                item['username'] = submit.username
+                if submit.username and submit.username != '':
+                    item['username'] = submit.username
+                else:
+                    item['username'] = '匿名用户'
                 item['is_valid'] = submit.is_valid
                 item['score'] = submit.score
                 item['qn_id'] = submit.survey_id.survey_id
