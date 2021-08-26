@@ -160,9 +160,10 @@ def get_qn_data(qn_id):
         temp['refer'] = item.right_answer
         temp['point'] = item.point
         temp['id'] = item.sequence  # 按照前端的题目顺序
-        temp['options'] = []
+        temp['options'] = [{'id':1,'title':""}]
         temp['answer'] = item.right_answer
         if temp['type'] in ['radio', 'checkbox']:
+            temp['options'] = []
             # 单选题或者多选题有选项
             option_list = Option.objects.filter(question_id=item.question_id)
             for option_item in option_list:
@@ -171,11 +172,8 @@ def get_qn_data(qn_id):
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
 
-        elif temp['type'] in ['mark','text','info','name','stuId','class','school']: 
-            item = {}
-            item['id'] = 1
-            item['title'] = ""
-            temp['options'].append(item)
+        elif temp['type'] in ['mark','text','name','stuId','class','school']:
+            pass
         elif temp['type'] == 'info':
             pass
 
@@ -183,6 +181,7 @@ def get_qn_data(qn_id):
         print(questions)
     response['questions'] = questions
     return response
+
 
 
 @csrf_exempt
