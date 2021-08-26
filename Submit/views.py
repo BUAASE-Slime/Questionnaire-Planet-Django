@@ -999,10 +999,16 @@ def save_qn_keep_history(request):
         if survey.description == '':
             survey.description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
         survey.type = req['type']
+        try:
+            req['finished_time'] = req['finished_time']
+            survey.finished_time = req['finished_time']
+        except:
+            req['finished_time'] = None
+        
         if req['type'] == '2':
             # 如果问卷是考试问卷
             #TODO 正常发问卷的截止时间
-            survey.finished_time = req['finished_time']
+            # survey.finished_time = req['finished_time']
             survey.description = "这里是一份考卷，您可以在此处编写关于本考卷的简介，帮助考生了解这份考卷"
 
         survey.save()
