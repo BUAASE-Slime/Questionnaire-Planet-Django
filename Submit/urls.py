@@ -1,6 +1,7 @@
 from django.conf.urls.static import static
 from django.urls import path
 from .views import *
+from .no_use_func import *
 urlpatterns = [
 
     path('delete/qn/recover',recover_survey_from_delete),
@@ -20,7 +21,7 @@ urlpatterns = [
     path('create/question',create_question),
 
     path('save/qn',save_qn),
-    path('save/qn_kepp/history',save_qn_keep_history),
+    path('save/qn_keep/history',save_qn_keep_history),
 
     path('deploy_qn',deploy_qn),
     path('pause_qn',pause_qn),
