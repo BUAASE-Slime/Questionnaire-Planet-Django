@@ -481,6 +481,8 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         create_option(question, content, sequence)
     question.save()
 
+from Submit.views import get_qn_data
+@csrf_exempt
 def save_exam_answer(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
@@ -489,20 +491,35 @@ def save_exam_answer(request):
         qn_id = req['qn_id']# 获取问卷信息
         answer_list = req['answers']
         username = request.session.get('username')
-        if username is None:
-            username = ''
+        if username is None or username == '':
+            # username = ''
+            response = {'status_code': 4, 'message': '您尚未登陆'}
+            return JsonResponse(response)
 
         survey = Survey.objects.get(survey_id=qn_id)
+        survey.recycling_num += 1
+        survey.save()
         submit = Submit(username=username, survey_id=survey,score=0)
         submit.save()
+        all_score = 0
         for answer_dict in answer_list:
             question = Question.objects.get(question_id=answer_dict['question_id'])
             answer = Answer(anwer=answer_dict['ans'],username=username,
                             type = answer_dict['type'],question_id=question,submit_id=submit,
-                            score=answer_dict['score']
                             )
             answer.save()
+            if answer_dict['ans'] == question.right_answer:
+                answer.score = question.point
+            else:
+                answer.score = 0
+            answer.save()
 
+            all_score += answer.score
+        submit.score = all_score
+        submit.save()
+
+        response['questions'] = get_qn_data(qn_id)['questions']
+        response['answers'] = req['answers']
         return JsonResponse(response)
 
     else:
