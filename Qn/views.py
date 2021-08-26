@@ -530,7 +530,10 @@ def save_qn_answer(request):
         print(req)
         code = req['code']
 
-        survey = Survey.objects.get(share_url=code)
+        try:
+            survey = Survey.objects.get(share_url=code)
+        except:
+            return JsonResponse({'status_code': 3})
         if survey.is_deleted or not survey.is_released:
             return JsonResponse({'status_code': 2})
         survey.recycling_num = survey.recycling_num + 1
