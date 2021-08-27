@@ -264,11 +264,14 @@ def get_survey_details_by_others(request):
             return JsonResponse(response)
         if survey.type in ['2', '3', '4']:
             username = request.session.get('username')
+            print(username)
             if username is not None:
                 try:
-                    submit = Submit.objects.get(username=username, survey_id=survey)
-                    response = {'status_code': 888, 'message': '您已填写问卷'}
-                    return JsonResponse(response)
+                    submit = Submit.objects.filter(username=username, survey_id=survey)
+                    if submit:
+                        response = {'status_code': 888, 'message': '您已填写问卷'}
+                        print("用户 " + username + " 试图重复填写考试问卷，将被拒绝")
+                        return JsonResponse(response)
                 except:
                     pass
         if survey.is_released and not survey.is_deleted:
