@@ -10,7 +10,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 from Qn.form import CreateNewQnForm
 from Qn.models import Survey, Submit, Question, Answer, Option
-from epidemic.form import UploadPictureForm
+from djangoProject.settings import WEB_ROOT
+from epidemic.form import *
 from signup.views import question_dict_to_question, create_question_in_save, OptionRecyleNumError
 from userinfo.models import User
 
@@ -151,12 +152,72 @@ def upload_image(request):
         if upload_form.is_valid():
             question = Question.objects.get(question_id=upload_form.cleaned_data.get('question_id'))
             question.image.delete()
-            image = request.FILES['file']
-            if image.name.split('.')[-1] not in ['jpeg', 'jpg', 'png']:
+            image = upload_form.cleaned_data.get('image')
+            if image.name.split('.')[-1] not in ['jpeg', 'jpg', 'png', 'bmp', 'tif', 'gif']:
                 return JsonResponse({'status_code': 2, 'message': '图片格式有误'})
             question.image = image
             question.save()
             return JsonResponse({'status_code': 1, 'message': 'success'})
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
+def get_image_url(request):
+    if request.method == 'POST':
+        image_form = GetForm(request.POST)
+        if image_form.is_valid():
+            question_id = image_form.cleaned_data.get('question_id')
+            question = Question.objects.get(question_id=question_id)
+            if question.image:
+                data = WEB_ROOT + question.image.url
+            else:
+                data = None
+            return JsonResponse({'status_code': 1, 'message': 'Success', 'data': data})
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
+
+
+@csrf_exempt
+def upload_video(request):
+    if request.method == 'POST':
+        upload_form = UploadVideoForm(request.POST, request.FILES)
+        if upload_form.is_valid():
+            question = Question.objects.get(question_id=upload_form.cleaned_data.get('question_id'))
+            question.video.delete()
+            video = upload_form.cleaned_data.get('video')
+            # if video.name.split('.')[-1] not in ['mp4']:
+            #     return JsonResponse({'status_code': 2, 'message': '视频格式有误'})
+            question.video = video
+            question.save()
+            return JsonResponse({'status_code': 1, 'message': 'success'})
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
+
+@csrf_exempt
+def get_video_url(request):
+    if request.method == 'POST':
+        video_form = GetForm(request.POST)
+        if video_form.is_valid():
+            question_id = video_form.cleaned_data.get('question_id')
+            question = Question.objects.get(question_id=question_id)
+            if question.video:
+                data = WEB_ROOT + question.video.url
+            else:
+                data = None
+            return JsonResponse({'status_code': 1, 'message': 'Success', 'data': data})
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
             return JsonResponse(response)
