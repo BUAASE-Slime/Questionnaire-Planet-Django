@@ -143,6 +143,7 @@ def save_signup_answer_by_code(request):
             username = ''
         print("username"+username)
         survey = Survey.objects.get(share_url=code)
+        qn_id = survey.survey_id
         if survey.is_deleted:
             response = {'status_code': 2, 'message': '问卷已删除'}
             return JsonResponse(response)
@@ -157,20 +158,22 @@ def save_signup_answer_by_code(request):
             return JsonResponse({'status_code': 4, 'message': '问卷未发布'})
 
         if survey.recycling_num >= survey.max_recycling & survey.max_recycling != 0:
-            finish_qn(survey.survey_id)
+            finish_qn(qn_id)
             return JsonResponse({'status_code': 5, 'message': '人数已满'})
         try:
             with transaction.atomic():
-                if survey.recycling_num + 1 > survey.max_recycling:
+                survey_lock = Survey.objects.select_for_update().get(survey_id=survey.survey_id)
+                if survey_lock.recycling_num + 1 > survey_lock.max_recycling:
                     raise SubmitRecyleNumError(survey.recycling_num)
                 survey.recycling_num = survey.recycling_num + 1
-                survey.save()
+                survey_lock.save()
 
         except SubmitRecyleNumError as e:
             print('问卷报名已满,错误信息为',e)
-            finish_qn(survey.survey_id)
-            return JsonResponse({'status_code': 11, 'message': '问卷报名已满'})
+            finish_qn(qn_id)
 
+            return JsonResponse({'status_code': 11, 'message': '问卷报名已满'})
+        question_list = Question.objects.filter(survey_id=survey)
         submit = Submit(username=username, survey_id=survey, score=0)
         submit.save()
         for answer_dict in answer_list:
@@ -182,7 +185,8 @@ def save_signup_answer_by_code(request):
                 from Submit.views import KEY_STR
                 print(answer_dict)
                 option_content_list = answer_dict['answer'].split(KEY_STR)
-                for option in options:
+                for option_not_lock in options:
+                    option = Option.objects.select_for_update().get(option_id=option_not_lock.option_id)
                     if option.content in option_content_list:
                         try:
                             with transaction.atomic():
@@ -192,12 +196,26 @@ def save_signup_answer_by_code(request):
                             option.save()
                         except OptionRecyleNumError as e:
                             print('问卷存在报名项目报名已满,错误信息为', e)
+                            survey.recycling_num = survey.recycling_num - 1
+                            survey.save()
                             submit.delete()
-                            # finish_qn(survey.survey_id)
+                            is_stop = True
+                            # 之前修改的都回滚
+                            for question in question_list:
+                                if is_stop:
+                                    break
+                                options = Option.objects.filter(question_id=question)
+                                for option in options:
+                                    if option.remain_num != 0 and option.has_num_limit:
+                                        option.remain_num = option.remain_num+1
+                                    elif option.remain_num == 0 and option.has_num_limit:
+                                        is_stop = True
+                                        break
                             return JsonResponse({'status_code': 12, 'message': '有选项报名已满'})
 
             answer.save()
-
+        survey.recycling_num = survey.recycling_num + 1
+        survey.save()
         return JsonResponse(response)
 
     else:
