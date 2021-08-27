@@ -1,25 +1,29 @@
-from django.shortcuts import render
 import json
 import time
 
 import pytz
-from drf_yasg.openapi import *
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework.decorators import api_view
-from drf_yasg import openapi
-import datetime
-
-# Create your views here.
-from Submit.views import produce_time
-from utils.toHash import hash_code
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-
-from Qn.form import CollectForm, CreateNewQnForm, SurveyIdForm
+from django.db import transaction
+from Qn.form import CreateNewQnForm, SurveyIdForm
 from Qn.models import *
+# Create your views here.
+from Submit.views import produce_time
 
 utc = pytz.UTC
+class SubmitRecyleNumError(Exception):
+    def __init__(self,num):
+        self.num = num
 
+    def __str__(self):
+        return "您报名的问卷回收数目为： %d, 已达到最大回收量" % self.num
+
+class OptionRecyleNumError(BaseException):
+    def __init__(self,num):
+        self.num = num
+
+    def __str__(self):
+        return "您报名的选项回收数目为： %d, 已达到最大回收量" % self.num
 
 # Create your views here.
 
@@ -56,15 +60,15 @@ def save_signup_answer(request):
         username = request.session.get('username')
         if username is None:
             username = ''
-
+        print("username"+username)
         survey = Survey.objects.get(survey_id=qn_id)
         if survey.is_deleted:
             return JsonResponse(response={'status_code': 2, 'message': '问卷已删除'})
 
-        if time.mktime(survey.finished_time.timetuple()) < time.time():
-            return JsonResponse({'status_code': -1, 'message': '超过截止时间'})
+            # if time.mktime(survey.finished_time.timetuple()) < time.time():
+            #     return JsonResponse({'status_code': -1, 'message': '超过截止时间'})
 
-        if Submit.objects.filter(survey_id=survey, username=username):
+        if Submit.objects.filter(survey_id=survey, username=username) and username != '':#TODO delete
             return JsonResponse({'status_code': 3, 'message': '已提交过问卷'})
 
         if not survey.is_released:
@@ -72,9 +76,16 @@ def save_signup_answer(request):
 
         if survey.recycling_num >= survey.max_recycling:
             return JsonResponse({'status_code': 5, 'message': '人数已满'})
+        try:
+            with transaction.atomic():
+                if survey.recycling_num + 1 > survey.max_recycling:
+                    raise SubmitRecyleNumError(survey.recycling_num)
+                survey.recycling_num = survey.recycling_num + 1
+                survey.save()
 
-        survey.recycling_num = survey.recycling_num + 1
-        survey.save()
+        except SubmitRecyleNumError as e:
+            print('问卷报名已满,错误信息为',e)
+            return JsonResponse({'status_code': 11, 'message': '问卷报名已满'})
 
         submit = Submit(username=username, survey_id=survey, score=0)
         submit.save()
@@ -83,9 +94,16 @@ def save_signup_answer(request):
             answer = Answer(answer=answer_dict['ans'], username=username,
                             type=answer_dict['type'], question_id=question, submit_id=submit)
             if question.type in ["radio", "checkbox"]:
-                option = Option.objects.get(content=answer_dict['ans'])
-                option.remain_num = option.remain_num - 1
-                option.save()
+                option = Option.objects.get(content=answer_dict['ans'],question_id=question)
+                try:
+                    with transaction.atomic():
+                        if option.remain_num <=0:
+                            raise OptionRecyleNumError(option.num_limit)
+                    option.remain_num = option.remain_num - 1
+                    option.save()
+                except OptionRecyleNumError as e:
+                    print('问卷存在报名项目报名已满,错误信息为', e)
+                    return JsonResponse({'status_code': 12, 'message': '有选项报名已满'})
 
             answer.save()
 
