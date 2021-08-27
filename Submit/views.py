@@ -174,7 +174,7 @@ def get_qn_data(qn_id):
                 if survey.type == '4':
                     option_dict['hasNumLimit'] = option_item.has_num_limit
                     option_dict['supply'] = option_item.num_limit
-                    option_dict['remain'] = option_item.remain_num
+                    option_dict['consume'] = option_item.num_limit - option_item.remain_num
 
         elif temp['type'] in ['mark','text','name','stuId','class','school']:
             pass
