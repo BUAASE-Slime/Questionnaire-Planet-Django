@@ -36,6 +36,7 @@ class Survey(models.Model):
         (3,'报名问卷'),
     ]
     type = models.CharField(max_length=32, verbose_name="问卷类型",default='')
+    is_logic = models.BooleanField(default=False,verbose_name="是否存在逻辑问题")
 
 
 class Question(models.Model):
@@ -68,6 +69,11 @@ class Question(models.Model):
     has_video = models.BooleanField(default=False, verbose_name="包含视频")
     image_url = models.URLField(verbose_name="图片链接", default='')
     video_url = models.URLField(verbose_name="视频链接", default='')
+
+    # last_option = models.ForeignKey(Option,on_delete=models.CASCADE,verbose_name="上一个选项")
+    last_option = models.IntegerField(default=0, verbose_name="上一个选项")
+    last_question = models.IntegerField(default=0, verbose_name="上一个问题")
+    is_shown = models.BooleanField(default=True, verbose_name="展示题目")
 
     # radio checkbox 单选题 多选题 text 填空 mark 判断 location 定位
 class Option(models.Model):
