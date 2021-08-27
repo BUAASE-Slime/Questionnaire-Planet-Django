@@ -63,7 +63,8 @@ def save_signup_answer(request):
         print("username"+username)
         survey = Survey.objects.get(survey_id=qn_id)
         if survey.is_deleted:
-            return JsonResponse(response={'status_code': 2, 'message': '问卷已删除'})
+            response = {'status_code': 2, 'message': '问卷已删除'}
+            return JsonResponse(response)
 
             # if time.mktime(survey.finished_time.timetuple()) < time.time():
             #     return JsonResponse({'status_code': -1, 'message': '超过截止时间'})
@@ -266,6 +267,7 @@ def save_qn(request):
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
 
 
 @csrf_exempt
