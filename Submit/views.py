@@ -21,7 +21,7 @@ except:
     IS_LINUX = True
 
 
-# Create your views here.
+
 
 @csrf_exempt
 def empty_the_recycle_bin(request):
@@ -264,6 +264,9 @@ def get_survey_details_by_others(request):
             return JsonResponse(response)
         if survey.finished_time is not None and survey.finished_time < datetime.datetime.now():
             response = {'status_code': 666, 'message': '问卷已经超过截止时间'}
+            survey.is_finished = True
+            survey.is_released = False
+            survey.save()
             return JsonResponse(response)
         if survey.type in ['2', '3', '4']:
             username = request.session.get('username')
@@ -490,37 +493,37 @@ def pause_qn(request):
         return JsonResponse(response)
 
 
-@csrf_exempt
-def finish_qn(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        survey_form = SurveyIdForm(request.POST)
-        if survey_form.is_valid():
-            id = survey_form.cleaned_data.get('qn_id')
-            try:
-                survey = Survey.objects.get(survey_id=id)
-            except:
-                response = {'status_code': 2, 'message': '问卷不存在'}
-                return JsonResponse(response)
-            if survey.is_deleted == True:
-                response = {'status_code': 4, 'message': '问卷已经放入回收站'}
-                return JsonResponse(response)
-            if survey.is_finished:
-                response = {'status_code': 5, 'message': '问卷已经停止回收'}
-                return JsonResponse(response)
-            survey.is_finished = True
-            survey.finished_time = datetime.datetime.now()
-            survey.is_released = False
-
-            survey.save()
-            return JsonResponse(response)
-
-        else:
-            response = {'status_code': -1, 'message': 'invalid form'}
-            return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': '请求错误'}
-        return JsonResponse(response)
+# @csrf_exempt
+# def finish_qn(request):
+#     response = {'status_code': 1, 'message': 'success'}
+#     if request.method == 'POST':
+#         survey_form = SurveyIdForm(request.POST)
+#         if survey_form.is_valid():
+#             id = survey_form.cleaned_data.get('qn_id')
+#             try:
+#                 survey = Survey.objects.get(survey_id=id)
+#             except:
+#                 response = {'status_code': 2, 'message': '问卷不存在'}
+#                 return JsonResponse(response)
+#             if survey.is_deleted == True:
+#                 response = {'status_code': 4, 'message': '问卷已经放入回收站'}
+#                 return JsonResponse(response)
+#             if survey.is_finished:
+#                 response = {'status_code': 5, 'message': '问卷已经停止回收'}
+#                 return JsonResponse(response)
+#             survey.is_finished = True
+#             survey.finished_time = datetime.datetime.now()
+#             survey.is_released = False
+#
+#             survey.save()
+#             return JsonResponse(response)
+#
+#         else:
+#             response = {'status_code': -1, 'message': 'invalid form'}
+#             return JsonResponse(response)
+#     else:
+#         response = {'status_code': -2, 'message': '请求错误'}
+#         return JsonResponse(response)
 
 
 from docx.enum.style import WD_STYLE_TYPE
@@ -543,9 +546,10 @@ def TestDocument(request):
             if survey.type == '2':
                 document, f, docx_title, _ = paper_to_docx(id)
 
-            else: # TODO
+            elif survey.type == '3':
+                document, f, docx_title, _ = vote_to_docx(id)
+            else:
                 document, f, docx_title, _ = qn_to_docx(id)
-
             response['filename'] = docx_title
             response['docx_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + docx_title
             # TODO: 根据实时文件位置设置url
@@ -1571,3 +1575,22 @@ def submit_reporter(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+
+def finish_qn(qn_id):
+
+    survey = Survey.objects.get(survey_id=id)
+    survey.is_finished = True
+    survey.is_released = False
+    survey.save()
+
+    return 1
+
+def dispose_qn_correlate_question(qn_id):
+
+    show_question_list = Question.objects.filter(survey_id=qn_id,last_question=0)
+
+
+
+
+
