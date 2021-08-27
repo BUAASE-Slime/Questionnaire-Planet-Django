@@ -35,10 +35,21 @@ def paper_to_docx(qn_id):
     introduction = "考试须知：本考卷共计" + str(survey.question_num) + "个问题，总分共计 "+str(sum_score)+"分"
 
     paragraph = document.add_paragraph().add_run(introduction, style='Song')
+    str_time = survey.finished_time
+    if survey.finished_time  is None:
+        str_time = "暂未设定"
 
-    warning = "此外本场考试的截止时间为：" + str(survey.finished_time) + "注意不要在考试截止时间后提交试卷！！"
+    warning = "此外本场考试的截止时间为：" + str(str_time) + "。注意不要在考试截止时间后提交试卷！！"
     document.add_paragraph().add_run(warning, style='Song')
-    questions = Question.objects.filter(survey_id=survey)
+    questions = [] ; question_info_list = [];
+    question_list = Question.objects.filter(survey_id=survey)
+    for question in question_list:
+        if question.type in ['school','name','class','stuId']:
+            question_info_list.append(question)
+        else:
+            questions.append(question)
+    for question in question_info_list:
+        document.add_paragraph().add_run(question.title, style='Song')
     i = 1
     for question in questions:
 
