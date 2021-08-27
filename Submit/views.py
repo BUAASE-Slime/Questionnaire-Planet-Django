@@ -377,7 +377,7 @@ def create_option(question, content, sequence):
 
 
 
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point,isVote):
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point,isVote,last_question,last_option):
     question = Question()
     try:
         question.title = title
@@ -392,6 +392,8 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         question.point = point
         question.right_answer =refer
         question.isVote = isVote
+        question.last_question = last_question
+        question.last_option = last_option
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
         return JsonResponse(response)
@@ -921,6 +923,15 @@ def question_dict_to_question(question, question_dict):
     options = question_dict['options']
     question.sequence = question_dict['id']
 
+    try:
+        question_dict['last_question'] =  question_dict['last_question']
+        question.last_question = save_question_by_order(question.survey_id,question_dict['last_question'])
+        last_question = Question.objects.get(question_id=question.last_question)
+        question.last_option = save_option_by_order(last_question,question_dict['last_option'])
+    except:
+        pass
+
+
     if question.survey_id.type == '2':
         question.right_answer = question_dict['refer']
         question.point = question_dict['point']
@@ -970,6 +981,7 @@ def save_qn_keep_history(request):
         if survey.description == '':
             survey.description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
         survey.type = req['type']
+
         try:
             req['finished_time'] = req['finished_time']
             print("问卷截止时间为 " + req['finished_time'])
@@ -1020,12 +1032,23 @@ def save_qn_keep_history(request):
 
             elif req['type'] == '3':
                 isVote = question_dict['isVote']
+
             if question_dict['question_id'] == 0:
+                try:
+                    last_question = question_dict['last_question']
+                    last_option = question_dict['last_option']
+                    question_id = save_question_by_order(survey,last_question)
+                    last_question_obj = Question.objects.get(question_id=question_id)
+                    last_question = last_question_obj.question_id
+                    last_option = save_option_by_order(last_question_obj,last_option)
+                except:
+                    last_question = 0
+                    last_option = 0
                 create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
                                         , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
                                         score=question_dict['score'],
                                         options=question_dict['options'],
-                                        sequence=question_dict['id'],refer=refer,point=point,isVote=isVote
+                                        sequence=question_dict['id'],refer=refer,point=point,isVote=isVote,last_question=last_question,last_option=last_option
                                         )
                 # 添加问题
 
@@ -1601,7 +1624,25 @@ def dispose_qn_correlate_question(qn_id):
             not_question_list.append(question)
             question.is_shown = False
 
+def save_option_by_order(question,option_order):
+    
+    option_list = Option.objects.filter(question_id=question)
+    i = 1
+    for option in option_list:
+        if i == option_order:
+            return option.option_id
+        i += 1
+    return 0
 
+def save_question_by_order(qn,question_order):
+
+    i = 1
+    question_list = Question.objects.filter(survey_id=qn)
+    for question in question_list:
+        if i == question_order:
+            return question.question_id
+        i += 1
+    return 0
 
 
 
