@@ -2,7 +2,7 @@ from django.conf.urls.static import static
 from django.urls import path
 from .views import *
 from .no_use_func import *
-from exam.views import *
+from exam.views import save_exam_answer
 from vote.views import ret_vote_answer
 urlpatterns = [
 
