@@ -286,14 +286,15 @@ def get_survey_details_by_others(request):
 # username title description type
 @csrf_exempt
 def create_qn(request):
-    global survey
+    # global survey
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
+
         new_qn_form = CreateNewQnForm(request.POST)
         if new_qn_form.is_valid():
             username = new_qn_form.cleaned_data.get('username')
             title = new_qn_form.cleaned_data.get('title')
-            description = new_qn_form.cleaned_data.get('description')
+            # description = new_qn_form.cleaned_data.get('description')
             type = new_qn_form.cleaned_data.get('type')
 
             description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
@@ -314,7 +315,7 @@ def create_qn(request):
                 title = "默认标题"
                 if type == '2':
                     title = "默认标题"
-
+            print("创建问卷： 设置标题成功")
             try:
                 survey = Survey(username=username, title=title, type=type, description=description, question_num=0,
                                 recycling_num=0)
@@ -324,6 +325,7 @@ def create_qn(request):
                 return JsonResponse(response)
 
             response['qn_id'] = survey.survey_id
+            print(response)
             return JsonResponse(response)
 
 
