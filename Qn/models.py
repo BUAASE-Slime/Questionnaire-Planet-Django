@@ -4,7 +4,7 @@ from userinfo.models import *
 
 def question_image_directory_path(instance, filename):
     # 文件上传到 MEDIA_ROOT/iamge/question_<id>/<filename>目录中
-    return 'image/question_{0}/{1}'.format(instance.id, filename)
+    return 'image/question_{0}/{1}'.format(instance.question_id, filename)
 
 class Survey(models.Model):
     survey_id = models.AutoField(primary_key=True,verbose_name="id")
