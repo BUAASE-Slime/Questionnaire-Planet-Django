@@ -120,7 +120,9 @@ def write_exam_to_excel(qn_id):
     sht1.write(0, 2, "提交时间")
     question_list = Question.objects.filter(survey_id=qn)
     question_info_list = []; questions = []
+    paper_sum_score = 0
     for question in question_list:
+        paper_sum_score += question.point
         if question.type in ['school','name','class','stuId']:
             question_info_list.append(question)
         else:# TODO 都是问题吧？
@@ -135,26 +137,50 @@ def write_exam_to_excel(qn_id):
     # i = 1
 
     for question in questions:
-        sht1.write(0, 2 + i, str(i-info_num) + "、" + question.title+" ("+str(question.point)+"分)")
+        type = question.type
+        type_str = ""
+        if type == 'radio':
+            type_str = "单选题"
+        elif type == 'checkbox':
+            type_str = '多选题'
+        elif type == 'text':
+            type_str = '填空题'
+        elif type == 'mark':
+            type_str = '评分题'
+        elif type == 'judge':
+            type_str = "判断题"
+        sht1.write(0, 2 + i, str(i-info_num) + "、" + question.title+" ("+type_str+" "+str(question.point)+"分)")
         i += 1
-    sht1.write(0, 2 + i, "总分")
+    sht1.write(0, 2 + i, "总分 ("+str(paper_sum_score)+"分)")
     pattern_green = xlwt.Pattern()  # Create the Pattern
     pattern_green.pattern = xlwt.Pattern.SOLID_PATTERN  # May be: NO_PATTERN, SOLID_PATTERN, or 0x00 through 0x12
     pattern_green.pattern_fore_colour = 3
     # May be: 8 through 63. 0 = Black, 1 = White, 2 = Red, 3 = Green, 4 = Blue, 5 = Yellow, 6 = Magenta, 7 = Cyan, 16 = Maroon, 17 = Dark Green, 18 = Dark Blue, 19 = Dark Yellow , almost brown), 20 = Dark Magenta, 21 = Teal, 22 = Light Gray, 23 = Dark Gray, the list goes on...
     style_green = xlwt.XFStyle()  # Create the Pattern
-    style_green.pattern = pattern_green # Add Pattern to Style
-
+    # style_green.pattern = pattern_green # Add Pattern to Style
+    font_green = xlwt.Font()
+    font_green.colour_index = 17
+    style_green.font = font_green
     pattern_red = xlwt.Pattern()  # Create the Pattern
     pattern_red.pattern = xlwt.Pattern.SOLID_PATTERN  # May be: NO_PATTERN, SOLID_PATTERN, or 0x00 through 0x12
     pattern_red.pattern_fore_colour = 2
     # May be: 8 through 63. 0 = Black, 1 = White, 2 = Red, 3 = Green, 4 = Blue, 5 = Yellow, 6 = Magenta, 7 = Cyan, 16 = Maroon, 17 = Dark Green, 18 = Dark Blue, 19 = Dark Yellow , almost brown), 20 = Dark Magenta, 21 = Teal, 22 = Light Gray, 23 = Dark Gray, the list goes on...
     style_red = xlwt.XFStyle()  # Create the Pattern
-    style_red.pattern = pattern_red  # Add Pattern to Style
+    # style_red.pattern = pattern_red  # Add Pattern to Style
+    font_red = xlwt.Font()
+    font_red.colour_index = 2
+    style_red.font = font_red
+    sht1.write(1, 0, "正确答案")
+    i = 2+info_num+1
+    for question in questions:
+        answer_str = question.right_answer
+        answer_str = answer_str.replace(KEY_STR, ';')
+        sht1.write(1, i, answer_str)
+        i+=1
 
-    id = 1
+    id = 2
     for submit in submit_list:
-        sht1.write(id, 0, id)
+        sht1.write(id, 0, id-1)
         username = submit.username
         if username == '' or username is None:
             username = "匿名用户"
@@ -165,7 +191,9 @@ def write_exam_to_excel(qn_id):
             answer_str = (Answer.objects.get(submit_id=submit, question_id=question)).answer
             sht1.write(id, 2 + question_num, answer_str)
             question_num += 1
+        personal_score = 0
         for question in questions:
+
             answer_str = ""
             try:
                 answer = Answer.objects.get(submit_id=submit, question_id=question)
@@ -175,13 +203,19 @@ def write_exam_to_excel(qn_id):
             if question.type == 'checkbox':
                 answer_str = answer_str.replace(KEY_STR,';')
             if answer.answer == question.right_answer:
+                answer.score = question.point
                 style = style_green
             else:
                 style = style_red
+                answer.score = 0
+            answer.save()
+            personal_score+=answer.score
 
             sht1.write(id, 2 + question_num, answer_str,style)
 
             question_num += 1
+        submit.score = personal_score
+        submit.save()
         sht1.write(id, 2 + question_num, submit.score)
 
         id += 1
