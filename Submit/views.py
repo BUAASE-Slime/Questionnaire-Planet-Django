@@ -268,6 +268,10 @@ def get_survey_details_by_others(request):
             survey.is_released = False
             survey.save()
             return JsonResponse(response)
+        if not survey.is_released:
+            return JsonResponse({'status_code': 3})
+        if survey.is_deleted:
+            return JsonResponse({'status_code': 3})
         if survey.type in ['2', '3', '4']:
             username = request.session.get('username')
             print(username)
@@ -280,6 +284,13 @@ def get_survey_details_by_others(request):
                         return JsonResponse(response)
                 except:
                     pass
+        if survey.type is '5':
+            username = request.session.get('username')
+            print(username)
+            if username is not None:
+                if Submit.objects.filter(survey_id=survey, username=username,
+                                         submit_time__gte=datetime.datetime.today().date()):
+                    return JsonResponse({'status_code': 999, 'message': '当天已填写'})
         if survey.is_released and not survey.is_deleted:
             response = get_qn_data(survey.survey_id)
             return JsonResponse(response)
