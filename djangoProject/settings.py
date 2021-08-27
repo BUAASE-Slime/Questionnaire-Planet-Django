@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'exam',
     'vote',
     'signup',
+    'epidemic',
 ]
 
 MIDDLEWARE = [
