@@ -270,7 +270,7 @@ def get_survey_details_by_others(request):
                     submit = Submit.objects.filter(username=username, survey_id=survey)
                     if submit:
                         response = {'status_code': 888, 'message': '您已填写问卷'}
-                        print("用户 " + username + " 试图重复填写考试问卷，将被拒绝")
+                        print("用户 " + username + " 试图重复填写问卷，将提供查看问卷结果")
                         return JsonResponse(response)
                 except:
                     pass
@@ -1018,6 +1018,63 @@ def save_qn_keep_history(request):
         return JsonResponse(response)
 
 
+@csrf_exempt
+def get_answer_from_submit_by_code(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        code = request.POST.get('code')
+        username = request.session.get('username')
+        print(code)
+        try:
+            submits = Submit.objects.filter(survey_id__share_url=code, username=username)
+            submit = submits[0]
+        except:
+            print(2)
+            response = {'status_code': 2, 'message': '答卷不存在'}
+            return JsonResponse(response)
+        qn = submit.survey_id
+        qn_dict = get_qn_data(qn.survey_id)
+        questions = qn_dict['questions']
+        response['questions'] = questions
+        print(questions)
+        # TODO
+        # if request.session['username'] != username:
+        #     response = {'status_code': 0, 'message': '没有访问权限'}
+        #     return JsonResponse(response)
+
+        try:
+            answer_list = Answer.objects.filter(submit_id=submit)
+            if len(answer_list) == 0:
+                raise Exception('')
+        except:
+            response = {'status_code': 3, 'message': '该问卷暂无回答'}
+            return JsonResponse(response)
+        answers = []
+        response['submit_id'] = submit.submit_id
+        response['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
+        response['username'] = submit.username
+        response['is_valid'] = submit.is_valid
+        response['score'] = submit.score
+        response['qn_id'] = submit.survey_id.survey_id
+
+        for answer in answer_list:
+            item = {}
+            item['answer'] = answer.answer
+            item['score'] = answer.score
+            item['username'] = answer.username
+            item['answer_id'] = answer.answer_id
+            item['type'] = answer.type
+            item['question_id'] = answer.question_id.question_id
+            item['submit_id'] = answer.submit_id_id
+            answers.append(item)
+        # TODO
+        response['answers'] = answers
+        print(answers)
+        return JsonResponse(response)
+
+    else:
+        response = {'status_code': -1, 'message': 'invalid form'}
+        return JsonResponse(response)
 
 
 @csrf_exempt
@@ -1039,6 +1096,7 @@ def get_answer_from_submit(request):
             qn_dict = get_qn_data(qn.survey_id)
             questions = qn_dict['questions']
             response['questions'] = questions
+            response['description'] = qn.description
             print(questions)
             # TODO
             # if request.session['username'] != username:

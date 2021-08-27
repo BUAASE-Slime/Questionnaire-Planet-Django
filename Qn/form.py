@@ -11,6 +11,9 @@ class AnswerForm(forms.Form):
 class URLForm(forms.Form):
     url = forms.CharField(label="问卷链接", max_length=128, widget=forms.TextInput(attrs={'class': 'form-control'}))
 
+class CodeForm(forms.Form):
+    code = forms.CharField(label="问卷码", max_length=128, widget=forms.TextInput(attrs={'class': 'form-control'}))
+
 class UserNameForm(forms.Form):
     username = forms.CharField(label="用户名", max_length=128, widget=forms.TextInput(attrs={'class': 'form-control'}))
 
