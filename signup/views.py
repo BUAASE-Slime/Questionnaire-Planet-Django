@@ -170,7 +170,7 @@ def save_signup_answer_by_code(request):
                 survey_lock.recycling_num = survey_lock.recycling_num + 1
 
                 survey_lock.save()
-                print("lock_回收数目"+survey_lock.recycling_num)
+                # print("lock_回收数目"+survey_lock.recycling_num)
             # transaction.commit()
 
         except SubmitRecyleNumError as e:
