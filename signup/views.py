@@ -178,17 +178,22 @@ def save_signup_answer_by_code(request):
             answer = Answer(answer=answer_dict['answer'], username=username,
                             type=answer_dict['type'], question_id=question, submit_id=submit)
             if question.type in ["radio", "checkbox"]:
-                option = Option.objects.get(content=answer_dict['answer'],question_id=question)
-                try:
-                    with transaction.atomic():
-                        if option.remain_num <=0:
-                            raise OptionRecyleNumError(option.num_limit)
-                    option.remain_num = option.remain_num - 1
-                    option.save()
-                except OptionRecyleNumError as e:
-                    print('问卷存在报名项目报名已满,错误信息为', e)
-                    finish_qn(survey.survey_id)
-                    return JsonResponse({'status_code': 12, 'message': '有选项报名已满'})
+                options = Option.objects.filter(question_id=question)
+                from Submit.views import KEY_STR
+                print(answer_dict)
+                option_content_list = answer_dict['answer'].split(KEY_STR)
+                for option in options:
+                    if option.content in option_content_list:
+                        try:
+                            with transaction.atomic():
+                                if option.remain_num <=0:
+                                    raise OptionRecyleNumError(option.num_limit)
+                            option.remain_num = option.remain_num - 1
+                            option.save()
+                        except OptionRecyleNumError as e:
+                            print('问卷存在报名项目报名已满,错误信息为', e)
+                            finish_qn(survey.survey_id)
+                            return JsonResponse({'status_code': 12, 'message': '有选项报名已满'})
 
             answer.save()
 
