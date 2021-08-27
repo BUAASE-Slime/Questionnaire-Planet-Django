@@ -872,9 +872,9 @@ def empty_qn_all_Submit(request):
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
             username = qn.username
-            if request.session['username'] != username:
-                response = {'status_code': 0, 'message': '没有访问权限'}
-                return JsonResponse(response)
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
             qn.recycling_num = 0
             qn.save()
 
