@@ -6,4 +6,5 @@ urlpatterns = [
     path('save_qn', save_qn),
     # path('get_qn', get_survey_details),
     path('save_ans', save_signup_answer),
+    path('save_answer_by_code', save_signup_answer_by_code),
 ]
