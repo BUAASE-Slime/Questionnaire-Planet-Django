@@ -1589,7 +1589,7 @@ def finish_qn(qn_id):
 def dispose_qn_correlate_question(qn_id):
 
     show_question_list = Question.objects.filter(survey_id=qn_id,last_question=0)
-    
+
 
 
 
