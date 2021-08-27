@@ -1,18 +1,16 @@
 import base64
-
-import djangoProject.settings
+import datetime
 import json
-from io import BytesIO
 
 import pytz
-# Create your views here.
-from .forms import *
-import datetime
-from Qn.form import *
-from Qn.models import *
-from .export import *
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+
+import djangoProject.settings
+from Qn.form import *
+from .export import *
+# Create your views here.
+from .forms import *
 
 utc = pytz.UTC
 
@@ -173,6 +171,11 @@ def get_qn_data(qn_id):
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
 
+                if survey.type == '4':
+                    option_dict['hasNumLimit'] = option_item.has_num_limit
+                    option_dict['supply'] = option_item.num_limit
+                    option_dict['remain'] = option_item.remain_num
+
         elif temp['type'] in ['mark','text','name','stuId','class','school']:
             pass
         elif temp['type'] == 'info':
@@ -300,7 +303,8 @@ def create_qn(request):
             description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
             if type == '2':
                 description = "这里是考试问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
-
+            elif type == '4':
+                description = "这里是报名问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
             try:
                 user = User.objects.get(username=username)
 
@@ -323,6 +327,22 @@ def create_qn(request):
             except:
                 response = {'status_code': -3, 'message': '后端炸了'}
                 return JsonResponse(response)
+            if type == '4':
+                questions = [{"id": 1, "type": "text", "title": "你的姓名是：",
+                              "must": True, "description": '', "row": 1, "score": 0,
+                              "options": [{'id': 1, 'title': ""}]},
+                             {"id": 2, "type": "text", "title": "你的手机号是：",
+                              "must": True, "description": '', "row": 1, "score": 0,
+                              "options": [{'id': 1, 'title': ""}]}]
+
+                options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 10, "remain": 10},
+                           {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 10, "remain": 10},
+                           {"hasNumLimit": True, "title": "学习委员", "id": 3, "supply": 10, "remain": 10}]
+
+                questions.append({"id": 3, "type": "radio", "title": "您想要竞选的职位是：",
+                                  "must": True, "description": '', "row": 1, "score": 0, "options": options})
+                response['questions'] = questions
+
 
             response['qn_id'] = survey.survey_id
             print(response)
@@ -844,6 +864,8 @@ def empty_qn_all_Submit(request):
             if request.session['username'] != username:
                 response = {'status_code': 0, 'message': '没有访问权限'}
                 return JsonResponse(response)
+            qn.recycling_num = 0
+            qn.save()
 
             submit_list = Submit.objects.filter(survey_id=qn.survey_id)
             for submit in submit_list:
@@ -1167,6 +1189,9 @@ def delete_submit(request):
             #     answer.delete()
             # 数据库是级联删除的，删除了submit 带有这个外键的自动珊瑚
             submit.delete()
+            qn = submit.survey_id
+            qn.recycling_num -= 1
+            qn.save()
 
             return JsonResponse(response)
 
