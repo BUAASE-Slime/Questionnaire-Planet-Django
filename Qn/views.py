@@ -47,10 +47,11 @@ def get_list(request):
         if survey_id is not None:
             try:
                 survey = Survey.objects.get(survey_id=survey_id)
+                num = len(Submit.objects.filter(survey_id=survey))
                 json_item = {"survey_id": survey.survey_id, "title": survey.title,
                              "description": survey.description, "is_released": survey.is_released,
                              "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
-                             "recycling_num": survey.recycling_num, "username": survey.username,
+                             "recycling_num": num, "username": survey.username,
                              "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M"),
                              "type": survey.type}
 
@@ -82,10 +83,11 @@ def get_list(request):
 
         json_list = []
         for survey in survey_list:
+            num = len(Submit.objects.filter(survey_id=survey))
             json_item = {"survey_id": survey.survey_id, "title": survey.title,
                          "description": survey.description, "is_released": survey.is_released,
                          "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
-                         "recycling_num": survey.recycling_num, "username": survey.username,
+                         "recycling_num": num, "username": survey.username,
                          "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M"),
                          "type": survey.type}
             json_list.append(json_item)
