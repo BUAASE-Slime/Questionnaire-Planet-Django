@@ -543,9 +543,10 @@ def TestDocument(request):
             if survey.type == '2':
                 document, f, docx_title, _ = paper_to_docx(id)
 
-            else: # TODO
+            elif survey.type == '3':
+                document, f, docx_title, _ = vote_to_docx(id)
+            else:
                 document, f, docx_title, _ = qn_to_docx(id)
-
             response['filename'] = docx_title
             response['docx_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + docx_title
             # TODO: 根据实时文件位置设置url
