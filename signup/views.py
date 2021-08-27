@@ -106,7 +106,7 @@ def save_signup_answer(request):
                     option.save()
                 except OptionRecyleNumError as e:
                     print('问卷存在报名项目报名已满,错误信息为', e)
-                    finish_qn(qn_id)
+                    # finish_qn(qn_id)
                     return JsonResponse({'status_code': 12, 'message': '有选项报名已满'})
 
             answer.save()
