@@ -2,6 +2,10 @@ from django.db import models
 from userinfo.models import *
 # Create your models here.
 
+def question_image_directory_path(instance, filename):
+    # 文件上传到 MEDIA_ROOT/iamge/question_<id>/<filename>目录中
+    return 'image/question_{0}/{1}'.format(instance.id, filename)
+
 class Survey(models.Model):
     survey_id = models.AutoField(primary_key=True,verbose_name="id")
     title = models.CharField(max_length=50,verbose_name="标题")
@@ -36,6 +40,7 @@ class Survey(models.Model):
         (3,'报名问卷'),
     ]
     type = models.CharField(max_length=32, verbose_name="问卷类型",default='')
+    is_logic = models.BooleanField(default=False,verbose_name="是否存在逻辑问题")
 
 
 class Question(models.Model):
@@ -66,8 +71,14 @@ class Question(models.Model):
 
     has_image = models.BooleanField(default=False, verbose_name="包含图片")
     has_video = models.BooleanField(default=False, verbose_name="包含视频")
-    image_url = models.URLField(verbose_name="图片链接", default='')
+    # image_url = models.URLField(verbose_name="图片链接", default='')
+    image = models.ImageField(upload_to=question_image_directory_path, blank=True, verbose_name="图片文件")
     video_url = models.URLField(verbose_name="视频链接", default='')
+
+    # last_option = models.ForeignKey(Option,on_delete=models.CASCADE,verbose_name="上一个选项")
+    last_option = models.IntegerField(default=0, verbose_name="上一个选项")
+    last_question = models.IntegerField(default=0, verbose_name="上一个问题")
+    is_shown = models.BooleanField(default=True, verbose_name="展示题目")
 
     # radio checkbox 单选题 多选题 text 填空 mark 判断 location 定位
 class Option(models.Model):

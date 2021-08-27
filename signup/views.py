@@ -8,7 +8,7 @@ from django.db import transaction
 from Qn.form import CreateNewQnForm, SurveyIdForm
 from Qn.models import *
 # Create your views here.
-from Submit.views import produce_time
+from Submit.views import produce_time,finish_qn
 
 utc = pytz.UTC
 class SubmitRecyleNumError(Exception):
@@ -63,7 +63,8 @@ def save_signup_answer(request):
         print("username"+username)
         survey = Survey.objects.get(survey_id=qn_id)
         if survey.is_deleted:
-            return JsonResponse(response={'status_code': 2, 'message': '问卷已删除'})
+            response = {'status_code': 2, 'message': '问卷已删除'}
+            return JsonResponse(response)
 
             # if time.mktime(survey.finished_time.timetuple()) < time.time():
             #     return JsonResponse({'status_code': -1, 'message': '超过截止时间'})
@@ -75,6 +76,7 @@ def save_signup_answer(request):
             return JsonResponse({'status_code': 4, 'message': '问卷未发布'})
 
         if survey.recycling_num >= survey.max_recycling & survey.max_recycling != 0:
+            finish_qn(qn_id)
             return JsonResponse({'status_code': 5, 'message': '人数已满'})
         try:
             with transaction.atomic():
@@ -85,6 +87,7 @@ def save_signup_answer(request):
 
         except SubmitRecyleNumError as e:
             print('问卷报名已满,错误信息为',e)
+            finish_qn(qn_id)
             return JsonResponse({'status_code': 11, 'message': '问卷报名已满'})
 
         submit = Submit(username=username, survey_id=survey, score=0)
@@ -103,6 +106,7 @@ def save_signup_answer(request):
                     option.save()
                 except OptionRecyleNumError as e:
                     print('问卷存在报名项目报名已满,错误信息为', e)
+                    finish_qn(qn_id)
                     return JsonResponse({'status_code': 12, 'message': '有选项报名已满'})
 
             answer.save()
@@ -266,6 +270,7 @@ def save_qn(request):
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
 
 
 @csrf_exempt
@@ -361,106 +366,3 @@ def question_dict_to_question(question, question_dict):
     question.save()
 
 
-@csrf_exempt
-def get_survey_details(request):
-    response = {'status_code': 1, 'message': 'success'}
-    this_username = request.session.get('username')
-    # if not this_username:
-    #     return JsonResponse({'status_code': 0})
-    if request.method == 'POST':
-        survey_form = SurveyIdForm(request.POST)
-        if survey_form.is_valid():
-            id = survey_form.cleaned_data.get('qn_id')
-            try:
-                survey = Survey.objects.get(survey_id=id)
-                print(survey.survey_id)
-            except:
-                response = {'status_code': -2, 'message': '问卷不存在'}
-                return JsonResponse(response)
-
-            # if survey.username != this_username:
-            #     return JsonResponse({'status_code': 0})
-
-            response = get_qn_data(id)
-
-            return JsonResponse(response)
-        else:
-            response = {'status_code': -1, 'message': '问卷id不为整数'}
-            return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': '请求错误'}
-        return JsonResponse(response)
-
-
-def get_qn_data(qn_id):
-    id = qn_id
-    survey = Survey.objects.get(survey_id=qn_id)
-    response = {'status_code': 1, 'message': 'success'}
-    response['qn_id'] = survey.survey_id
-    response['username'] = survey.username
-    response['title'] = survey.title
-    response['description'] = survey.description
-    response['type'] = survey.type
-
-    response['question_num'] = survey.question_num
-    response['created_time'] = response['release_time'] = response['finished_time'] = ''
-    if produce_time(survey.created_time):
-        response['created_time'] = survey.created_time.strftime("%Y/%m/%d %H:%M")
-    if produce_time(survey.finished_time):
-        response['finished_time'] = survey.finished_time.strftime("%Y/%m/%d %H:%M")
-    if produce_time(survey.release_time):
-        response['release_time'] = survey.release_time.strftime("%Y/%m/%d %H:%M")
-    response['is_released'] = survey.is_released
-    response['is_deleted'] = survey.is_deleted
-    response['is_finished'] = survey.is_finished
-    response['share_url'] = survey.share_url
-    response['docx_url'] = survey.docx_url
-    response['pdf_url'] = survey.pdf_url
-    response['excel_url'] = survey.excel_url
-    response['recycling_num'] = survey.recycling_num
-    response['max_recycling'] = survey.max_recycling
-
-    question_list = Question.objects.filter(survey_id__survey_id=qn_id)
-    questions = []
-    for item in question_list:
-        temp = {}
-        temp['question_id'] = item.question_id
-        temp['row'] = item.raw
-        temp['score'] = item.score
-        temp['title'] = item.title
-        temp['description'] = item.direction
-        temp['must'] = item.is_must_answer
-        temp['type'] = item.type
-        temp['qn_id'] = qn_id
-        temp['sequence'] = item.sequence
-        temp['option_num'] = item.option_num
-        temp['refer'] = item.right_answer
-        temp['point'] = item.point
-        temp['id'] = item.sequence  # 按照前端的题目顺序
-        temp['options'] = [{'id': 1, 'title': ""}]
-        temp['answer'] = item.right_answer
-        if temp['type'] in ['radio', 'checkbox']:
-            temp['options'] = []
-            # 单选题或者多选题有选项
-            option_list = Option.objects.filter(question_id=item.question_id)
-            for option_item in option_list:
-                option_dict = {}
-                option_dict['id'] = option_item.option_id
-                option_dict['title'] = option_item.content
-
-                if survey.type == '4':
-                    option_dict['hasNumLimit'] = option_item.has_num_limit
-                    option_dict['supply'] = option_item.num_limit
-                    option_dict['remain'] = option_item.remain_num
-
-                temp['options'].append(option_dict)
-
-        elif temp['type'] in ['mark', 'text', 'name', 'stuId', 'class', 'school']:
-            pass
-        elif temp['type'] == 'info':
-            pass
-
-        questions.append(temp)
-        print(questions)
-    response['questions'] = questions
-    return response
