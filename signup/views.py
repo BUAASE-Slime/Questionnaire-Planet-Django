@@ -185,15 +185,16 @@ def save_signup_answer_by_code(request):
                 from Submit.views import KEY_STR
                 print(answer_dict)
                 option_content_list = answer_dict['answer'].split(KEY_STR)
-                for option_not_lock in options:
-                    option = Option.objects.select_for_update().get(option_id=option_not_lock.option_id)
+                for option in options:
+                    # option = Option.objects.select_for_update().get(option_id=option_not_lock.option_id)
                     if option.content in option_content_list:
                         try:
                             with transaction.atomic():
-                                if option.remain_num <=0:
+                                option_lock = Option.objects.select_for_update().get(option_id=option.option_id)
+                                if option_lock.remain_num <=0:
                                     raise OptionRecyleNumError(option.num_limit)
-                            option.remain_num = option.remain_num - 1
-                            option.save()
+                                option_lock.remain_num = option.remain_num - 1
+                                option_lock.save()
                         except OptionRecyleNumError as e:
                             print('问卷存在报名项目报名已满,错误信息为', e)
                             survey.recycling_num = survey.recycling_num - 1
