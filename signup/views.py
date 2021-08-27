@@ -168,8 +168,9 @@ def save_signup_answer_by_code(request):
                 if survey_lock.recycling_num + 1 > survey_lock.max_recycling:
                     raise SubmitRecyleNumError(survey.recycling_num)
                 survey_lock.recycling_num = survey_lock.recycling_num + 1
-                print(survey_lock.recycling_num)
+
                 survey_lock.save()
+                print("lock_回收数目"+survey_lock.recycling_num)
             # transaction.commit()
 
         except SubmitRecyleNumError as e:
@@ -210,9 +211,8 @@ def save_signup_answer_by_code(request):
                             option_lock.save()
                         except OptionRecyleNumError as e:
                             print('问卷存在报名项目报名已满,错误信息为', e)
-                            print("before recycling_num")
-                            survey.recycling_num = survey.recycling_num - 1
-                            survey.save()
+                            # print("before recycling_num")
+
                             print("after recycling_num")
                             answer_list = Answer.objects.filter(submit_id=submit)
                             is_stop = False
@@ -225,14 +225,14 @@ def save_signup_answer_by_code(request):
                                     answer_answer_list = answer.answer.split(KEY_STR)
                                     if option_roolback.content in answer_answer_list and option_roolback.has_num_limit and option_roolback.option_id != option.option_id:
                                         option_roolback.remain_num += 1
-                                        print(answer.answer)
-                                        print(option_roolback.content+"roolback")
+                                        # print(answer.answer)
+                                        # print(option_roolback.content+"roolback")
                                         option_roolback.save()
                                     elif answer.answer.find(option_roolback.content) >= 0 and option_roolback.has_num_limit and option_roolback.option_id == option.option_id:
-                                        print(option_roolback.content+"not roolback")
+                                        # print(option_roolback.content+"not roolback")
                                         is_stop = True
                                         break
-
+                            survey.save()
                             submit.delete()
                             return JsonResponse({'status_code': 12, 'message': '有选项报名已满'})
 
