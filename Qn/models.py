@@ -69,7 +69,7 @@ class Question(models.Model):
     image_url = models.URLField(verbose_name="图片链接", default='')
     video_url = models.URLField(verbose_name="视频链接", default='')
 
-    # radio checkbox 单选题 多选题 text 填空 mark 判断
+    # radio checkbox 单选题 多选题 text 填空 mark 判断 location 定位
 class Option(models.Model):
 
     option_id = models.AutoField(primary_key=True,verbose_name="选项编号")
