@@ -70,7 +70,7 @@ def save_signup_answer(request):
         if not survey.is_released:
             return JsonResponse({'status_code': 4, 'message': '问卷未发布'})
 
-        if survey.recycling_num >= survey.max_recycling:
+        if survey.recycling_num >= survey.max_recycling & survey.max_recycling != 0:
             return JsonResponse({'status_code': 5, 'message': '人数已满'})
 
         survey.recycling_num = survey.recycling_num + 1
