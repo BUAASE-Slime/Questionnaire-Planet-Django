@@ -25,7 +25,6 @@ class OptionRecyleNumError(BaseException):
     def __str__(self):
         return "您报名的选项回收数目为： %d, 已达到最大回收量" % self.num
 
-# Create your views here.
 
 def change_signup_max(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -78,12 +77,26 @@ def save_signup_answer(request):
         if survey.recycling_num >= survey.max_recycling & survey.max_recycling != 0:
             finish_qn(qn_id)
             return JsonResponse({'status_code': 5, 'message': '人数已满'})
+        sum_option_count = 0
+        has_signup = False
+        question_list = Question.objects.filter(survey_id=survey)
+        for question in question_list:
+            option_list = Option.objects.filter(question_id=question)
+            for option in option_list:
+                if option.has_num_limit:
+                    sum_option_count += option.remain_num
+                    has_signup = True
+        if sum_option_count == 0 and has_signup:
+            finish_qn(qn_id)
+            return JsonResponse({'status_code': 5, 'message': '人数已满'})
+
         try:
             with transaction.atomic():
                 if survey.recycling_num + 1 > survey.max_recycling:
                     raise SubmitRecyleNumError(survey.recycling_num)
                 survey.recycling_num = survey.recycling_num + 1
                 survey.save()
+
 
         except SubmitRecyleNumError as e:
             print('问卷报名已满,错误信息为',e)
