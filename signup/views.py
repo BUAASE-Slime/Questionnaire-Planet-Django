@@ -132,6 +132,7 @@ def save_signup_answer(request):
 
 
 @csrf_exempt
+@transaction.atomic
 def save_signup_answer_by_code(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
@@ -180,21 +181,29 @@ def save_signup_answer_by_code(request):
             question = Question.objects.get(question_id=answer_dict['question_id'])
             answer = Answer(answer=answer_dict['answer'], username=username,
                             type=answer_dict['type'], question_id=question, submit_id=submit)
+
+
             if question.type in ["radio", "checkbox"]:
                 options = Option.objects.filter(question_id=question)
                 from Submit.views import KEY_STR
                 print(answer_dict)
+
                 option_content_list = answer_dict['answer'].split(KEY_STR)
                 for option in options:
+
+                    print(option.content)
+                    if not option.has_num_limit:
+                        continue
                     # option = Option.objects.select_for_update().get(option_id=option_not_lock.option_id)
                     if option.content in option_content_list:
                         try:
                             with transaction.atomic():
                                 option_lock = Option.objects.select_for_update().get(option_id=option.option_id)
-                                if option_lock.remain_num <=0:
+                                if option_lock.remain_num <= 0:
                                     raise OptionRecyleNumError(option.num_limit)
-                                option_lock.remain_num = option.remain_num - 1
-                                option_lock.save()
+
+                            option_lock.remain_num -=  1
+                            option_lock.save()
                         except OptionRecyleNumError as e:
                             print('问卷存在报名项目报名已满,错误信息为', e)
                             survey.recycling_num = survey.recycling_num - 1
