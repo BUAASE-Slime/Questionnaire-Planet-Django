@@ -309,3 +309,90 @@ def vote_to_docx(qn_id):
     document.save(docx_path + docx_title)
 
     return document, f, docx_title, docx_path
+
+
+def write_vote_to_excel(qn_id):
+    qn = Survey.objects.get(survey_id=qn_id)
+    submit_list = Submit.objects.filter(survey_id=qn)
+
+    xls = xlwt.Workbook()
+    sht1 = xls.add_sheet("Sheet1")
+
+    sht1.write(0, 0, "序号")
+    sht1.write(0, 1, "提交者")
+    sht1.write(0, 2, "提交时间")
+    question_list = Question.objects.filter(survey_id=qn)
+    question_sum = len(question_list)
+    i = 1
+
+    for question in question_list:
+        sht1.write(0, 2 + i, str(i) + "、" + question.title)
+        i += 1
+
+    id = 1
+    for submit in submit_list:
+        sht1.write(id, 0, id)
+        username = submit.username
+        if username == '' or username is None:
+            username = "匿名用户"
+        sht1.write(id, 1, username)
+        sht1.write(id, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        question_num = 1
+        for question in question_list:
+            answer_str = ""
+            try:
+                answer = Answer.objects.get(submit_id=submit, question_id=question)
+                answer_str = answer.answer
+            except:
+                answer_str = ""
+            if question.type == 'checkbox':
+                answer_str = answer_str.replace(KEY_STR, ';')
+
+            sht1.write(id, 2 + question_num, answer_str)
+
+            question_num += 1
+
+        id += 1
+    question_num = 1
+    submit_num = len(submit_list)
+    option_id = 0
+
+    for question in question_list:
+        if question.isVote:
+            result_str = ""
+            option_list = Option.objects.filter(question_id=question)
+            answer_list = Answer.objects.filter(question_id=question)
+            option_max_num = 0
+            for option in option_list:
+                option_num = 0
+                content = option.content
+                for answer in answer_list:
+                    if answer.answer.find(content) >= 0:
+                        option_num += 1
+                if option_num > option_max_num:
+                    option_max_num = option_num
+                    result_str = content
+                    option_id = option.option_id
+            for option in option_list:
+                option_num = 0
+                content = option.content
+                for answer in answer_list:
+                    if answer.answer.find(content) >= 0:
+                        option_num += 1
+                if option_num == option_max_num and option_id != option.option_id:
+                    option_max_num = option_num
+                    result_str += ";"+ content
+            sht1.write(id,2+question_num,result_str)
+            sht1.write(id+1, 2 + question_num, option_max_num)
+        question_num += 1
+
+
+    sht1.write(id, 0, "投票最高结果")
+    sht1.write(id+1, 0, "投票最高人数")
+    save_path = djangoProject.settings.MEDIA_ROOT + "\Document\\"
+    from .views import IS_LINUX
+    if IS_LINUX:
+        save_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
+    excel_name = qn.title + "问卷的统计信息" + ".xls"
+    xls.save(save_path + excel_name)
+    return excel_name

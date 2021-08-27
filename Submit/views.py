@@ -19,7 +19,7 @@ try:
     import pythoncom
 except:
     IS_LINUX = True
-
+from django.db.models import Q
 
 
 
@@ -794,6 +794,8 @@ def export_excel(request):
                 return JsonResponse(response)
             if qn.type == '2':
                 excel_name = write_exam_to_excel(id)
+            elif qn.type == '3':
+                excel_name = write_vote_to_excel(id)
             else:#TODO 其他类型
                 excel_name = write_submit_to_excel(id)
 
@@ -1588,7 +1590,18 @@ def finish_qn(qn_id):
 
 def dispose_qn_correlate_question(qn_id):
 
-    show_question_list = Question.objects.filter(survey_id=qn_id,last_question=0)
+    question_list = Question.objects.filter(survey_id__survey_id=qn_id)
+    show_question_list = []
+    not_question_list = []
+    for question in question_list:
+        if question.last_question == 0:
+            show_question_list.append(question)
+            question.is_shown = True
+        else:
+            not_question_list.append(question)
+            question.is_shown = False
+
+
 
 
 
