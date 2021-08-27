@@ -211,7 +211,7 @@ def save_signup_answer_by_code(request):
                         except OptionRecyleNumError as e:
                             print('问卷存在报名项目报名已满,错误信息为', e)
                             print("before recycling_num")
-                            survey.recycling_num = survey.recycling_num + 1
+                            survey.recycling_num = survey.recycling_num - 1
                             survey.save()
                             print("after recycling_num")
                             answer_list = Answer.objects.filter(submit_id=submit)
