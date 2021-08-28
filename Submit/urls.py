@@ -2,7 +2,7 @@ from django.conf.urls.static import static
 from django.urls import path
 from .views import *
 from .no_use_func import *
-from exam.views import save_exam_answer
+from exam.views import *
 from vote.views import *
 urlpatterns = [
 
@@ -25,6 +25,7 @@ urlpatterns = [
     path('save/qn',save_qn),
     path('save/qn_keep/history',save_qn_keep_history),
     path('save/exam/paper',save_exam_answer),
+    path('save/exam/paper/by/code', save_exam_answer_by_code),
     path('deploy_qn',deploy_qn),
     path('pause_qn',pause_qn),
 
