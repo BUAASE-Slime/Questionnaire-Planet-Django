@@ -51,6 +51,8 @@ INSTALLED_APPS = [
     'vote',
     'signup',
     'epidemic',
+
+    'resources',
 ]
 
 MIDDLEWARE = [
