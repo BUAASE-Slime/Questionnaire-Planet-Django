@@ -6,13 +6,11 @@ import pytz
 from drf_yasg.openapi import *
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
-from drf_yasg import openapi
 import datetime
 
 # Create your views here.
 
 from exam.forms import *
-from utils.toHash import hash_code
 # from .form import *
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
