@@ -665,6 +665,8 @@ def TestDocument(request):
 
             elif survey.type == '3':
                 document, f, docx_title, _ = vote_to_docx(id)
+            elif survey.type == '4':
+                document, f, docx_title, _ = signup_to_docx(id)
             elif survey.type == '5':
                 document, f, docx_title, _ = epidemic_to_docx(id)
             else:
@@ -788,6 +790,12 @@ def qn_to_pdf(qn_id):
     qn = Survey.objects.get(survey_id=qn_id)
     if qn.type == '2':
         document, _, docx_title, docx_path = paper_to_docx(qn_id)
+    elif qn.type == '3':
+        document, _, docx_title, docx_path = vote_to_docx(qn_id)
+    elif qn.type == '4':
+        document, _, docx_title, docx_path = signup_to_docx(qn_id)
+    elif qn.type == '5':
+        document, _, docx_title, docx_path = epidemic_to_docx(qn_id)
     else:
         document, _, docx_title, docx_path = qn_to_docx(qn_id)
     input_file = docx_path + docx_title
@@ -917,6 +925,7 @@ def export_excel(request):
                 excel_name = write_exam_to_excel(id)
             elif qn.type == '3':
                 excel_name = write_vote_to_excel(id)
+
             elif qn.type == '5':
                 excel_name = write_epidemic_to_excel(id)
             else:  # TODO 其他类型
