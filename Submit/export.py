@@ -1,4 +1,4 @@
-
+import datetime
 
 from Qn.models import *
 from docx.enum.style import WD_STYLE_TYPE
@@ -486,3 +486,87 @@ def epidemic_to_docx(qn_id):
     document.save(docx_path + docx_title)
 
     return document, f, docx_title, docx_path
+
+
+def write_epidemic_to_excel(qn_id):
+    qn = Survey.objects.get(survey_id=qn_id)
+    submit_list = Submit.objects.filter(survey_id=qn)
+
+    xls = xlwt.Workbook()
+    sht1 = xls.add_sheet("Sheet1")
+
+    try:
+        begin_date = (Submit.objects.filter(survey_id__type='5'))[0].submit_time.date()
+    except:
+        begin_date = datetime.datetime.today()
+    print(begin_date)
+    last_date = begin_date
+    end_date = datetime.datetime.today()
+    day_num = 1
+    sht1.write(0, 0, "序号")
+    sht1.write(0, 1, "提交者")
+    sht1.write(0, 2, "提交时间")
+    question_list = Question.objects.filter(survey_id=qn)
+    question_sum = len(question_list)
+
+    i = 1
+    for question in question_list:
+        sht1.write(0, 2 + i, str(i) + "、" + question.title)
+        i += 1
+    sht1.write(1,0,begin_date.strftime("%Y/%m/%d"))
+    id = 1
+    daka_num = 0
+    style_red = xlwt.XFStyle()  # Create the Pattern
+    # style_red.pattern = pattern_red  # Add Pattern to Style
+    font_red = xlwt.Font()
+    font_red.colour_index = 2
+    style_red.font = font_red
+    for submit in submit_list:
+        if submit.submit_time.date()-last_date >= datetime.timedelta(days=1):
+            sht1.write(id + 2 * day_num - 1, 0, "打卡人数：")
+            sht1.write(id + 2 * day_num - 1, 1, daka_num)
+            sht1.write(id + 2 * day_num , 0, submit.submit_time.strftime("%Y/%m/%d"))
+            day_num+= 1
+            daka_num = 0
+            last_date = submit.submit_time.date()
+        sht1.write(id+2*day_num-1, 0, id)
+        username = submit.username
+        if username == '' or username is None:
+            username = "匿名用户"
+        sht1.write(id+2*day_num-1, 1, username)
+        sht1.write(id+2*day_num-1, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        question_num = 1
+        for question in question_list:
+            is_red = False
+
+            answer_str = ""
+            try:
+                answer = Answer.objects.get(submit_id=submit, question_id=question)
+                answer_str = answer.answer
+            except:
+                answer_str = ""
+            if (question.title == "近14日内，所接触环境和人员是否一切正常？" and answer_str == "否")or (question.title == '今日本人情况是否正常？' and answer_str == "否") :
+                is_red = True
+            if question.type == 'checkbox':
+                answer_str = answer_str.replace(KEY_STR, ';')
+            if is_red:
+                sht1.write(id + 2 * day_num - 1, 2 + question_num, answer_str,style_red)
+            else:
+                sht1.write(id+2*day_num-1, 2 + question_num, answer_str)
+
+            question_num += 1
+        daka_num += 1
+        id += 1
+    sht1.write(id + 2 * day_num - 1, 0, "打卡人数：")
+    sht1.write(id + 2 * day_num - 1, 1, daka_num)
+    question_num = 1
+    submit_num = len(submit_list)
+    option_id = 0
+
+    save_path = djangoProject.settings.MEDIA_ROOT + "\Document\\"
+    from .views import IS_LINUX
+    if IS_LINUX:
+        save_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
+    excel_name = qn.title + "问卷的统计信息" + ".xls"
+    xls.save(save_path + excel_name)
+    return excel_name

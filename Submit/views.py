@@ -911,6 +911,8 @@ def export_excel(request):
                 excel_name = write_exam_to_excel(id)
             elif qn.type == '3':
                 excel_name = write_vote_to_excel(id)
+            elif qn.type == '5':
+                excel_name = write_epidemic_to_excel(id)
             else:  # TODO 其他类型
                 excel_name = write_submit_to_excel(id)
 
