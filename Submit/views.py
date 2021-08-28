@@ -1030,7 +1030,7 @@ def empty_qn_all_Submit(request):
             #     return JsonResponse(response)
             qn.recycling_num = 0
             qn.save()
-
+            # 清空问卷的所有提交：即问卷的所有名额为满状态
             submit_list = Submit.objects.filter(survey_id=qn.survey_id)
             for submit in submit_list:
                 submit.delete()
@@ -1753,6 +1753,7 @@ def exam_question_analyising(question,response):
 
     question = Question.objects.get(question_id=question.question_id)
     response['right_answer'] = question.right_answer
+    response['right_answerList'] = question.right_answer.split(KEY_STR)
     response['point'] = question.point
     response['is_exam_question'] = True if (response['right_answer'] != '') else False
 
