@@ -1795,7 +1795,7 @@ def submit_reporter(request):
                 for option in option_list:
                     option_contnet_list.append(option.content)
                 options = []
-                if item['type'] in ['checkbox', 'radio']:
+                if item['type'] in ['checkbox', 'radio','judge']:
                     option_list = Option.objects.filter(question_id=question)
                     for option in option_list:
                         dict = {}

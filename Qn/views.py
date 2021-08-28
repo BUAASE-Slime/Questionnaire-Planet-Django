@@ -453,7 +453,7 @@ def get_survey_from_url(request):
                 temp['id'] = item.sequence  # 按照前端的题目顺序
                 temp['option'] = []
                 temp['answer'] = ''
-                if temp['type'] in ['radio', 'checkbox']:
+                if temp['type'] in ['radio', 'checkbox','judge']:
                     # 单选题或者多选题有选项
                     option_list = Option.objects.filter(question_id=item.question_id)
                     for option_item in option_list:
@@ -503,7 +503,7 @@ def get_question_answer(request):
                     'must': question.is_must_answer, 'type': question.type, 'sequence': question.sequence,
                     'num_all': len(answers), 'options': [], 'fill_blank': [], 'scores': []}
 
-            if temp['type'] in ['radio', 'checkbox']:  # 单选，多选
+            if temp['type'] in ['radio', 'checkbox','judge']:  # 单选，多选
                 options = Option.objects.filter(question_id=question)
                 for option in options:
                     answer_option = Answer.objects.filter(question_id=question, answer__contains=option.content)
