@@ -376,9 +376,9 @@ def create_qn(request):
                               "must": True, "description": '', "row": 1, "score": 0,
                               "options": [{'id': 1, 'title': ""}]}]
 
-                options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 10, "consume": 10},
-                           {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 10, "consume": 10},
-                           {"hasNumLimit": True, "title": "学习委员", "id": 3, "supply": 10, "consume": 10}]
+                options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 10, "consume": 0},
+                           {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 10, "consume": 0},
+                           {"hasNumLimit": True, "title": "学习委员", "id": 3, "supply": 10, "consume": 0}]
 
                 questions.append({"id": 3, "type": "radio", "title": "您想要竞选的职位是：",
                                   "must": True, "description": '', "row": 1, "score": 0, "options": options})
