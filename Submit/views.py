@@ -1462,7 +1462,46 @@ def exam_submit_report(submit,response):
     response['score'] = submit.score
     response['submit_time'] = submit.submit_time
     return response
+def get_all_submit_data(qn_id,response,type):
+    qn = Survey.objects.get(survey_id=qn_id)
+    question_sum = qn.question_num
+    print(question_sum)
+    if type == 'exam':
+        submit_list = Submit.objects.filter(survey_id=qn.survey_id).order_by('-score')
+    else:
+        submit_list = Submit.objects.filter(survey_id=qn.survey_id)
+    submit_rank_list = Submit.objects.filter(survey_id=qn.survey_id).order_by('-score')
+    i = 1
+    submits = []
+    for submit in submit_list:
+        item = {}
+        if submit.survey_id.type == '2':
+            item = exam_submit_report(submit,item)
+            the_rank = 1
+            for submit_rank_obj in submit_rank_list:
+                if submit_rank_obj.submit_id == submit.submit_id:
+                    item['rank'] = the_rank
+                the_rank += 1
 
+        item['num'] = i
+        i += 1
+        item['submit_id'] = submit.submit_id
+        item['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
+        if submit.username and submit.username != '':
+            item['username'] = submit.username
+        else:
+            item['username'] = '匿名用户'
+        item['is_valid'] = submit.is_valid
+        item['score'] = submit.score
+        item['qn_id'] = submit.survey_id.survey_id
+
+        answer_num = len(Answer.objects.filter(submit_id=submit))
+        item['answer_num'] = answer_num
+        item['answer_percent'] = str("%.2f" % ((float(answer_num) / question_sum) * 100)) + '%'
+        submits.append(item)
+
+    response['submits'] = submits
+    return response
 @csrf_exempt
 def get_qn_all_submit(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -1479,44 +1518,40 @@ def get_qn_all_submit(request):
             # if request.session['username'] != username:
             #     response = {'status_code': 0, 'message': '没有访问权限'}
             #     return JsonResponse(response)
+            response = get_all_submit_data(id,response,'normal')
 
-            question_sum = qn.question_num
-            print(question_sum)
-            submits = []
-            submit_list = Submit.objects.filter(survey_id=qn.survey_id).order_by('-score','submit_time')
-            i = 1
-            for submit in submit_list:
-                item = {}
-                if submit.survey_id.type == '2':
-                    item = exam_submit_report(submit,item)
-                    item['rank'] = i
-                item['num'] = i
-                i += 1
-                item['submit_id'] = submit.submit_id
-                item['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
-                if submit.username and submit.username != '':
-                    item['username'] = submit.username
-                else:
-                    item['username'] = '匿名用户'
-                item['is_valid'] = submit.is_valid
-                item['score'] = submit.score
-                item['qn_id'] = submit.survey_id.survey_id
-
-                answer_num = len(Answer.objects.filter(submit_id=submit))
-                item['answer_num'] = answer_num
-                item['answer_percent'] = str(int((float(answer_num) / question_sum) * 100)) + '%'
-                submits.append(item)
-
-            response['submits'] = submits
             return JsonResponse(response)
-
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
             return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+@csrf_exempt
+def get_exam_rank(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            # username = qn.username
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+            response = get_all_submit_data(id,response,'exam')
 
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
 
 @csrf_exempt
 def cross_analysis(request):
@@ -1707,7 +1742,7 @@ def exam_question_analyising(question,response):
             correct_people += 1
     response['correct_people'] = correct_people
     response['answer_sum'] = len(answer_list)
-    response['accuracy'] = float(correct_people)/len(answer_list)
+    response['accuracy'] ="%.4f" % (float(correct_people)/len(answer_list))
 
     return response
 

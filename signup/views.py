@@ -133,6 +133,7 @@ def save_signup_answer(request):
 
 @csrf_exempt
 @transaction.atomic
+# 事务处理，加悲观锁，并模拟数据库回滚操作
 def save_signup_answer_by_code(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':

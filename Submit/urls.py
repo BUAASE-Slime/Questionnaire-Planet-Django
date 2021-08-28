@@ -52,4 +52,5 @@ urlpatterns = [
     path('get/vote/current_situation/from/code', ret_vote_answer_by_code),
 
     path('get/ip', get_ip),
+    path('get/exam/rank', get_exam_rank),
 ]
