@@ -253,6 +253,7 @@ def upload_video(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def get_video_url(request):
     if request.method == 'POST':
@@ -271,3 +272,50 @@ def get_video_url(request):
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
+
+
+def compare_location(id):
+    submit = Submit.objects.get(submit_id=id)
+    submit_list = Submit.objects.filter(username=submit.username, survey_id=submit.survey_id,
+                                        submit_time__lte=submit.submit_time)
+    submit_list = submit_list.order_by('-submit_time')
+    if submit_list.count() == 1:
+        return JsonResponse({'status_code': -1, 'message': '第一次提交'})
+    last_submit = submit_list[1]
+    answer = Answer.objects.get(submit_id=submit, type='location')
+    last_answer = Answer.objects.get(submit_id=last_submit, type='location')
+    print("location:" + answer.answer + "/ last_location:" + last_answer.answer)
+    if answer.answer == last_answer.answer:
+        return JsonResponse({'status_code': 1, 'message': '位置相同'})
+    else:
+        return JsonResponse({'status_code': 2, 'message': '位置不同'})
+
+
+high_risk = ["河南省 商丘市 虞城县", "云南省 德宏傣族景颇族自治州 瑞丽市"]
+middle_risk = ["上海市 松江区", "上海市 浦东新区", "云南省 瑞丽市", "湖北省 荆门市 掇刀区", "河南省 郑州市 二七区",
+               "河南省 商丘市", "河南省 开封市 尉氏县", "江苏省 扬州市 蜀区-瘦西湖风景名胜区", "江苏省 扬州市 广陵区",
+               "江苏省 扬州市 邗江区", "江苏省 扬州市 经济技术开发区"]
+
+
+def judge_location(id):
+    submit = Submit.objects.get(submit_id=id)
+    answer = Answer.objects.get(submit_id=submit, type='location')
+    location = answer.answer
+    high_data = [x for i, x in enumerate(high_risk) if x.find(location) != -1]
+    middle_data = [x for i, x in enumerate(middle_risk) if x.find(location) != -1]
+    print('high_data:'+"/".join(high_data))
+    print('middle_data:'+"/".join(middle_data))
+    if len(high_data) == 0 and len(middle_data) == 0:
+        return JsonResponse({'status_code': 1, 'message': '低风险地区'})
+    if len(high_data) != 0:
+        return JsonResponse({'status_code': 2, 'message': '高风险地区'})
+    if len(middle_data) != 0:
+        return JsonResponse({'status_code': 3, 'message': '中风险地区'})
+
+
+# def test(request):
+#     if request.method == 'POST':
+#         form = GetForm(request.POST)
+#         if form.is_valid():
+#             id = form.cleaned_data.get('question_id')
+#             return judge_location(id)
