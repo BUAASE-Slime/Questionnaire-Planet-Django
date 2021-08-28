@@ -353,6 +353,8 @@ def create_qn(request):
             except:
                 response = {'status_code': -3, 'message': '后端炸了'}
                 return JsonResponse(response)
+            if type == '1':
+                return JsonResponse({'status_code': 1, 'qn_id': survey.survey_id})
             if type == '2':
                 questions = [{"id": 1, "type": "name", "title": "姓名：",
                               "must": True, "description": '', "row": 1, "score": 0, "refer": "", "point": 0,
@@ -1691,7 +1693,7 @@ def submit_reporter(request):
                             i += 1
 
 
-                elif item['type'] == 'text':
+                elif item['type'] in ['text', 'name', 'stuId', 'class', 'school', 'location'] :
                     tableData = []
                     num = 1
                     for answer in answer_list:
@@ -1720,8 +1722,9 @@ def submit_reporter(request):
 
                 item['options'] = options
                 questions.append(item)
-                print('success')
                 response['questions'] = questions
+            print("请求成功，信息为：")
+            print(response['questions'])
             return JsonResponse(response)
 
 
