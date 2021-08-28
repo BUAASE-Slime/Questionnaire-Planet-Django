@@ -163,10 +163,10 @@ def get_qn_data(qn_id):
         temp['isVote'] = item.isVote
 
         temp['last_question'] = item.last_question
-        temp['last_option'] = 0
-        if item.last_question != 0:
-            last_option_obj = Option.objects.get(option_id=item.last_option)
-            temp['last_option'] = last_option_obj.order
+        temp['last_option'] = item.last_option
+        # if item.last_question != 0:
+        #     last_option_obj = Option.objects.get(option_id=item.last_option)
+        #     temp['last_option'] = last_option_obj.order
         temp['is_shown'] = item.is_shown
 
         temp['imgList'] = []
@@ -860,7 +860,6 @@ def pdf_document(request):
 
 
 import xlwt
-
 from Qn.views import KEY_STR
 
 
@@ -1088,8 +1087,8 @@ def question_dict_to_question(question, question_dict):
         # question_dict['last_question'] =  question_dict['last_question']
         question.last_question = question_dict['last_question']
         # last_question = Question.objects.get(question_id=question.last_question)
-        last_option = Option.objects.get(question_id__question_id=question_dict['last_question'],order=question_dict['last_option'])
-        question.last_option = last_option.option_id
+        # last_option = Option.objects.get(question_id__question_id=question_dict['last_question'],order=question_dict['last_option'])
+        question.last_option = question_dict['last_option']
     except:
         pass
 
@@ -1213,7 +1212,8 @@ def save_qn_keep_history(request):
                     question_id = save_question_by_order(survey, last_question)
                     last_question_obj = Question.objects.get(question_id=question_id)
                     # last_question = last_question_obj.question_id
-                    last_option = save_option_by_order(last_question_obj,last_option)
+                    # last_option = save_option_by_order(last_question_obj,last_option)
+                    last_option = question_dict['last_option']
                 except:
                     last_question = 0
                     last_option = 0
