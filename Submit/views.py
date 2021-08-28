@@ -119,7 +119,7 @@ def get_qn_data(qn_id):
     response['title'] = survey.title
     response['description'] = survey.description
     response['type'] = survey.type
-
+    dispose_qn_correlate_question(qn_id)
     response['question_num'] = survey.question_num
     response['created_time'] = response['release_time'] = response['finished_time'] = ''
     if produce_time(survey.created_time):
@@ -659,6 +659,8 @@ def TestDocument(request):
 
             elif survey.type == '3':
                 document, f, docx_title, _ = vote_to_docx(id)
+            elif survey.type == '5':
+                document, f, docx_title, _ = epidemic_to_docx(id)
             else:
                 document, f, docx_title, _ = qn_to_docx(id)
             response['filename'] = docx_title
@@ -1745,6 +1747,7 @@ def dispose_qn_correlate_question(qn_id):
         else:
             not_question_list.append(question)
             question.is_shown = False
+        question.save()
 
 
 def save_option_by_order(question, option_order):
