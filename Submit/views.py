@@ -12,6 +12,7 @@ from .export import *
 # Create your views here.
 from .forms import *
 
+
 utc = pytz.UTC
 
 IS_LINUX = False
@@ -189,7 +190,7 @@ def get_qn_data(qn_id):
                     option_dict['consume'] = option_item.num_limit - option_item.remain_num
 
         elif temp['type'] in ['mark', 'text', 'name', 'stuId', 'class', 'school']:
-            pass
+            temp['options'] = [{'id': 1, 'title': ""}]
         elif temp['type'] == 'info':
             pass
 
@@ -1441,6 +1442,11 @@ def delete_submit(request):
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
 
+def exam_submit_report(submit,response):
+
+    response['score'] = submit.score
+    response['submit_time'] = submit.submit_time
+    return response
 
 @csrf_exempt
 def get_qn_all_submit(request):
@@ -1462,10 +1468,13 @@ def get_qn_all_submit(request):
             question_sum = qn.question_num
             print(question_sum)
             submits = []
-            submit_list = Submit.objects.filter(survey_id=qn.survey_id)
+            submit_list = Submit.objects.filter(survey_id=qn.survey_id).order_by('-score','submit_time')
             i = 1
             for submit in submit_list:
                 item = {}
+                if submit.survey_id.type == '2':
+                    item = exam_submit_report(submit,item)
+                    item['rank'] = i
                 item['num'] = i
                 i += 1
                 item['submit_id'] = submit.submit_id
@@ -1669,7 +1678,23 @@ def get_qn_question(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+def exam_question_analyising(question,response):
 
+    question = Question.objects.get(question_id=question.question_id)
+    response['right_answer'] = question.right_answer
+    response['point'] = question.point
+    response['is_exam_question'] = True if (response['right_answer'] != '') else False
+
+    answer_list = Answer.objects.filter(question_id=question)
+    correct_people = 0
+    for answer in answer_list:
+        if answer.answer == question.right_answer:
+            correct_people += 1
+    response['correct_people'] = correct_people
+    response['answer_sum'] = len(answer_list)
+    response['accuracy'] = float(correct_people)/len(answer_list)
+
+    return response
 
 @csrf_exempt
 def submit_reporter(request):
@@ -1678,6 +1703,7 @@ def submit_reporter(request):
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
             id = survey_form.cleaned_data.get('qn_id')
+            survey = Survey.objects.get(survey_id=id)
             print("用户请求查看问卷 " + str(id) + " 的数据")
             question_list = Question.objects.filter(survey_id=id)
             questions = []
@@ -1689,6 +1715,8 @@ def submit_reporter(request):
                 item['row'] = question.raw
                 item['score'] = question.score
                 item['must'] = question.is_must_answer
+                if survey.type == '2':
+                    item = exam_question_analyising(question,item)
                 answer_list = Answer.objects.filter(question_id=question)
                 option_list = Option.objects.filter(question_id=question)
                 option_contnet_list = []
@@ -1712,8 +1740,6 @@ def submit_reporter(request):
                             if option_title in answer_content_list:
                                 options[i]['choosed'] += 1
                             i += 1
-
-
 
                 elif item['type'] in ['text', 'name', 'stuId', 'class', 'school', 'location'] :
                     tableData = []

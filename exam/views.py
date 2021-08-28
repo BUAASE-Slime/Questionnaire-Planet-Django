@@ -10,7 +10,7 @@ from drf_yasg import openapi
 import datetime
 
 # Create your views here.
-from Submit.views import produce_time, create_option
+
 from exam.forms import *
 from utils.toHash import hash_code
 # from .form import *
@@ -85,85 +85,85 @@ def get_answer(request):
         return JsonResponse({'status_code': 404})
 
 
-@csrf_exempt
-@swagger_auto_schema(method='post',
-                     tags=['问卷相关'],
-                     operation_summary='根据链接获取问卷详细信息',
-                     manual_parameters=[Parameter(name='url', in_=IN_QUERY, description='问卷链接',
-                                                  type=TYPE_INTEGER, required=True)],
-                     responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
-                     )
-@api_view(['post'])
-def get_qn_from_url(request):
-    # 检查登录情况
-    if not request.session.get('is_login'):
-        return JsonResponse({'status_code': 401})
-
-    if request.method == 'POST':
-        url_form = URLForm(request.POST)
-        if url_form.is_valid():
-            code = url_form.cleaned_data.get('code')
-            try:
-                survey = Survey.objects.get(share_url=code)
-                if request.session.get('username') != survey.username:
-                    return JsonResponse({'status_code': 403})
-            except:
-                return JsonResponse({'status_code': 402})
-
-            response = {'status_code': 1, 'message': 'success'}
-            response['qn_id'] = survey.survey_id
-            response['username'] = survey.username
-            response['title'] = survey.title
-            response['description'] = survey.description
-            response['type'] = survey.type
-
-            response['question_num'] = survey.question_num
-            response['created_time'] = response['release_time'] = response['finished_time'] = ''
-            if produce_time(survey.created_time):
-                response['created_time'] = survey.created_time.strftime("%Y/%m/%d %H:%M")
-            if produce_time(survey.finished_time):
-                response['finished_time'] = survey.finished_time.strftime("%Y/%m/%d %H:%M")
-            if produce_time(survey.release_time):
-                response['release_time'] = survey.release_time.strftime("%Y/%m/%d %H:%M")
-            response['is_released'] = survey.is_released
-            response['recycling_num'] = survey.recycling_num
-
-            question_list = Question.objects.filter(survey_id=survey.survey_id)
-            questions = []
-            for item in question_list:
-                temp = {}
-                temp['question_id'] = item.question_id
-                temp['row'] = item.raw
-                temp['score'] = item.score
-                temp['title'] = item.title
-                temp['direction'] = item.direction
-                temp['must'] = item.is_must_answer
-                temp['type'] = item.type
-                temp['qn_id'] = survey.survey_id
-                temp['sequence'] = item.sequence
-                temp['id'] = item.sequence  # 按照前端的题目顺序
-                temp['options'] = []
-                temp['answer'] = item.right_answer
-                if temp['type'] in ['radio', 'checkbox']:
-                    # 单选题或者多选题有选项
-                    option_list = Option.objects.filter(question_id=item.question_id)
-                    for option_item in option_list:
-                        option_dict = {}
-                        option_dict['id'] = option_item.option_id
-                        option_dict['title'] = option_item.content
-                        temp['options'].append(option_dict)
-
-                else:  # TODO 填空题或者其他
-                    pass
-
-                questions.append(temp)
-                print(questions)
-            response['questions'] = questions
-            return JsonResponse(response)
-        else:
-            return JsonResponse({'status_code': 404})
-    else:
-        return JsonResponse({'status_code': 404})
+# @csrf_exempt
+# @swagger_auto_schema(method='post',
+#                      tags=['问卷相关'],
+#                      operation_summary='根据链接获取问卷详细信息',
+#                      manual_parameters=[Parameter(name='url', in_=IN_QUERY, description='问卷链接',
+#                                                   type=TYPE_INTEGER, required=True)],
+#                      responses={200: '操作成功', 401: '未登录', 402: '操作失败', 403: '用户名不匹配,没有查询权限', 404: '表单格式不正确'}
+#                      )
+# @api_view(['post'])
+# def get_qn_from_url(request):
+#     # 检查登录情况
+#     if not request.session.get('is_login'):
+#         return JsonResponse({'status_code': 401})
+#
+#     if request.method == 'POST':
+#         url_form = URLForm(request.POST)
+#         if url_form.is_valid():
+#             code = url_form.cleaned_data.get('code')
+#             try:
+#                 survey = Survey.objects.get(share_url=code)
+#                 if request.session.get('username') != survey.username:
+#                     return JsonResponse({'status_code': 403})
+#             except:
+#                 return JsonResponse({'status_code': 402})
+#
+#             response = {'status_code': 1, 'message': 'success'}
+#             response['qn_id'] = survey.survey_id
+#             response['username'] = survey.username
+#             response['title'] = survey.title
+#             response['description'] = survey.description
+#             response['type'] = survey.type
+#
+#             response['question_num'] = survey.question_num
+#             response['created_time'] = response['release_time'] = response['finished_time'] = ''
+#             if produce_time(survey.created_time):
+#                 response['created_time'] = survey.created_time.strftime("%Y/%m/%d %H:%M")
+#             if produce_time(survey.finished_time):
+#                 response['finished_time'] = survey.finished_time.strftime("%Y/%m/%d %H:%M")
+#             if produce_time(survey.release_time):
+#                 response['release_time'] = survey.release_time.strftime("%Y/%m/%d %H:%M")
+#             response['is_released'] = survey.is_released
+#             response['recycling_num'] = survey.recycling_num
+#
+#             question_list = Question.objects.filter(survey_id=survey.survey_id)
+#             questions = []
+#             for item in question_list:
+#                 temp = {}
+#                 temp['question_id'] = item.question_id
+#                 temp['row'] = item.raw
+#                 temp['score'] = item.score
+#                 temp['title'] = item.title
+#                 temp['direction'] = item.direction
+#                 temp['must'] = item.is_must_answer
+#                 temp['type'] = item.type
+#                 temp['qn_id'] = survey.survey_id
+#                 temp['sequence'] = item.sequence
+#                 temp['id'] = item.sequence  # 按照前端的题目顺序
+#                 temp['options'] = []
+#                 temp['answer'] = item.right_answer
+#                 if temp['type'] in ['radio', 'checkbox']:
+#                     # 单选题或者多选题有选项
+#                     option_list = Option.objects.filter(question_id=item.question_id)
+#                     for option_item in option_list:
+#                         option_dict = {}
+#                         option_dict['id'] = option_item.option_id
+#                         option_dict['title'] = option_item.content
+#                         temp['options'].append(option_dict)
+#
+#                 else:  # TODO 填空题或者其他
+#                     pass
+#
+#                 questions.append(temp)
+#                 print(questions)
+#             response['questions'] = questions
+#             return JsonResponse(response)
+#         else:
+#             return JsonResponse({'status_code': 404})
+#     else:
+#         return JsonResponse({'status_code': 404})
 
 
 @csrf_exempt
@@ -366,120 +366,120 @@ def create_qn(request):
         return JsonResponse(response)
 
 
-@csrf_exempt
-def create_question(request):
-    # TODO 完善json。dump
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        new_question_form = CreateNewQuestionForm(request.POST)
-        if new_question_form.is_valid():
-            question = Question()
-            try:
-                question.title = new_question_form.cleaned_data.get('title')
-                question.direction = new_question_form.cleaned_data.get('direction')
-                question.is_must_answer = new_question_form.cleaned_data.get('must')
-                question.type = new_question_form.cleaned_data.get('type')
-                survey_id = new_question_form.cleaned_data.get('qn_id')
-                question.survey_id = Survey.objects.get(survey_id=survey_id)
-                question.raw = new_question_form.cleaned_data.get('row')
-                question.score = new_question_form.cleaned_data.get('score')
-                question.right_answer = new_question_form.cleaned_data.get('right_answer')
-
-                option_str = new_question_form.cleaned_data.get('options')
-            except:
-                response = {'status_code': -3, 'message': '后端炸了'}
-                return JsonResponse(response)
-            KEY = "-<^-^>-"
-            option_list = option_str.split(KEY)
-            for item in option_list:
-                create_option(question, item)
-            question.save()
-            response['option_num'] = len(option_list)
-
-            return JsonResponse(response)
-
-        else:
-            response = {'status_code': -1, 'message': 'invalid form'}
-            return JsonResponse(response)
-
-    else:
-        response = {'status_code': -2, 'message': 'invalid http method'}
-        return JsonResponse(response)
-
-
-@csrf_exempt
-def save_qn(request):
-    response = {'status_code': 1, 'message': 'success'}
-    if request.method == 'POST':
-        req = json.loads(request.body)
-        print(req)
-        qn_id = req['qn_id']
-        try:
-            question_list = Question.objects.filter(survey_id=qn_id)
-        except:
-            response = {'status_code': 3, 'message': '问卷不存在'}
-            return JsonResponse(response)
-        for question in question_list:
-            question.delete()
-
-        survey = Survey.objects.get(survey_id=qn_id)
-        survey.username = req['username']
-        survey.title = req['title']
-        survey.description = req['description']
-        survey.type = req['type']
-        print(req['finish_time'])
-        if req['finish_time'] != '' and req['finish_time'] is not None:
-            survey.finished_time = req['finish_time']
-        survey.save()
-        question_list = req['questions']
-
-        if request.session.get("username") != req['username']:
-            request.session.flush()
-            return JsonResponse({'status_code': 0})
-
-        # TODO
-        question_num = 0
-        for question in question_list:
-            question_num += 1
-            create_question_in_save(question['title'], question['description'], question['must']
-                                    , question['type'], qn_id=req['qn_id'], raw=question['row'],
-                                    score=question['score'],
-                                    options=question['options'],
-                                    sequence=question['id'],
-                                    right_answer=question['refer'],
-                                    )
-
-        survey.question_num = question_num
-        survey.save()
-        return JsonResponse(response)
-    else:
-        response = {'status_code': -2, 'message': 'invalid http method'}
+# @csrf_exempt
+# def create_question(request):
+#     # TODO 完善json。dump
+#     response = {'status_code': 1, 'message': 'success'}
+#     if request.method == 'POST':
+#         new_question_form = CreateNewQuestionForm(request.POST)
+#         if new_question_form.is_valid():
+#             question = Question()
+#             try:
+#                 question.title = new_question_form.cleaned_data.get('title')
+#                 question.direction = new_question_form.cleaned_data.get('direction')
+#                 question.is_must_answer = new_question_form.cleaned_data.get('must')
+#                 question.type = new_question_form.cleaned_data.get('type')
+#                 survey_id = new_question_form.cleaned_data.get('qn_id')
+#                 question.survey_id = Survey.objects.get(survey_id=survey_id)
+#                 question.raw = new_question_form.cleaned_data.get('row')
+#                 question.score = new_question_form.cleaned_data.get('score')
+#                 question.right_answer = new_question_form.cleaned_data.get('right_answer')
+#
+#                 option_str = new_question_form.cleaned_data.get('options')
+#             except:
+#                 response = {'status_code': -3, 'message': '后端炸了'}
+#                 return JsonResponse(response)
+#             KEY = "-<^-^>-"
+#             option_list = option_str.split(KEY)
+#             for item in option_list:
+#                 create_option(question, item)
+#             question.save()
+#             response['option_num'] = len(option_list)
+#
+#             return JsonResponse(response)
+#
+#         else:
+#             response = {'status_code': -1, 'message': 'invalid form'}
+#             return JsonResponse(response)
+#
+#     else:
+#         response = {'status_code': -2, 'message': 'invalid http method'}
+#         return JsonResponse(response)
 
 
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence, right_answer):
-    question = Question()
-    try:
-        question.title = title
-        question.direction = direction
-        question.is_must_answer = must
-        question.type = type
-        survey_id = qn_id
-        question.survey_id = Survey.objects.get(survey_id=survey_id)
-        question.raw = raw
-        question.score = score
-        question.sequence = sequence
-        question.right_answer = right_answer
-    except:
-        response = {'status_code': -3, 'message': '后端炸了'}
-        return JsonResponse(response)
+# @csrf_exempt
+# def save_qn(request):
+#     response = {'status_code': 1, 'message': 'success'}
+#     if request.method == 'POST':
+#         req = json.loads(request.body)
+#         print(req)
+#         qn_id = req['qn_id']
+#         try:
+#             question_list = Question.objects.filter(survey_id=qn_id)
+#         except:
+#             response = {'status_code': 3, 'message': '问卷不存在'}
+#             return JsonResponse(response)
+#         for question in question_list:
+#             question.delete()
+#
+#         survey = Survey.objects.get(survey_id=qn_id)
+#         survey.username = req['username']
+#         survey.title = req['title']
+#         survey.description = req['description']
+#         survey.type = req['type']
+#         print(req['finish_time'])
+#         if req['finish_time'] != '' and req['finish_time'] is not None:
+#             survey.finished_time = req['finish_time']
+#         survey.save()
+#         question_list = req['questions']
+#
+#         if request.session.get("username") != req['username']:
+#             request.session.flush()
+#             return JsonResponse({'status_code': 0})
+#
+#         # TODO
+#         question_num = 0
+#         for question in question_list:
+#             question_num += 1
+#             create_question_in_save(question['title'], question['description'], question['must']
+#                                     , question['type'], qn_id=req['qn_id'], raw=question['row'],
+#                                     score=question['score'],
+#                                     options=question['options'],
+#                                     sequence=question['id'],
+#                                     right_answer=question['refer'],
+#                                     )
+#
+#         survey.question_num = question_num
+#         survey.save()
+#         return JsonResponse(response)
+#     else:
+#         response = {'status_code': -2, 'message': 'invalid http method'}
 
-    option_list = options
-    for item in option_list:
-        print(item)
-        content = item['title']
-        sequence = item['id']
-        create_option(question, content, sequence)
-    question.save()
+
+# def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence, right_answer):
+#     question = Question()
+#     try:
+#         question.title = title
+#         question.direction = direction
+#         question.is_must_answer = must
+#         question.type = type
+#         survey_id = qn_id
+#         question.survey_id = Survey.objects.get(survey_id=survey_id)
+#         question.raw = raw
+#         question.score = score
+#         question.sequence = sequence
+#         question.right_answer = right_answer
+#     except:
+#         response = {'status_code': -3, 'message': '后端炸了'}
+#         return JsonResponse(response)
+#
+#     option_list = options
+#     for item in option_list:
+#         print(item)
+#         content = item['title']
+#         sequence = item['id']
+#         create_option(question, content, sequence)
+#     question.save()
 
 from Submit.views import get_qn_data
 @csrf_exempt
@@ -529,3 +529,5 @@ def save_exam_answer(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+
