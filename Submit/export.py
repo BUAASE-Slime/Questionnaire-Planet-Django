@@ -367,7 +367,9 @@ def write_vote_to_excel(qn_id):
                 option_num = 0
                 content = option.content
                 for answer in answer_list:
-                    if answer.answer.find(content) >= 0:
+                    # if answer.answer.find(content) >= 0:
+                    answer_content_list = answer.answer.split(KEY_STR)
+                    if content in answer_content_list:
                         option_num += 1
                 if option_num > option_max_num:
                     option_max_num = option_num
@@ -377,7 +379,9 @@ def write_vote_to_excel(qn_id):
                 option_num = 0
                 content = option.content
                 for answer in answer_list:
-                    if answer.answer.find(content) >= 0:
+                    # if answer.answer.find(content) >= 0:
+                    answer_content_list = answer.answer.split(KEY_STR)
+                    if content in answer_content_list:
                         option_num += 1
                 if option_num == option_max_num and option_id != option.option_id:
                     option_max_num = option_num
@@ -433,14 +437,16 @@ def epidemic_to_docx(qn_id):
         type = question.type
         type_str = ""
         if type == 'radio':
-            type_str = "单选题"
+            type_str = ""
         elif type == 'checkbox':
-            type_str = '多选题'
+            type_str = ''
         elif type == 'text':
-            type_str = '填空题'
+            type_str = '（填空题）'
         elif type == 'mark':
-            type_str = '评分题'
-        document.add_paragraph().add_run(str(i) + "、" + question.title,  style='Song')
+            type_str = ''
+        elif type == 'location':
+            type_str = '（位置信息）'
+        document.add_paragraph().add_run(str(i) + "、" + question.title+type_str ,  style='Song')
 
         i += 1
         options = Option.objects.filter(question_id=question)
@@ -523,18 +529,18 @@ def write_epidemic_to_excel(qn_id):
     style_red.font = font_red
     for submit in submit_list:
         if submit.submit_time.date()-last_date >= datetime.timedelta(days=1):
-            sht1.write(id + 2 * day_num - 1, 0, "打卡人数：")
-            sht1.write(id + 2 * day_num - 1, 1, daka_num)
-            sht1.write(id + 2 * day_num , 0, submit.submit_time.strftime("%Y/%m/%d"))
+            sht1.write(id + 3 * day_num - 2, 0, "打卡人数：")
+            sht1.write(id + 3 * day_num - 2, 1, daka_num)
+            sht1.write(id + 3 * day_num , 0, submit.submit_time.strftime("%Y/%m/%d"))
             day_num+= 1
             daka_num = 0
             last_date = submit.submit_time.date()
-        sht1.write(id+2*day_num-1, 0, id)
+        sht1.write(id+3*day_num-2, 0, id)
         username = submit.username
         if username == '' or username is None:
             username = "匿名用户"
-        sht1.write(id+2*day_num-1, 1, username)
-        sht1.write(id+2*day_num-1, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        sht1.write(id+3*day_num-2, 1, username)
+        sht1.write(id+3*day_num-2, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
         question_num = 1
         for question in question_list:
             is_red = False
@@ -550,15 +556,15 @@ def write_epidemic_to_excel(qn_id):
             if question.type == 'checkbox':
                 answer_str = answer_str.replace(KEY_STR, ';')
             if is_red:
-                sht1.write(id + 2 * day_num - 1, 2 + question_num, answer_str,style_red)
+                sht1.write(id + 3 * day_num - 2, 2 + question_num, answer_str,style_red)
             else:
-                sht1.write(id+2*day_num-1, 2 + question_num, answer_str)
+                sht1.write(id+3*day_num-2, 2 + question_num, answer_str)
 
             question_num += 1
         daka_num += 1
         id += 1
-    sht1.write(id + 2 * day_num - 1, 0, "打卡人数：")
-    sht1.write(id + 2 * day_num - 1, 1, daka_num)
+    sht1.write(id + 3 * day_num - 2, 0, "打卡人数：")
+    sht1.write(id + 3 * day_num - 2, 1, daka_num)
     question_num = 1
     submit_num = len(submit_list)
     option_id = 0
@@ -594,7 +600,7 @@ def signup_to_docx(qn_id):
 
     paragraph = document.add_paragraph().add_run(survey.description, style='Song')
 
-    introduction = "本报名问卷已经收集了" + str(survey.recycling_num) + "份，共计" + str(survey.question_num) + "个问题，本数据仅代表该文件被导出时的数据，请及时登录问卷星球网站查看最新数据"
+    introduction = "本报名问卷已经收集了" + str(survey.recycling_num) + "份，共计" + str(survey.question_num) + "个问题，本数据仅代表该文件被导出时的数据，请及时登录问卷星球网站查看最新数据。"
     paragraph = document.add_paragraph().add_run(introduction, style='Song')
     paragraph_list.append(paragraph)
 
@@ -653,3 +659,97 @@ def signup_to_docx(qn_id):
     document.save(docx_path + docx_title)
 
     return document, f, docx_title, docx_path
+
+def write_signup_to_excel(qn_id):
+    qn = Survey.objects.get(survey_id=qn_id)
+    submit_list = Submit.objects.filter(survey_id=qn)
+
+    xls = xlwt.Workbook()
+    sht1 = xls.add_sheet("Sheet1")
+    submit_num = Submit.objects.filter(survey_id=qn).count()
+    sht1.write(0, 0, "序号")
+    sht1.write(0, 1, "提交者")
+    sht1.write(0, 2, "提交时间")
+    sht1.write(submit_num+1,0,"选择次数")
+
+    question_list = Question.objects.filter(survey_id=qn)
+    question_num = len(question_list)
+    option_now_num = 0
+    i = 1
+
+    for question in question_list:
+
+        sht1.write(0, 2 + i+option_now_num, str(i) + "、" + question.title)
+        i += 1
+        if not question_is_signup(question):
+            continue
+        options = Option.objects.filter(question_id=question)
+        this_option_num = 0
+        for option in options:
+            this_option_num += 1
+
+            sht1.write(0, 2 + i + option_now_num, "选项"+str(this_option_num) + "、" + option.content)
+            print(option.option_id)
+            sht1.write(submit_num+1, 2 + i + option_now_num, option.num_limit-option.remain_num )
+            option_now_num += 1
+
+    id = 1
+    this_option_num = 0
+    option_now_num = 0
+    for submit in submit_list:
+        sht1.write(id, 0, id)
+        username = submit.username
+        if username == '' or username is None:
+            username = "匿名用户"
+        sht1.write(id, 1, username)
+        sht1.write(id, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        option_now_num = 0
+        question_num = 1
+        for question in question_list:
+            is_signup = question_is_signup(question)
+            options = Option.objects.filter(question_id=question)
+            this_option_num = 0
+            answer_str = ""
+            try:
+                answer = Answer.objects.get(submit_id=submit, question_id=question)
+                answer_str = answer.answer
+            except:
+                answer_str = ""
+            if question.type == 'checkbox':
+                answer_str = answer_str.replace(KEY_STR, ';')
+            pattern_green = xlwt.Pattern()  # Create the Pattern
+            pattern_green.pattern = xlwt.Pattern.SOLID_PATTERN  # May be: NO_PATTERN, SOLID_PATTERN, or 0x00 through 0x12
+            pattern_green.pattern_fore_colour = 0x2A
+            # May be: 8 through 63. 0 = Black, 1 = White, 2 = Red, 3 = Green, 4 = Blue, 5 = Yellow, 6 = Magenta, 7 = Cyan, 16 = Maroon, 17 = Dark Green, 18 = Dark Blue, 19 = Dark Yellow , almost brown), 20 = Dark Magenta, 21 = Teal, 22 = Light Gray, 23 = Dark Gray, the list goes on...
+            style_green = xlwt.XFStyle()  # Create the Pattern
+            style_green.pattern = pattern_green # Add Pattern to Style
+            sht1.write(id, 2 + question_num+option_now_num, answer_str)
+            if is_signup:
+
+                for option in options:
+                    this_option_num += 1
+                    this_answer_list = answer.answer.split(KEY_STR)
+                    if option.content in this_answer_list:
+                        sht1.write(id, 2+1 +option_now_num+question_num,   option.content,style_green)
+                    option_now_num += 1
+
+            question_num += 1
+
+        id += 1
+
+
+    save_path = djangoProject.settings.MEDIA_ROOT + "\Document\\"
+    from .views import IS_LINUX
+    if IS_LINUX:
+        save_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
+    excel_name = qn.title + "问卷的统计信息" + ".xls"
+    xls.save(save_path + excel_name)
+    return excel_name
+
+def question_is_signup(question):
+    is_signup = False
+    options = Option.objects.filter(question_id=question)
+    for option in options:
+        if option.has_num_limit:
+            is_signup = True
+    return is_signup

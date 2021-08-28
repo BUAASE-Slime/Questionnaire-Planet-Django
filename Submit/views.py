@@ -925,6 +925,8 @@ def export_excel(request):
                 excel_name = write_exam_to_excel(id)
             elif qn.type == '3':
                 excel_name = write_vote_to_excel(id)
+            elif qn.type == '4':
+                excel_name = write_signup_to_excel(id)
 
             elif qn.type == '5':
                 excel_name = write_epidemic_to_excel(id)
@@ -1555,13 +1557,16 @@ def cross_analysis(request):
 
                 i = 1
                 for option in option_list1:
-                    if answer1.answer.find(option.content) >= 0:
+                    answer1_content_list = answer1.answer.split(KEY_STR)
+                    # if answer1.answer.find(option.content) >= 0:
+                    if option.content in answer1_content_list:
                         selection_x.append(i)
                     i += 1
 
                 j = 1
                 for option in option_list2:
-                    if answer2.answer.find(option.content) >= 0:
+                    answer2_content_list = answer2.answer.split(KEY_STR)
+                    if option.content in answer2_content_list:
                         selection_y.append(j)
                     j += 1
                 for i in selection_x:
@@ -1697,7 +1702,9 @@ def submit_reporter(request):
                     for answer in answer_list:
                         i = 0
                         for option_title in option_contnet_list:
-                            if answer.answer.find(option_title) >= 0:
+                            # if answer.answer.find(option_title) >= 0:
+                            answer_content_list = answer.answer.split(KEY_STR)
+                            if option_title in answer_content_list:
                                 options[i]['choosed'] += 1
                             i += 1
 
