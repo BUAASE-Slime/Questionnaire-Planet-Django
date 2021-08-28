@@ -19,7 +19,6 @@ try:
     import pythoncom
 except:
     IS_LINUX = True
-from django.db.models import Q
 
 
 
@@ -139,9 +138,10 @@ def get_qn_data(qn_id):
     response['excel_url'] = survey.excel_url
     response['recycling_num'] = survey.recycling_num
     response['max_recycling'] = survey.max_recycling
+    response['is_logic'] = survey.is_logic
 
 
-    question_list = Question.objects.filter(survey_id=qn_id)
+    question_list = Question.objects.filter(survey_id=qn_id).order_by('sequence')
     questions = []
     for item in question_list:
         temp = {}
@@ -161,13 +161,26 @@ def get_qn_data(qn_id):
         temp['options'] = [{'id':1,'title':""}]
         temp['answer'] = item.right_answer
         temp['isVote'] = item.isVote
-        if temp['type'] in ['radio', 'checkbox','judge']:
+
+        temp['last_question'] = item.last_question
+        temp['last_option'] = 0
+        if item.last_question != 0:
+            last_option_obj = Option.objects.get(option_id=item.last_option)
+            temp['last_option'] = last_option_obj.order
+        temp['is_shown'] = item.is_shown
+        temp['image_url'] = djangoProject.settings.WEB_ROOT + "/media/" + str(item.image)
+        temp['video_url'] = djangoProject.settings.WEB_ROOT + "/media/" + str(item.video)
+        if item.image is None or item.image == '':
+            temp['image_url'] = ''
+        if item.video is None or item.image == '':
+            temp['video_url'] = ''
+        if temp['type'] in ['radio', 'checkbox', 'judge']:
             temp['options'] = []
             # 单选题或者多选题有选项
-            option_list = Option.objects.filter(question_id=item.question_id)
+            option_list = Option.objects.filter(question_id=item.question_id).order_by('order')
             for option_item in option_list:
                 option_dict = {}
-                option_dict['id'] = option_item.option_id
+                option_dict['id'] = option_item.order
                 option_dict['title'] = option_item.content
                 temp['options'].append(option_dict)
 
@@ -221,8 +234,8 @@ def delete_survey_real(request):
 def get_survey_details(request):
     response = {'status_code': 1, 'message': 'success'}
     this_username = request.session.get('username')
-    if not this_username:
-        return JsonResponse({'status_code': 0})
+    # if not this_username:
+    #     return JsonResponse({'status_code': 0})
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
         if survey_form.is_valid():
@@ -363,17 +376,17 @@ def create_qn(request):
         return JsonResponse(response)
 
 @csrf_exempt
-def create_option(question, content, sequence):
+def create_option(question, content, sequence, has_num_limit, num_limit, remain_num):
     option = Option()
     option.content = content
     question.option_num += 1
     option.question_id = question
     question.save()
     option.order = sequence
+    option.has_num_limit = has_num_limit
+    option.num_limit = num_limit
+    option.remain_num = remain_num
     option.save()
-
-
-
 
 
 
@@ -397,14 +410,20 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
         return JsonResponse(response)
-    KEY = "^_^_^"
 
     option_list = options
     for item in option_list:
         print(item)
         content = item['title']
         sequence = item['id']
-        create_option(question, content, sequence)
+        has_num_limit = False
+        num_limit = 0
+        remain_num = 0
+        if question.survey_id.type == '4':
+            has_num_limit = item['hasNumLimit']
+            num_limit = item['supply']
+            remain_num = item['supply'] - item['consume']
+        create_option(question, content, sequence, has_num_limit, num_limit, remain_num)
     question.save()
 
 
@@ -848,7 +867,6 @@ def duplicate_qn(request):
                     new_option.save()
 
             print(new_qn_id)
-            # response = get_qn_data(new_qn_id)
             return JsonResponse({'status_code': 1, 'qn_id': new_qn_id})
 
         else:
@@ -924,10 +942,11 @@ def question_dict_to_question(question, question_dict):
     question.sequence = question_dict['id']
 
     try:
-        question_dict['last_question'] =  question_dict['last_question']
-        question.last_question = save_question_by_order(question.survey_id,question_dict['last_question'])
-        last_question = Question.objects.get(question_id=question.last_question)
-        question.last_option = save_option_by_order(last_question,question_dict['last_option'])
+        # question_dict['last_question'] =  question_dict['last_question']
+        question.last_question = question_dict['last_question']
+        # last_question = Question.objects.get(question_id=question.last_question)
+        last_option = Option.objects.get(question_id__question_id=question_dict['last_question'],order=question_dict['last_option'])
+        question.last_option = last_option.option_id
     except:
         pass
 
@@ -951,8 +970,21 @@ def question_dict_to_question(question, question_dict):
         print(item)
         content = item['title']
         sequence = item['id']
-        create_option(question, content, sequence)
+        has_num_limit = False
+        num_limit = 0
+        remain_num = 0
+        if question.survey_id.type == '4':
+            try:
+                has_num_limit = item['hasNumLimit']
+                num_limit = item['supply']
+                remain_num = item['supply'] - item['consume']
+            except:
+                has_num_limit = False
+                num_limit = 10000
+                remain_num = 10000
+        create_option(question, content, sequence, has_num_limit, num_limit, remain_num)
     question.save()
+
 
 
 @csrf_exempt
@@ -999,7 +1031,6 @@ def save_qn_keep_history(request):
         survey.save()
         question_list = req['questions']
 
-
         #TODO
         # if request.session.get("username") != req['username']:
         #     request.session.flush()
@@ -1039,7 +1070,7 @@ def save_qn_keep_history(request):
                     last_option = question_dict['last_option']
                     question_id = save_question_by_order(survey,last_question)
                     last_question_obj = Question.objects.get(question_id=question_id)
-                    last_question = last_question_obj.question_id
+                    # last_question = last_question_obj.question_id
                     last_option = save_option_by_order(last_question_obj,last_option)
                 except:
                     last_question = 0
