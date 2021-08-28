@@ -136,6 +136,7 @@ def save_signup_answer(request):
 def save_signup_answer_by_code(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
+        print("问卷提交中...")
         req = json.loads(request.body)
         code = req['code']
         answer_list = req['answers']
@@ -433,9 +434,14 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         num_limit = 0
         remain_num = 0
         if question.survey_id.type == '4':
-            has_num_limit = item['hasNumLimit']
-            num_limit = item['supply']
-            remain_num = item['remain']
+            try:
+                has_num_limit = item['hasNumLimit']
+                num_limit = item['supply']
+                remain_num = item['supply'] - item['consume']
+            except:
+                has_num_limit = False
+                num_limit = 99999
+                remain_num = 99999
         create_option(question, content, sequence, has_num_limit, num_limit, remain_num)
     question.save()
 
