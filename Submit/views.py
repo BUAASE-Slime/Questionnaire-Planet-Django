@@ -308,7 +308,7 @@ def get_survey_details_by_others(request):
                         return JsonResponse(response)
                 except:
                     pass
-        if survey.type is '5':
+        if survey.type == '5':
             username = request.session.get('username')
             print(username)
             if username is not None:
@@ -1034,6 +1034,14 @@ def empty_qn_all_Submit(request):
             submit_list = Submit.objects.filter(survey_id=qn.survey_id)
             for submit in submit_list:
                 submit.delete()
+            questions = Question.objects.filter(survey_id=qn)
+            for question in questions:
+                options = Option.objects.filter(question_id=question)
+                for option in options:
+                    if option.has_num_limit:
+                        option.remain_num = option.num_limit
+                    option.save()
+            
             return JsonResponse(response)
 
         else:
@@ -1447,6 +1455,18 @@ def delete_submit(request):
             qn = submit.survey_id
             qn.recycling_num -= 1
             qn.save()
+            # 恢复此人之前投票的额度
+            answers = Answer.objects.filter(submit_id=submit)
+            questions = Question.objects.filter(survey_id=qn)
+            for question in questions:
+                options = Option.objects.get(question_id=question)
+                for option in options:
+                    for answer in answers:
+                        this_answer_list = answer.answer.split(KEY_STR)
+                        if option.has_num_limit and option.content in this_answer_list:
+                            option.remain_num += 1
+                    option.save()
+                    option.save()
 
             return JsonResponse(response)
 
@@ -1481,6 +1501,7 @@ def get_all_submit_data(qn_id,response,type):
             for submit_rank_obj in submit_rank_list:
                 if submit_rank_obj.submit_id == submit.submit_id:
                     item['rank'] = the_rank
+                    break
                 the_rank += 1
 
         item['num'] = i
