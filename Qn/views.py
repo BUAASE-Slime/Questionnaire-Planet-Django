@@ -32,6 +32,7 @@ def get_list(request):
         is_collected = bool(request.POST.get('is_collected'))
         order_item = request.POST.get('order_item')
         order_type = request.POST.get('order_type')
+        qn_type = request.POST.get('type')
 
         print(is_released, order_item, order_type, title_key, username, is_collected)
 
@@ -80,6 +81,9 @@ def get_list(request):
             survey_list = survey_list.order_by('-' + order_item)
         else:
             survey_list = survey_list.order_by(order_item)
+        if qn_type:
+            if qn_type != '0':
+                survey_list = survey_list.filter(type=qn_type)
 
         json_list = []
         for survey in survey_list:
