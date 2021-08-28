@@ -963,7 +963,7 @@ def duplicate_qn(request):
                 return JsonResponse(response)
             new_qn = Survey(title=qn.title + "-副本", description=qn.description, question_num=qn.question_num,
                             recycling_num=0,
-                            username=qn.username, type=qn.type, max_recycling=qn.max_recycling)
+                            username=qn.username, type=qn.type, max_recycling=qn.max_recycling,is_logic=qn.is_logic)
 
             new_qn.save()
             new_qn_id = new_qn.survey_id
@@ -974,12 +974,15 @@ def duplicate_qn(request):
                                         sequence=question.sequence, option_num=question.option_num,
                                         score=question.score, raw=question.raw,
                                         type=question.type, survey_id=new_qn, right_answer=question.right_answer,
-                                        point=question.point)
+                                        point=question.point,has_image=question.has_image,has_video=question.has_video,
+                                        isVote=question.isVote,is_shown=question.is_shown,last_question=question.last_question,
+                                        last_option=question.last_option,image=question.image,video=question.video)
                 new_question.save()
                 options = Option.objects.filter(question_id=question)
 
                 for option in options:
-                    new_option = Option(content=option.content, question_id=new_question, order=option.order)
+                    new_option = Option(content=option.content, question_id=new_question, order=option.order,
+                                        num_limit=option.num_limit,remain_num=option.remain_num,has_num_limit=option.has_num_limit)
                     new_option.save()
 
             print(new_qn_id)
@@ -1709,6 +1712,7 @@ def submit_reporter(request):
                             if option_title in answer_content_list:
                                 options[i]['choosed'] += 1
                             i += 1
+
 
 
                 elif item['type'] in ['text', 'name', 'stuId', 'class', 'school', 'location'] :
