@@ -369,26 +369,26 @@ def create_qn(request):
                 questions = [{"id": 1, "type": "radio", "title": "你认为谁最帅：", "isVote": True,
                               "must": True, "description": '', "row": 1, "score": 0, "options": options}]
             if type == '4':
-                questions = [{"id": 1, "type": "name", "title": "姓名：",
+                questions = [{"id": 1, "type": "text", "title": "姓名：",
                               "must": True, "description": '', "row": 1, "score": 0,
                               "options": [{'id': 1, 'title': ""}]},
                              {"id": 2, "type": "text", "title": "手机号：",
                               "must": True, "description": '', "row": 1, "score": 0,
                               "options": [{'id': 1, 'title': ""}]}]
 
-                options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 10, "remain": 10},
-                           {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 10, "remain": 10},
-                           {"hasNumLimit": True, "title": "学习委员", "id": 3, "supply": 10, "remain": 10}]
+                options = [{"hasNumLimit": True, "title": "班长", "id": 1, "supply": 10, "consume": 0},
+                           {"hasNumLimit": True, "title": "团支书", "id": 2, "supply": 10, "consume": 0},
+                           {"hasNumLimit": True, "title": "学习委员", "id": 3, "supply": 10, "consume": 0}]
 
                 questions.append({"id": 3, "type": "radio", "title": "您想要竞选的职位是：",
                                   "must": True, "description": '', "row": 1, "score": 0, "options": options})
 
             if type == '5':
                 questions = []
-                questions.append({"id": 1, "type": "stuId", "title": "学号：",
+                questions.append({"id": 1, "type": "text", "title": "学号：",
                                   "must": True, "description": '', "row": 1, "score": 0,
                                   "options": [{'id': 1, 'title': ""}]}),
-                questions.append({"id": 2, "type": "name", "title": "姓名：",
+                questions.append({"id": 2, "type": "text", "title": "姓名：",
                                   "must": True, "description": '', "row": 1, "score": 0,
                                   "options": [{'id': 1, 'title': ""}]})
                 questions.append({"id": 3, "type": "radio", "title": "你的体温是：",
