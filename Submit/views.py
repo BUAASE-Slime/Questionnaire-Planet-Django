@@ -369,7 +369,7 @@ def create_qn(request):
                 questions = [{"id": 1, "type": "radio", "title": "你认为谁最帅：", "isVote": True,
                               "must": True, "description": '', "row": 1, "score": 0, "options": options}]
             if type == '4':
-                questions = [{"id": 1, "type": "name", "title": "姓名：",
+                questions = [{"id": 1, "type": "text", "title": "姓名：",
                               "must": True, "description": '', "row": 1, "score": 0,
                               "options": [{'id': 1, 'title': ""}]},
                              {"id": 2, "type": "text", "title": "手机号：",
@@ -385,10 +385,10 @@ def create_qn(request):
 
             if type == '5':
                 questions = []
-                questions.append({"id": 1, "type": "stuId", "title": "学号：",
+                questions.append({"id": 1, "type": "text", "title": "学号：",
                                   "must": True, "description": '', "row": 1, "score": 0,
                                   "options": [{'id': 1, 'title': ""}]}),
-                questions.append({"id": 2, "type": "name", "title": "姓名：",
+                questions.append({"id": 2, "type": "text", "title": "姓名：",
                                   "must": True, "description": '', "row": 1, "score": 0,
                                   "options": [{'id': 1, 'title': ""}]})
                 questions.append({"id": 3, "type": "radio", "title": "你的体温是：",
