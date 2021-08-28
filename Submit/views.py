@@ -168,26 +168,24 @@ def get_qn_data(qn_id):
         #     last_option_obj = Option.objects.get(option_id=item.last_option)
         #     temp['last_option'] = last_option_obj.order
         temp['is_shown'] = item.is_shown
-
-        temp['imgList'] = []
-        if item.image is None or item.image == '':
-            temp['imgList'] = []
-        else:
-            imgUrl = djangoProject.settings.WEB_ROOT + "/media/" + str(item.image)
-            temp['imgList'].append({
-                'url': imgUrl,
-                'name': imgUrl.split('/')[-1]
-            })
-
         temp['videoList'] = []
-        if item.video is None or item.image == '':
-            temp['videoList'] = []
-        else:
-            videoUrl = djangoProject.settings.WEB_ROOT + "/media/" + str(item.video)
-            temp['videoList'].append({
-                'url': videoUrl,
-                'name': videoUrl.split('/')[-1]
-            })
+        temp['imgList'] = []
+        if item.image_url != '':
+            imgUrlList = item.image_url.split(KEY_STR)
+            for img in imgUrlList:
+                temp['imgList'].append({
+                    'url': img,
+                    'name': img.split('/')[-1]
+                })
+
+
+        if item.image != '':
+            videoUrlList = item.video_url.split(KEY_STR)
+            for video in videoUrlList:
+                temp['videoList'].append({
+                    'url': video,
+                    'name': video.split('/')[-1]
+                })
 
         if temp['type'] in ['radio', 'checkbox', 'judge']:
             temp['options'] = []
@@ -498,7 +496,7 @@ def create_option_2(question, content, sequence, has_num_limit, num_limit, remai
     option.remain_num = remain_num
     option.save()
 
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point,isVote,last_question,last_option):
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point,isVote,last_question,last_option,image_url,video_url):
     question = Question()
     try:
         question.title = title
@@ -515,6 +513,8 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         question.isVote = isVote
         question.last_question = last_question
         question.last_option = last_option
+        question.video_url = video_url
+        question.image_url = image_url
     except:
         response = {'status_code': -3, 'message': '后端炸了'}
         return JsonResponse(response)
@@ -1082,6 +1082,24 @@ def question_dict_to_question(question, question_dict):
     question.score = question_dict['score']
     options = question_dict['options']
     question.sequence = question_dict['id']
+    try:
+        imgList = question_dict['imgList']
+        image_url = ""
+        for img in imgList:
+            image_url += img + KEY_STR
+
+    except:
+        image_url = ''
+    try:
+        videoList = question_dict['videoList']
+        video_url = ""
+        for video in videoList:
+            video_url += video + KEY_STR
+    except:
+        video_url = ''
+    question.video_url = video_url
+    question.image_url = image_url
+
 
     try:
         # question_dict['last_question'] =  question_dict['last_question']
@@ -1089,6 +1107,8 @@ def question_dict_to_question(question, question_dict):
         # last_question = Question.objects.get(question_id=question.last_question)
         # last_option = Option.objects.get(question_id__question_id=question_dict['last_question'],order=question_dict['last_option'])
         question.last_option = question_dict['last_option']
+        question.image_url = question_dict['image_url']
+        question.video_url = question_dict['video_url']
     except:
         pass
 
@@ -1217,12 +1237,27 @@ def save_qn_keep_history(request):
                 except:
                     last_question = 0
                     last_option = 0
+                try:
+                    imgList = question_dict['imgList']
+                    image_url = ""
+                    for img in imgList:
+                        image_url += img + KEY_STR
+
+                except:
+                    image_url = ''
+                try:
+                    videoList = question_dict['videoList']
+                    video_url = ""
+                    for video in videoList:
+                        video_url += video + KEY_STR
+                except:
+                    video_url = ''
                 create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
                                         , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
                                         score=question_dict['score'],
                                         options=question_dict['options'],
                                         sequence=question_dict['id'], refer=refer, point=point, isVote=isVote,
-                                        last_question=last_question, last_option=last_option
+                                        last_question=last_question, last_option=last_option,image_url=image_url,video_url=video_url
                                         )
                 # 添加问题
 
