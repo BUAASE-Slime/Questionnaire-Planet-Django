@@ -167,12 +167,27 @@ def get_qn_data(qn_id):
             last_option_obj = Option.objects.get(option_id=item.last_option)
             temp['last_option'] = last_option_obj.order
         temp['is_shown'] = item.is_shown
-        temp['image_url'] = djangoProject.settings.WEB_ROOT + "/media/" + str(item.image)
-        temp['video_url'] = djangoProject.settings.WEB_ROOT + "/media/" + str(item.video)
+
+        temp['imgList'] = []
         if item.image is None or item.image == '':
-            temp['image_url'] = ''
+            temp['imgList'] = []
+        else:
+            imgUrl = djangoProject.settings.WEB_ROOT + "/media/" + str(item.image)
+            temp['imgList'].append({
+                'url': imgUrl,
+                'name': imgUrl.split('/')[-1]
+            })
+
+        temp['videoList'] = []
         if item.video is None or item.image == '':
-            temp['video_url'] = ''
+            temp['videoList'] = []
+        else:
+            videoUrl = djangoProject.settings.WEB_ROOT + "/media/" + str(item.video)
+            temp['videoList'].append({
+                'url': videoUrl,
+                'name': videoUrl.split('/')[-1]
+            })
+
         if temp['type'] in ['radio', 'checkbox', 'judge']:
             temp['options'] = []
             # 单选题或者多选题有选项
