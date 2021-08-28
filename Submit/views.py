@@ -22,7 +22,6 @@ except:
 from django.db.models import Q
 
 
-
 @csrf_exempt
 def empty_the_recycle_bin(request):
     response = {'status_code': 1, 'message': 'success'}
@@ -140,7 +139,6 @@ def get_qn_data(qn_id):
     response['recycling_num'] = survey.recycling_num
     response['max_recycling'] = survey.max_recycling
 
-
     question_list = Question.objects.filter(survey_id=qn_id)
     questions = []
     for item in question_list:
@@ -158,10 +156,10 @@ def get_qn_data(qn_id):
         temp['refer'] = item.right_answer
         temp['point'] = item.point
         temp['id'] = item.sequence  # 按照前端的题目顺序
-        temp['options'] = [{'id':1,'title':""}]
+        temp['options'] = [{'id': 1, 'title': ""}]
         temp['answer'] = item.right_answer
         temp['isVote'] = item.isVote
-        if temp['type'] in ['radio', 'checkbox','judge']:
+        if temp['type'] in ['radio', 'checkbox', 'judge']:
             temp['options'] = []
             # 单选题或者多选题有选项
             option_list = Option.objects.filter(question_id=item.question_id)
@@ -176,7 +174,7 @@ def get_qn_data(qn_id):
                     option_dict['supply'] = option_item.num_limit
                     option_dict['consume'] = option_item.num_limit - option_item.remain_num
 
-        elif temp['type'] in ['mark','text','name','stuId','class','school']:
+        elif temp['type'] in ['mark', 'text', 'name', 'stuId', 'class', 'school']:
             pass
         elif temp['type'] == 'info':
             pass
@@ -185,7 +183,6 @@ def get_qn_data(qn_id):
         print(questions)
     response['questions'] = questions
     return response
-
 
 
 @csrf_exempt
@@ -236,11 +233,8 @@ def get_survey_details(request):
 
             # if survey.username != this_username:
             #     return JsonResponse({'status_code': 0})
-            
-
 
             response = get_qn_data(id)
-
 
             return JsonResponse(response)
         else:
@@ -301,12 +295,11 @@ def get_survey_details_by_others(request):
         return JsonResponse(response)
 
 
-
-
 # username title description type
 @csrf_exempt
 def create_qn(request):
     # global survey
+    global questions
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
 
@@ -320,8 +313,12 @@ def create_qn(request):
             description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
             if type == '2':
                 description = "这里是考试问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
-            elif type == '4':
+            if type == '3':
+                description = "这里是投票问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
+            if type == '4':
                 description = "这里是报名问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
+            if type == '5':
+                description = "这里是疫情打卡问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
             try:
                 user = User.objects.get(username=username)
 
@@ -334,8 +331,6 @@ def create_qn(request):
 
             if title == '':
                 title = "默认标题"
-                if type == '2':
-                    title = "默认标题"
             print("创建问卷： 设置标题成功")
             try:
                 survey = Survey(username=username, title=title, type=type, description=description, question_num=0,
@@ -344,11 +339,24 @@ def create_qn(request):
             except:
                 response = {'status_code': -3, 'message': '后端炸了'}
                 return JsonResponse(response)
+            if type == '2':
+                questions = [{"id": 1, "type": "name", "title": "姓名：",
+                              "must": True, "description": '', "row": 1, "score": 0, "refer": "", "point": 0,
+                              "options": [{'id': 1, 'title': ""}]},
+                             {"id": 2, "type": "stuId", "title": "学号：",
+                              "must": True, "description": '', "row": 1, "score": 0, "refer": "", "point": 0,
+                              "options": [{'id': 1, 'title': ""}]}]
+            if type == '3':
+                options = [{"title": "lygg最帅", "id": 1},
+                           {"title": "吴彦祖最帅", "id": 2}]
+
+                questions = [{"id": 1, "type": "radio", "title": "你认为谁最帅：", "isVote": True,
+                              "must": True, "description": '', "row": 1, "score": 0, "options": options}]
             if type == '4':
-                questions = [{"id": 1, "type": "text", "title": "你的姓名是：",
+                questions = [{"id": 1, "type": "name", "title": "姓名：",
                               "must": True, "description": '', "row": 1, "score": 0,
                               "options": [{'id': 1, 'title': ""}]},
-                             {"id": 2, "type": "text", "title": "你的手机号是：",
+                             {"id": 2, "type": "text", "title": "手机号：",
                               "must": True, "description": '', "row": 1, "score": 0,
                               "options": [{'id': 1, 'title': ""}]}]
 
@@ -358,8 +366,65 @@ def create_qn(request):
 
                 questions.append({"id": 3, "type": "radio", "title": "您想要竞选的职位是：",
                                   "must": True, "description": '', "row": 1, "score": 0, "options": options})
-                response['questions'] = questions
 
+            if type == '5':
+                questions = []
+                questions.append({"id": 1, "type": "stuId", "title": "学号：",
+                                  "must": True, "description": '', "row": 1, "score": 0,
+                                  "options": [{'id': 1, 'title': ""}]}),
+                questions.append({"id": 2, "type": "name", "title": "姓名：",
+                                  "must": True, "description": '', "row": 1, "score": 0,
+                                  "options": [{'id': 1, 'title': ""}]})
+                questions.append({"id": 3, "type": "radio", "title": "你的体温是：",
+                                  "must": True, "description": '', "row": 1, "score": 0,
+                                  "options": [{"title": "36℃以下", "id": 1},
+                                              {"title": "36.0℃~37.0℃", "id": 2},
+                                              {"title": "37.1℃~38.0℃", "id": 3},
+                                              {"title": "38.1℃~39.0℃", "id": 4},
+                                              {"title": "39℃以上", "id": 5}]})
+                questions.append({"id": 4, "type": "radio", "title": "近14日内，所接触环境和人员是否一切正常？",
+                                  "must": True, "description": '', "row": 1, "score": 0,
+                                  "options": [{"title": "是（未接触风险地区和人员，无入境共居成员，社区无确诊）", "id": 1},
+                                              {"title": "否", "id": 2}]})
+                questions.append({"id": 5, "type": "radio", "title": "今日本人情况是否正常？",
+                                  "must": True, "description": '', "row": 1, "score": 0,
+                                  "options": [{"title": "是（本人健康且未处于隔离期）", "id": 1},
+                                              {"title": "否", "id": 2}]})
+                questions.append({"id": 6, "type": "location", "title": "所在地点",
+                                  "must": True, "description": '', "row": 1, "score": 0,
+                                  "options": [{'id': 1, 'title': ""}]})
+
+            for question_dict in questions:
+                refer = ''
+                point = 0
+                isVote = False
+                if type == '2':
+                    refer = question_dict['refer']
+                    point = question_dict['point']
+                    print("this question point  = " + str(question_dict['point']))
+
+                elif type == '3':
+                    isVote = question_dict['isVote']
+
+                last_question = 0
+                last_option = 0
+                create_question_in_save(question_dict['title'], question_dict['description'],
+                                        question_dict['must'], question_dict['type'], qn_id=survey.survey_id,
+                                        raw=question_dict['row'],
+                                        score=question_dict['score'],
+                                        options=question_dict['options'],
+                                        sequence=question_dict['id'], refer=refer, point=point, isVote=isVote,
+                                        last_question=last_question, last_option=last_option
+                                        )
+                # 添加问题
+            question_num = 0
+            survey.save()
+            question_list = Question.objects.filter(survey_id=survey)
+            for question in question_list:
+                question_num += 1
+            survey.question_num = question_num
+            print("保存成功，该问卷的问题数目为：" + str(question_num))
+            survey.save()
 
             response['qn_id'] = survey.survey_id
             print(response)
@@ -373,6 +438,7 @@ def create_qn(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
+
 @csrf_exempt
 def create_option(question, content, sequence):
     option = Option()
@@ -384,11 +450,22 @@ def create_option(question, content, sequence):
     option.save()
 
 
+@csrf_exempt
+def create_option_2(question, content, sequence, has_num_limit, num_limit, remain_num):
+    option = Option()
+    option.content = content
+    question.option_num += 1
+    option.question_id = question
+    question.save()
+    option.order = sequence
+    option.has_num_limit = has_num_limit
+    option.num_limit = num_limit
+    option.remain_num = remain_num
+    option.save()
 
 
-
-
-def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point,isVote,last_question,last_option):
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence, refer, point, isVote,
+                            last_question, last_option):
     question = Question()
     try:
         question.title = title
@@ -401,7 +478,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         question.score = score
         question.sequence = sequence
         question.point = point
-        question.right_answer =refer
+        question.right_answer = refer
         question.isVote = isVote
         question.last_question = last_question
         question.last_option = last_option
@@ -415,7 +492,13 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         print(item)
         content = item['title']
         sequence = item['id']
-        create_option(question, content, sequence)
+        if question.survey_id.type == '4' and question.type in ['radio', 'checkbox', 'judge']:
+            has_num_limit = item['hasNumLimit']
+            num_limit = item['supply']
+            remain_num = item['remain']
+            create_option_2(question, content, sequence, has_num_limit, num_limit, remain_num)
+        else:
+            create_option(question, content, sequence)
     question.save()
 
 
@@ -730,6 +813,8 @@ def pdf_document(request):
 import xlwt
 
 from Qn.views import KEY_STR
+
+
 def write_submit_to_excel(qn_id):
     qn = Survey.objects.get(survey_id=qn_id)
     submit_list = Submit.objects.filter(survey_id=qn)
@@ -765,7 +850,7 @@ def write_submit_to_excel(qn_id):
             except:
                 answer_str = ""
             if question.type == 'checkbox':
-                answer_str = answer_str.replace(KEY_STR,';')
+                answer_str = answer_str.replace(KEY_STR, ';')
 
             sht1.write(id, 2 + question_num, answer_str)
 
@@ -809,7 +894,7 @@ def export_excel(request):
                 excel_name = write_exam_to_excel(id)
             elif qn.type == '3':
                 excel_name = write_vote_to_excel(id)
-            else:#TODO 其他类型
+            else:  # TODO 其他类型
                 excel_name = write_submit_to_excel(id)
 
             response['excel_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + excel_name
@@ -838,8 +923,9 @@ def duplicate_qn(request):
             except:
                 response = {'status_code': 2, 'message': '问卷不存在'}
                 return JsonResponse(response)
-            new_qn = Survey(title=qn.title+"-副本", description=qn.description, question_num=qn.question_num, recycling_num=0,
-                            username=qn.username, type=qn.type,max_recycling=qn.max_recycling)
+            new_qn = Survey(title=qn.title + "-副本", description=qn.description, question_num=qn.question_num,
+                            recycling_num=0,
+                            username=qn.username, type=qn.type, max_recycling=qn.max_recycling)
 
             new_qn.save()
             new_qn_id = new_qn.survey_id
@@ -849,7 +935,7 @@ def duplicate_qn(request):
                                         is_must_answer=question.is_must_answer,
                                         sequence=question.sequence, option_num=question.option_num,
                                         score=question.score, raw=question.raw,
-                                        type=question.type, survey_id=new_qn,right_answer=question.right_answer,
+                                        type=question.type, survey_id=new_qn, right_answer=question.right_answer,
                                         point=question.point)
                 new_question.save()
                 options = Option.objects.filter(question_id=question)
@@ -935,13 +1021,12 @@ def question_dict_to_question(question, question_dict):
     question.sequence = question_dict['id']
 
     try:
-        question_dict['last_question'] =  question_dict['last_question']
-        question.last_question = save_question_by_order(question.survey_id,question_dict['last_question'])
+        question_dict['last_question'] = question_dict['last_question']
+        question.last_question = save_question_by_order(question.survey_id, question_dict['last_question'])
         last_question = Question.objects.get(question_id=question.last_question)
-        question.last_option = save_option_by_order(last_question,question_dict['last_option'])
+        question.last_option = save_option_by_order(last_question, question_dict['last_option'])
     except:
         pass
-
 
     if question.survey_id.type == '2':
         question.right_answer = question_dict['refer']
@@ -978,7 +1063,7 @@ def save_qn_keep_history(request):
         except:
             response = {'status_code': 3, 'message': '问卷不存在'}
             return JsonResponse(response)
-        submit_list =  Submit.objects.filter(survey_id=qn_id)
+        submit_list = Submit.objects.filter(survey_id=qn_id)
         for submit in submit_list:
             submit.is_valid = False
             submit.save()
@@ -999,19 +1084,18 @@ def save_qn_keep_history(request):
             if req['finished_time'] is not None and req['finished_time'] != '':
                 survey.finished_time = req['finished_time']
         except:
-           pass
-        
+            pass
+
         if req['type'] == '2':
             # 如果问卷是考试问卷
-            #TODO 正常发问卷的截止时间
+            # TODO 正常发问卷的截止时间
             # survey.finished_time = req['finished_time']
             survey.description = "这里是一份考卷，您可以在此处编写关于本考卷的简介，帮助考生了解这份考卷"
 
         survey.save()
         question_list = req['questions']
 
-
-        #TODO
+        # TODO
         # if request.session.get("username") != req['username']:
         #     request.session.flush()
         #     return JsonResponse({'status_code': 0})
@@ -1020,8 +1104,8 @@ def save_qn_keep_history(request):
             num = 0
             for question_dict in question_list:
                 if question_dict['question_id'] == question.question_id:
-                    #旧问题在新问题中有 更新问题
-                    question_dict_to_question(question,question_dict)
+                    # 旧问题在新问题中有 更新问题
+                    question_dict_to_question(question, question_dict)
                     num = 1
                     break
 
@@ -1039,7 +1123,7 @@ def save_qn_keep_history(request):
             if req['type'] == '2':
                 refer = question_dict['refer']
                 point = question_dict['point']
-                print("this question point  = "+str(question_dict['point']))
+                print("this question point  = " + str(question_dict['point']))
 
             elif req['type'] == '3':
                 isVote = question_dict['isVote']
@@ -1048,10 +1132,10 @@ def save_qn_keep_history(request):
                 try:
                     last_question = question_dict['last_question']
                     last_option = question_dict['last_option']
-                    question_id = save_question_by_order(survey,last_question)
+                    question_id = save_question_by_order(survey, last_question)
                     last_question_obj = Question.objects.get(question_id=question_id)
                     last_question = last_question_obj.question_id
-                    last_option = save_option_by_order(last_question_obj,last_option)
+                    last_option = save_option_by_order(last_question_obj, last_option)
                 except:
                     last_question = 0
                     last_option = 0
@@ -1059,10 +1143,10 @@ def save_qn_keep_history(request):
                                         , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
                                         score=question_dict['score'],
                                         options=question_dict['options'],
-                                        sequence=question_dict['id'],refer=refer,point=point,isVote=isVote,last_question=last_question,last_option=last_option
+                                        sequence=question_dict['id'], refer=refer, point=point, isVote=isVote,
+                                        last_question=last_question, last_option=last_option
                                         )
                 # 添加问题
-
 
         question_num = 0
 
@@ -1071,7 +1155,7 @@ def save_qn_keep_history(request):
         for question in question_list:
             question_num += 1
         survey.question_num = question_num
-        print("保存成功，该问卷的问题数目为："+str(question_num))
+        print("保存成功，该问卷的问题数目为：" + str(question_num))
         survey.save()
 
         return JsonResponse(response)
@@ -1450,7 +1534,7 @@ def cross_analysis(request):
                 item['column_comment'] = option.content
                 tableHead.append(item)
                 j += 1
-            tableHead.append({'column_name':"column_{}".format(j),'column_comment':"小计"})
+            tableHead.append({'column_name': "column_{}".format(j), 'column_comment': "小计"})
 
             # tableData.append(item)
             i = 1
@@ -1564,9 +1648,9 @@ def submit_reporter(request):
                         options.append(dict)
 
                     for answer in answer_list:
-                        i=0
+                        i = 0
                         for option_title in option_contnet_list:
-                            if answer.answer.find(option_title)>=0:
+                            if answer.answer.find(option_title) >= 0:
                                 options[i]['choosed'] += 1
                             i += 1
 
@@ -1583,9 +1667,9 @@ def submit_reporter(request):
                     item['tableData'] = tableData
 
                 elif item['type'] == 'mark':
-                    options= []
+                    options = []
 
-                    for i in range(1,question.score+1):
+                    for i in range(1, question.score + 1):
                         dict = {}
                         dict['title'] = i
                         dict['choosed'] = 0
@@ -1594,8 +1678,8 @@ def submit_reporter(request):
                         try:
                             score = int(answer.answer)
                         except:
-                            return JsonResponse({'status_code':5,'message':'得分不是整数'})
-                        options[score-1]['choosed'] += 1
+                            return JsonResponse({'status_code': 5, 'message': '得分不是整数'})
+                        options[score - 1]['choosed'] += 1
                     item['options'] = options
 
                 item['options'] = options
@@ -1614,7 +1698,6 @@ def submit_reporter(request):
 
 
 def finish_qn(qn_id):
-
     survey = Survey.objects.get(survey_id=id)
     survey.is_finished = True
     survey.is_released = False
@@ -1622,8 +1705,8 @@ def finish_qn(qn_id):
 
     return 1
 
-def dispose_qn_correlate_question(qn_id):
 
+def dispose_qn_correlate_question(qn_id):
     question_list = Question.objects.filter(survey_id__survey_id=qn_id)
     show_question_list = []
     not_question_list = []
@@ -1635,8 +1718,8 @@ def dispose_qn_correlate_question(qn_id):
             not_question_list.append(question)
             question.is_shown = False
 
-def save_option_by_order(question,option_order):
-    
+
+def save_option_by_order(question, option_order):
     option_list = Option.objects.filter(question_id=question)
     i = 1
     for option in option_list:
@@ -1645,8 +1728,8 @@ def save_option_by_order(question,option_order):
         i += 1
     return 0
 
-def save_question_by_order(qn,question_order):
 
+def save_question_by_order(qn, question_order):
     i = 1
     question_list = Question.objects.filter(survey_id=qn)
     for question in question_list:
@@ -1655,13 +1738,12 @@ def save_question_by_order(qn,question_order):
         i += 1
     return 0
 
+
 @csrf_exempt
 def get_ip(request):
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]#所以这里是真实的ip
+        ip = x_forwarded_for.split(',')[0]  # 所以这里是真实的ip
     else:
-        ip = request.META.get('REMOTE_ADDR')#这里获得代理ip
-    return JsonResponse({'ip':ip})
-
-
+        ip = request.META.get('REMOTE_ADDR')  # 这里获得代理ip
+    return JsonResponse({'ip': ip})

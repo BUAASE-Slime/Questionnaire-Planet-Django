@@ -435,7 +435,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         if question.survey_id.type == '4':
             has_num_limit = item['hasNumLimit']
             num_limit = item['supply']
-            remain_num = item['supply'] - item['consume']
+            remain_num = item['remain']
         create_option(question, content, sequence, has_num_limit, num_limit, remain_num)
     question.save()
 
