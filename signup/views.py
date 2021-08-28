@@ -154,7 +154,7 @@ def save_signup_answer_by_code(request):
             #     return JsonResponse({'status_code': -1, 'message': '超过截止时间'})
 
         if Submit.objects.filter(survey_id=survey, username=username) and username != '':#TODO delete
-            return JsonResponse({'status_code': 3, 'message': '已提交过问卷'})
+            return JsonResponse({'status_code': 21, 'message': '已提交过问卷'})
 
         if not survey.is_released:
             return JsonResponse({'status_code': 4, 'message': '问卷未发布'})
