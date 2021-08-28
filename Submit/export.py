@@ -76,7 +76,7 @@ def paper_to_docx(qn_id):
 
             alphas = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-            if question.type in ['checkbox', 'radio']:
+            if question.type in ['checkbox', 'radio','judge']:
                 option_str += alphas[option_option] + " :  "
                 # option_str += "选项 " + str(num) + " :  "
                 option_option += 1
