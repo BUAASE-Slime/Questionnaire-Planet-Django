@@ -9,4 +9,5 @@ urlpatterns = [
     path('get_img', get_image_url),
     path('upload_video', upload_video),
     path('get_video', get_video_url),
+    # path('test', test)
 ]
