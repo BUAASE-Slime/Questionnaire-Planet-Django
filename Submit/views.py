@@ -179,7 +179,7 @@ def get_qn_data(qn_id):
                 })
 
 
-        if item.image != '':
+        if item.video_url != '':
             videoUrlList = item.video_url.split(KEY_STR)
             for video in videoUrlList:
                 temp['videoList'].append({
