@@ -161,7 +161,7 @@ def get_qn_data(qn_id):
         temp['options'] = [{'id': 1, 'title': ""}]
         temp['answer'] = item.right_answer
         temp['isVote'] = item.isVote
-
+        # question = Question.objects.get(survey_id=survey,sequence=item.last_question)
         temp['last_question'] = item.last_question
         temp['last_option'] = item.last_option
         # if item.last_question != 0:

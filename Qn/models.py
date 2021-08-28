@@ -76,10 +76,11 @@ class Question(models.Model):
 
     has_image = models.BooleanField(default=False, verbose_name="包含图片")
     has_video = models.BooleanField(default=False, verbose_name="包含视频")
-    # image_url = models.URLField(verbose_name="图片链接", default='')
-    image = models.ImageField(upload_to=question_image_directory_path, blank=True, verbose_name="图片文件")
-    # video_url = models.URLField(verbose_name="视频链接", default='')
-    video = models.FileField(upload_to=question_video_directory_path, blank=True, verbose_name="视频文件")
+    # image_url = models.CharField(max_length=1024,verbose_name="图片链接",blank=True,default='')
+
+    # image = models.ImageField(upload_to=question_image_directory_path, blank=True, verbose_name="图片文件")
+    # video_url = models.CharField(max_length=1024,verbose_name="视频链接",blank=True,default='')
+    # video = models.FileField(upload_to=question_video_directory_path, blank=True, verbose_name="视频文件")
 
     # last_option = models.ForeignKey(Option,on_delete=models.CASCADE,verbose_name="上一个选项")
     last_option = models.IntegerField(default=0, verbose_name="上一个选项")
