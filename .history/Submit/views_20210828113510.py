@@ -139,8 +139,12 @@ def get_qn_data(qn_id):
     response['max_recycling'] = survey.max_recycling
     response['is_logic'] = survey.is_logic
 
+<<<<<<< HEAD
+    question_list = Question.objects.filter(survey_id=qn_id)
+=======
 
     question_list = Question.objects.filter(survey_id=qn_id).order_by('sequence')
+>>>>>>> ly
     questions = []
     for item in question_list:
         temp = {}
@@ -160,6 +164,8 @@ def get_qn_data(qn_id):
         temp['options'] = [{'id': 1, 'title': ""}]
         temp['answer'] = item.right_answer
         temp['isVote'] = item.isVote
+<<<<<<< HEAD
+=======
 
         temp['last_question'] = item.last_question
         temp['last_option'] = 0
@@ -173,6 +179,7 @@ def get_qn_data(qn_id):
             temp['image_url'] = ''
         if item.video is None or item.image == '':
             temp['video_url'] = ''
+>>>>>>> ly
         if temp['type'] in ['radio', 'checkbox', 'judge']:
             temp['options'] = []
             # 单选题或者多选题有选项
@@ -480,7 +487,13 @@ def create_option_2(question, content, sequence, has_num_limit, num_limit, remai
     option.remain_num = remain_num
     option.save()
 
+<<<<<<< HEAD
+
+def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence, refer, point, isVote,
+                            last_question, last_option):
+=======
 def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point,isVote,last_question,last_option):
+>>>>>>> ly
     question = Question()
     try:
         question.title = title
@@ -506,6 +519,15 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
         print(item)
         content = item['title']
         sequence = item['id']
+<<<<<<< HEAD
+        if question.survey_id.type == '4' and question.type in ['radio', 'checkbox', 'judge']:
+            has_num_limit = item['hasNumLimit']
+            num_limit = item['supply']
+            remain_num = item['remain']
+            create_option_2(question, content, sequence, has_num_limit, num_limit, remain_num)
+        else:
+            create_option(question, content, sequence)
+=======
         has_num_limit = False
         num_limit = 0
         remain_num = 0
@@ -514,6 +536,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
             num_limit = item['supply']
             remain_num = item['supply'] - item['consume']
         create_option(question, content, sequence, has_num_limit, num_limit, remain_num)
+>>>>>>> ly
     question.save()
 
 
@@ -1035,11 +1058,18 @@ def question_dict_to_question(question, question_dict):
     question.sequence = question_dict['id']
 
     try:
+<<<<<<< HEAD
+        question_dict['last_question'] = question_dict['last_question']
+        question.last_question = save_question_by_order(question.survey_id, question_dict['last_question'])
+        last_question = Question.objects.get(question_id=question.last_question)
+        question.last_option = save_option_by_order(last_question, question_dict['last_option'])
+=======
         # question_dict['last_question'] =  question_dict['last_question']
         question.last_question = question_dict['last_question']
         # last_question = Question.objects.get(question_id=question.last_question)
         last_option = Option.objects.get(question_id__question_id=question_dict['last_question'],order=question_dict['last_option'])
         question.last_option = last_option.option_id
+>>>>>>> ly
     except:
         pass
 
@@ -1123,7 +1153,11 @@ def save_qn_keep_history(request):
         survey.save()
         question_list = req['questions']
 
+<<<<<<< HEAD
+        # TODO
+=======
         #TODO
+>>>>>>> ly
         # if request.session.get("username") != req['username']:
         #     request.session.flush()
         #     return JsonResponse({'status_code': 0})
@@ -1162,8 +1196,13 @@ def save_qn_keep_history(request):
                     last_option = question_dict['last_option']
                     question_id = save_question_by_order(survey, last_question)
                     last_question_obj = Question.objects.get(question_id=question_id)
+<<<<<<< HEAD
+                    last_question = last_question_obj.question_id
+                    last_option = save_option_by_order(last_question_obj, last_option)
+=======
                     # last_question = last_question_obj.question_id
                     last_option = save_option_by_order(last_question_obj,last_option)
+>>>>>>> ly
                 except:
                     last_question = 0
                     last_option = 0
