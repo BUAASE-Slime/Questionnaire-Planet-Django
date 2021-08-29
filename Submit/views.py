@@ -344,11 +344,11 @@ def create_qn(request):
             description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
             if type == '2':
                 description = "这里是考试问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
-            if type == '3':
+            elif type == '3':
                 description = "这里是投票问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
-            if type == '4':
+            elif type == '4':
                 description = "这里是报名问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
-            if type == '5':
+            elif type == '5':
                 description = "这里是疫情打卡问卷说明信息，您可以在此处编写关于本考试问卷的简介，帮助填写者了解这份问卷。"
             try:
                 user = User.objects.get(username=username)
@@ -373,20 +373,20 @@ def create_qn(request):
                 return JsonResponse(response)
             if type == '1':
                 return JsonResponse({'status_code': 1, 'qn_id': survey.survey_id})
-            if type == '2':
+            elif type == '2':
                 questions = [{"id": 1, "type": "name", "title": "姓名：",
                               "must": True, "description": '', "row": 1, "score": 0, "refer": "", "point": 0,
                               "options": [{'id': 1, 'title': ""}]},
                              {"id": 2, "type": "stuId", "title": "学号：",
                               "must": True, "description": '', "row": 1, "score": 0, "refer": "", "point": 0,
                               "options": [{'id': 1, 'title': ""}]}]
-            if type == '3':
+            elif type == '3':
                 options = [{"title": "lygg最帅", "id": 1},
                            {"title": "吴彦祖最帅", "id": 2}]
 
                 questions = [{"id": 1, "type": "radio", "title": "你认为谁最帅：", "isVote": True,
                               "must": True, "description": '', "row": 1, "score": 0, "options": options}]
-            if type == '4':
+            elif type == '4':
                 questions = [{"id": 1, "type": "text", "title": "姓名：",
                               "must": True, "description": '', "row": 1, "score": 0,
                               "options": [{'id': 1, 'title': ""}]},
@@ -401,7 +401,7 @@ def create_qn(request):
                 questions.append({"id": 3, "type": "radio", "title": "您想要竞选的职位是：",
                                   "must": True, "description": '', "row": 1, "score": 0, "options": options})
 
-            if type == '5':
+            elif type == '5':
                 questions = []
                 questions.append({"id": 1, "type": "text", "title": "学号：",
                                   "must": True, "description": '', "row": 1, "score": 0,
@@ -456,6 +456,7 @@ def create_qn(request):
                 # 添加问题
             question_num = 0
             survey.save()
+            print("begin save code")
             code = hash_code(survey.username, str(survey.survey_id))
             # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
             end_info = code[:20].upper()
@@ -470,6 +471,7 @@ def create_qn(request):
             survey.question_num = question_num
             print("保存成功，该问卷的问题数目为：" + str(question_num))
             survey.save()
+            print("end code and code = ",survey.share_url)
 
             response['qn_id'] = survey.survey_id
             print(response)
@@ -1259,15 +1261,15 @@ def save_qn_keep_history(request):
                 except:
                     last_question = 0
                     last_option = 0
-                # try:
-                imgList = question_dict['imgList']
-                image_url = ""
-                for img in imgList:
-                    image_url += img['url'] + KEY_STR
-                print('img save ',image_url)
+                try:
+                    imgList = question_dict['imgList']
+                    image_url = ""
+                    for img in imgList:
+                        image_url += img['url'] + KEY_STR
+                    print('img save ',image_url)
 
-                # except:
-                #     image_url = ''
+                except:
+                    image_url = ''
                 try:
                     videoList = question_dict['videoList']
                     video_url = ""
