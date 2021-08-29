@@ -457,6 +457,14 @@ def create_qn(request):
                 # 添加问题
             question_num = 0
             survey.save()
+            code = hash_code(survey.username, str(survey.survey_id))
+            # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            end_info = code[:20].upper()
+            while Survey.objects.filter(share_url=end_info):
+                code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                end_info = code[:20].upper()
+
+            survey.share_url = end_info
             question_list = Question.objects.filter(survey_id=survey)
             for question in question_list:
                 question_num += 1
