@@ -34,6 +34,7 @@ urlpatterns = [
     path('api/qs/ep/', include(('epidemic.urls', 'epidemic'))),
 
     path('api/qs/upload/image', resources.views.upload_image),
+    path('api/qs/upload/video', resources.views.upload_video),
 
     url(r'media/(?P<path>.*)',serve,{'document_root':settings.MEDIA_ROOT}),
 

@@ -124,11 +124,11 @@ def get_qn_data(qn_id):
     response['question_num'] = survey.question_num
     response['created_time'] = response['release_time'] = response['finished_time'] = ''
     if produce_time(survey.created_time):
-        response['created_time'] = survey.created_time.strftime("%Y/%m/%d %H:%M")
+        response['created_time'] = survey.created_time.strftime("%Y-%m-%d %H:%M")
     if produce_time(survey.finished_time):
-        response['finished_time'] = survey.finished_time.strftime("%Y/%m/%d %H:%M")
+        response['finished_time'] = survey.finished_time.strftime("%Y-%m-%d %H:%M")
     if produce_time(survey.release_time):
-        response['release_time'] = survey.release_time.strftime("%Y/%m/%d %H:%M")
+        response['release_time'] = survey.release_time.strftime("%Y-%m-%d %H:%M")
     response['is_released'] = survey.is_released
     response['is_deleted'] = survey.is_deleted
     response['is_finished'] = survey.is_finished
@@ -886,7 +886,7 @@ def write_submit_to_excel(qn_id):
         if username == '' or username is None:
             username = "匿名用户"
         sht1.write(id, 1, username)
-        sht1.write(id, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        sht1.write(id, 2, submit.submit_time.strftime("%Y-%m-%d %H:%M"))
         question_num = 1
         for question in question_list:
             answer_str = ""
@@ -1195,7 +1195,7 @@ def save_qn_func(req,qn_id):
 
         if req['finished_time'] != '':
             try:
-                survey.finished_time =  datetime.datetime.strptime(req['finished_time'], '%Y-%m-%d %H:%M:%S')
+                survey.finished_time =  datetime.datetime.strptime(req['finished_time'], '%Y-%m-%d %H:%M')
                 print('save success 11111')
             except:
                 survey.finished_time = req['finished_time']
@@ -1363,7 +1363,7 @@ def get_answer_from_submit_by_code(request):
             return JsonResponse(response)
         answers = []
         response['submit_id'] = submit.submit_id
-        response['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
+        response['submit_time'] = submit.submit_time.strftime("%Y-%m-%d %H:%M")
         response['username'] = submit.username
         response['is_valid'] = submit.is_valid
         response['score'] = submit.score
@@ -1425,7 +1425,7 @@ def get_answer_from_submit(request):
                 return JsonResponse(response)
             answers = []
             response['submit_id'] = submit.submit_id
-            response['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
+            response['submit_time'] = submit.submit_time.strftime("%Y-%m-%d %H:%M")
             response['username'] = submit.username
             response['is_valid'] = submit.is_valid
             response['score'] = submit.score
@@ -1611,7 +1611,7 @@ def get_all_submit_data(qn_id,response,type):
         item['num'] = i
         i += 1
         item['submit_id'] = submit.submit_id
-        item['submit_time'] = submit.submit_time.strftime("%Y/%m/%d %H:%M")
+        item['submit_time'] = submit.submit_time.strftime("%Y-%m-%d %H:%M")
         if submit.username and submit.username != '':
             item['username'] = submit.username
         else:
