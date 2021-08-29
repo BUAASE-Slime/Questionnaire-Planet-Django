@@ -1190,15 +1190,20 @@ def save_qn_keep_history(request):
 
             print("问卷截止时间为 " + req['finished_time'])
             print(survey.finished_time > datetime.datetime.now())
-            if req['finished_time'] is not None or req['finished_time'] != '' :
-                survey.finished_time = req['finished_time']
+            if req['finished_time'] != '' :
+                try:
+                    survey.finished_time =  datetime.datetime.strptime(req['finished_time'], '%Y-%m-%d %H:%M:%S')
+                    print('save success 11111')
+                except:
+                    survey.finished_time = req['finished_time']
             survey.save()
-
-
+            print('finished_time' ,survey.finished_time)
+            print("survey finished_time save success")
+            if survey.finished_time - datetime.datetime.now() > datetime.timedelta(seconds=1):
+                survey.is_finished = False
         except:
             pass
-        if survey.finished_time > datetime.datetime.now() :
-            survey.is_finished = False
+
         if req['type'] == '2':
             # 如果问卷是考试问卷
             # TODO 正常发问卷的截止时间
