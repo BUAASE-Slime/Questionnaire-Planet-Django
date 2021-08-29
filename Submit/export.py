@@ -611,14 +611,14 @@ def signup_to_docx(qn_id):
         type = question.type
         type_str = ""
         if type == 'radio':
-            type_str = "单选题"
+            type_str = "(单选题)"
         elif type == 'checkbox':
-            type_str = '多选题'
+            type_str = '(多选题)'
         elif type == 'text':
-            type_str = '填空题'
+            type_str = '(填空题)'
         elif type == 'mark':
-            type_str = '评分题'
-        document.add_paragraph().add_run(str(i) + "、" + question.title + "(" + type_str + ")", style='Song')
+            type_str = '(评分题)'
+        document.add_paragraph().add_run(str(i) + "、" + question.title +  type_str , style='Song')
 
         i += 1
         options = Option.objects.filter(question_id=question)
