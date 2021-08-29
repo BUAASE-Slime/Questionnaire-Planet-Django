@@ -185,7 +185,7 @@ def write_exam_to_excel(qn_id):
         if username == '' or username is None:
             username = "匿名用户"
         sht1.write(id, 1, username)
-        sht1.write(id, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        sht1.write(id, 2, submit.submit_time.strftime("%Y-%m-%d %H:%M"))
         question_num = 1
         for question in question_info_list:
             answer_str = (Answer.objects.get(submit_id=submit, question_id=question)).answer
@@ -336,7 +336,7 @@ def write_vote_to_excel(qn_id):
         if username == '' or username is None:
             username = "匿名用户"
         sht1.write(id, 1, username)
-        sht1.write(id, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        sht1.write(id, 2, submit.submit_time.strftime("%Y-%m-%d %H:%M"))
         question_num = 1
         for question in question_list:
             answer_str = ""
@@ -519,7 +519,7 @@ def write_epidemic_to_excel(qn_id):
     for question in question_list:
         sht1.write(0, 2 + i, str(i) + "、" + question.title)
         i += 1
-    sht1.write(1,0,begin_date.strftime("%Y/%m/%d"))
+    sht1.write(1,0,begin_date.strftime("%Y-%m-%d"))
     id = 1
     daka_num = 0
     style_red = xlwt.XFStyle()  # Create the Pattern
@@ -531,7 +531,7 @@ def write_epidemic_to_excel(qn_id):
         if submit.submit_time.date()-last_date >= datetime.timedelta(days=1):
             sht1.write(id + 3 * day_num - 2, 0, "打卡人数：")
             sht1.write(id + 3 * day_num - 2, 1, daka_num)
-            sht1.write(id + 3 * day_num , 0, submit.submit_time.strftime("%Y/%m/%d"))
+            sht1.write(id + 3 * day_num , 0, submit.submit_time.strftime("%Y-%m-%d"))
             day_num+= 1
             daka_num = 0
             last_date = submit.submit_time.date()
@@ -540,7 +540,7 @@ def write_epidemic_to_excel(qn_id):
         if username == '' or username is None:
             username = "匿名用户"
         sht1.write(id+3*day_num-2, 1, username)
-        sht1.write(id+3*day_num-2, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        sht1.write(id+3*day_num-2, 2, submit.submit_time.strftime("%Y-%m-%d %H:%M"))
         question_num = 1
         for question in question_list:
             is_red = False
@@ -702,7 +702,7 @@ def write_signup_to_excel(qn_id):
         if username == '' or username is None:
             username = "匿名用户"
         sht1.write(id, 1, username)
-        sht1.write(id, 2, submit.submit_time.strftime("%Y/%m/%d %H:%M"))
+        sht1.write(id, 2, submit.submit_time.strftime("%Y-%m-%d %H:%M"))
         option_now_num = 0
         question_num = 1
         for question in question_list:

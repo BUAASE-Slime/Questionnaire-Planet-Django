@@ -53,7 +53,7 @@ def get_list(request):
                              "description": survey.description, "is_released": survey.is_released,
                              "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                              "recycling_num": num, "username": survey.username,
-                             "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M"),
+                             "create_time": survey.created_time.strftime("%Y-%m-%d %H:%M"),
                              "type": survey.type}
 
                 print(json_item)
@@ -92,7 +92,7 @@ def get_list(request):
                          "description": survey.description, "is_released": survey.is_released,
                          "is_collected": survey.is_collected, "is_deleted": survey.is_deleted,
                          "recycling_num": num, "username": survey.username,
-                         "create_time": survey.created_time.strftime("%Y/%m/%d %H:%M"),
+                         "create_time": survey.created_time.strftime("%Y-%m-%d %H:%M"),
                          "type": survey.type}
             json_list.append(json_item)
 
