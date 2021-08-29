@@ -363,6 +363,7 @@ def create_qn(request):
             if title == '':
                 title = "默认标题"
             print("创建问卷： 设置标题成功")
+
             try:
                 survey = Survey(username=username, title=title, type=type, description=description, question_num=0,
                                 recycling_num=0)
@@ -450,9 +451,19 @@ def create_qn(request):
                                         last_question=last_question, last_option=last_option,
                                         image_url='', video_url=''
                                         )
+
+
                 # 添加问题
             question_num = 0
             survey.save()
+            code = hash_code(survey.username, str(survey.survey_id))
+            # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            end_info = code[:20].upper()
+            while Survey.objects.filter(share_url=end_info):
+                code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                end_info = code[:20].upper()
+
+            survey.share_url = end_info
             question_list = Question.objects.filter(survey_id=survey)
             for question in question_list:
                 question_num += 1
