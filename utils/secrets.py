@@ -21,4 +21,5 @@ class Secrets:
         webFront = 'http://127.0.0.1:8080'
         # webFront = 'https://zewan.cc'
         # webBack = 'https://zewan.cc/api/qs'
-        webBack = 'http://127.0.0.1:8000'
+        # webBack = 'http://127.0.0.1:8000'
+        webBack = 'http://127.0.0.1:8080/api/api/qs'
