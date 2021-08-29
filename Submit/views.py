@@ -178,7 +178,7 @@ def get_qn_data(qn_id):
                     'url': img,
                     'name': img.split('/')[-1]
                 })
-
+            del(temp['imgList'][-1])
 
         if item.video_url != '':
             videoUrlList = item.video_url.split(KEY_STR)
@@ -187,6 +187,7 @@ def get_qn_data(qn_id):
                     'url': video,
                     'name': video.split('/')[-1]
                 })
+                del (temp['videoList'][-1])
 
         if temp['type'] in ['radio', 'checkbox', 'judge']:
             temp['options'] = []
@@ -1088,7 +1089,7 @@ def question_dict_to_question(question, question_dict):
         imgList = question_dict['imgList']
         image_url = ""
         for img in imgList:
-            image_url += img + KEY_STR
+            image_url += img['url'] + KEY_STR
 
     except:
         image_url = ''
@@ -1096,7 +1097,7 @@ def question_dict_to_question(question, question_dict):
         videoList = question_dict['videoList']
         video_url = ""
         for video in videoList:
-            video_url += video + KEY_STR
+            video_url += video['url'] + KEY_STR
     except:
         video_url = ''
     question.video_url = video_url
@@ -1239,19 +1240,20 @@ def save_qn_keep_history(request):
                 except:
                     last_question = 0
                     last_option = 0
-                try:
-                    imgList = question_dict['imgList']
-                    image_url = ""
-                    for img in imgList:
-                        image_url += img + KEY_STR
+                # try:
+                imgList = question_dict['imgList']
+                image_url = ""
+                for img in imgList:
+                    image_url += img['url'] + KEY_STR
+                print('img save ',image_url)
 
-                except:
-                    image_url = ''
+                # except:
+                #     image_url = ''
                 try:
                     videoList = question_dict['videoList']
                     video_url = ""
                     for video in videoList:
-                        video_url += video + KEY_STR
+                        video_url += video['url'] + KEY_STR
                 except:
                     video_url = ''
                 create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
