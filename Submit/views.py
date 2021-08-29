@@ -179,7 +179,7 @@ def get_qn_data(qn_id):
                 })
 
 
-        if item.image != '':
+        if item.video_url != '':
             videoUrlList = item.video_url.split(KEY_STR)
             for video in videoUrlList:
                 temp['videoList'].append({
@@ -1376,7 +1376,20 @@ def get_answer_from_submit(request):
             response['is_valid'] = submit.is_valid
             response['score'] = submit.score
             response['qn_id'] = submit.survey_id.survey_id
+            if submit.survey_id.type == '2':
+                response['is_test'] = True
+                sum_score = 0
+                questions = Question.objects.filter(survey_id=submit.survey_id)
+                for question in questions:
+                    sum_score += question.point
+                response['sum_score'] = sum_score
 
+                rank = 1
+                submit_rank_list = Submit.objects.filter(survey_id=submit.survey_id).order_by("-score")
+                for submit_obj in submit_rank_list:
+                    if submit_obj.submit_id == submit.submit_id:
+                        response['rank'] = rank
+                    rank += 1
             for answer in answer_list:
                 item = {}
                 item['answer'] = answer.answer
