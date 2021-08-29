@@ -1312,7 +1312,11 @@ def save_and_deploy(request):
         except:
             response = {'status_code': 3, 'message': '问卷不存在'}
             return JsonResponse(response)
+
         save_qn_func(req,qn_id)
+        if survey.question_num == 0:
+            return JsonResponse({'status_code': 2, 'msg': "no_questions"})
+
         code = hash_code(survey.username, str(qn_id))
         # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         end_info = code[:20].upper()
