@@ -486,18 +486,7 @@ def create_option(question, content, sequence, has_num_limit, num_limit, remain_
     option.save()
 
 
-@csrf_exempt
-def create_option_2(question, content, sequence, has_num_limit, num_limit, remain_num):
-    option = Option()
-    option.content = content
-    question.option_num += 1
-    option.question_id = question
-    question.save()
-    option.order = sequence
-    option.has_num_limit = has_num_limit
-    option.num_limit = num_limit
-    option.remain_num = remain_num
-    option.save()
+
 
 def create_question_in_save(title, direction, must, type, qn_id, raw, score, options, sequence,refer ,point,isVote,last_question,last_option,image_url,video_url):
     question = Question()
@@ -617,7 +606,7 @@ def pause_qn(request):
                 response = {'status_code': 6, 'message': '问卷已经结束，不可操作'}
                 return JsonResponse(response)
             if not survey.is_released:
-                response = {'status_code': 3, 'message': '问卷为发行，不可取消发行'}
+                response = {'status_code': 3, 'message': '问卷未发行，不可取消发行'}
                 return JsonResponse(response)
             survey.is_released = False
             survey.save()
