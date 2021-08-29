@@ -22,8 +22,8 @@ class Survey(models.Model):
     max_recycling = models.PositiveIntegerField(default=999999,verbose_name="最大回收数目")
 
     created_time = models.DateTimeField(auto_now_add=True,verbose_name="创建时间")
-    release_time = models.DateTimeField(blank=True,verbose_name="发布时间",null=True)
-    finished_time = models.DateTimeField(blank=True,verbose_name="结束时间",null=True)
+    release_time = models.DateTimeField(verbose_name="发布时间",null=True)
+    finished_time = models.DateTimeField(verbose_name="结束时间",null=True)
 
     is_released = models.BooleanField(default=False,verbose_name="是否已发行")
     is_deleted = models.BooleanField(default=False,verbose_name="是否已删除")
