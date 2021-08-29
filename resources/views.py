@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 
 # Create your views here.
+from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
 from djangoProject.settings import WEB_ROOT
@@ -8,6 +9,7 @@ from resources.form import ImageForm, VideoForm
 from resources.models import ImageModel, VideoModel
 
 
+@xframe_options_exempt
 @csrf_exempt
 def upload_image(request):
     if request.method == 'POST':
@@ -32,6 +34,7 @@ def upload_image(request):
     return JsonResponse({'status_code': -2})
 
 
+@xframe_options_exempt
 @csrf_exempt
 def upload_video(request):
     if request.method == 'POST':

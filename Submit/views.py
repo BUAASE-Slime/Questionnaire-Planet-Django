@@ -188,7 +188,7 @@ def get_qn_data(qn_id):
                     'url': video,
                     'name': video.split('/')[-1]
                 })
-                del (temp['videoList'][-1])
+            del (temp['videoList'][-1])
 
         if temp['type'] in ['radio', 'checkbox', 'judge']:
             temp['options'] = []
