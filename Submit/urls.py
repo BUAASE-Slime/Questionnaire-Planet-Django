@@ -25,6 +25,7 @@ urlpatterns = [
 
     path('save/qn',save_qn),
     path('save/qn_keep/history',save_qn_keep_history),
+    path('save/qn/deploy',save_and_deploy),
     path('save/exam/paper',save_exam_answer),
     path('save/exam/paper/by/code', save_exam_answer_by_code),
     path('deploy_qn',deploy_qn),
