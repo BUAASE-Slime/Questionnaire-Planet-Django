@@ -1168,6 +1168,7 @@ def save_qn_keep_history(request):
             submit.is_valid = False
             submit.save()
 
+
         survey = Survey.objects.get(survey_id=qn_id)
         survey.username = req['username']
         survey.title = req['title']
@@ -1176,7 +1177,7 @@ def save_qn_keep_history(request):
             survey.max_recycling = req['max_recycling']
         except:
             pass
-
+        print("finished_time = ", req['finished_time'])
         if survey.title == '':
             survey.title = "默认标题"
         survey.description = req['description']
@@ -1186,12 +1187,18 @@ def save_qn_keep_history(request):
 
         try:
             req['finished_time'] = req['finished_time']
+
             print("问卷截止时间为 " + req['finished_time'])
-            if req['finished_time'] is not None and req['finished_time'] != '':
+            print(survey.finished_time > datetime.datetime.now())
+            if req['finished_time'] is not None or req['finished_time'] != '' :
                 survey.finished_time = req['finished_time']
+            survey.save()
+
+
         except:
             pass
-
+        if survey.finished_time > datetime.datetime.now() :
+            survey.is_finished = False
         if req['type'] == '2':
             # 如果问卷是考试问卷
             # TODO 正常发问卷的截止时间
