@@ -288,6 +288,7 @@ def get_survey_details_by_others(request):
             response = {'status_code': 2, 'message': '问卷不存在'}
             return JsonResponse(response)
         if survey.finished_time is not None and survey.finished_time < datetime.datetime.now():
+            print('结束问题')
             response = {'status_code': 666, 'message': '问卷已经超过截止时间'}
             survey.is_finished = True
             survey.is_released = False
@@ -527,7 +528,7 @@ def create_question_in_save(title, direction, must, type, qn_id, raw, score, opt
 
     option_list = options
     for item in option_list:
-        print(item)
+        # print(item)
         content = item['title']
         sequence = item['id']
         has_num_limit = False
@@ -1190,10 +1191,9 @@ def save_qn_keep_history(request):
 
         try:
             req['finished_time'] = req['finished_time']
-
             print("问卷截止时间为 " + req['finished_time'])
-            print(survey.finished_time > datetime.datetime.now())
-            if req['finished_time'] != '' :
+
+            if req['finished_time'] != '':
                 try:
                     survey.finished_time =  datetime.datetime.strptime(req['finished_time'], '%Y-%m-%d %H:%M:%S')
                     print('save success 11111')
@@ -1224,6 +1224,10 @@ def save_qn_keep_history(request):
         for question in questions:
             num = 0
             for question_dict in question_list:
+                try:
+                    question_dict['question_id'] = question_dict['question_id']
+                except:
+                    question_dict['question_id'] = 0
                 if question_dict['question_id'] == question.question_id:
                     # 旧问题在新问题中有 更新问题
                     question_dict_to_question(question, question_dict)
