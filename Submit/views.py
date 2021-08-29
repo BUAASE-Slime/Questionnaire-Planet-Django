@@ -457,22 +457,13 @@ def create_qn(request):
                 # 添加问题
             question_num = 0
             survey.save()
-            print("begin save code")
-            code = hash_code(survey.username, str(survey.survey_id))
-            # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-            end_info = code[:20].upper()
-            while Survey.objects.filter(share_url=end_info):
-                code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-                end_info = code[:20].upper()
-
-            survey.share_url = end_info
             question_list = Question.objects.filter(survey_id=survey)
             for question in question_list:
                 question_num += 1
             survey.question_num = question_num
             print("保存成功，该问卷的问题数目为：" + str(question_num))
             survey.save()
-            print("end code and code = ",survey.share_url)
+
 
             response['qn_id'] = survey.survey_id
             print(response)
@@ -1172,139 +1163,172 @@ def save_qn_keep_history(request):
             submit.is_valid = False
             submit.save()
 
+        save_qn_func(req,qn_id)
 
-        survey = Survey.objects.get(survey_id=qn_id)
-        survey.username = req['username']
-        survey.title = req['title']
-
-        try:
-            survey.max_recycling = req['max_recycling']
-        except:
-            pass
-        print("finished_time = ", req['finished_time'])
-        if survey.title == '':
-            survey.title = "默认标题"
-        survey.description = req['description']
-        if survey.description == '':
-            survey.description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
-        survey.type = req['type']
-
-        try:
-            req['finished_time'] = req['finished_time']
-            print("问卷截止时间为 " + req['finished_time'])
-
-            if req['finished_time'] != '':
-                try:
-                    survey.finished_time =  datetime.datetime.strptime(req['finished_time'], '%Y-%m-%d %H:%M:%S')
-                    print('save success 11111')
-                except:
-                    survey.finished_time = req['finished_time']
-            survey.save()
-            print('finished_time' ,survey.finished_time)
-            print("survey finished_time save success")
-            if survey.finished_time - datetime.datetime.now() > datetime.timedelta(seconds=1):
-                survey.is_finished = False
-        except:
-            pass
-
-        if req['type'] == '2':
-            # 如果问卷是考试问卷
-            # TODO 正常发问卷的截止时间
-            # survey.finished_time = req['finished_time']
-            survey.description = "这里是一份考卷，您可以在此处编写关于本考卷的简介，帮助考生了解这份考卷"
-
-        survey.save()
-        question_list = req['questions']
-
-        #TODO
-        # if request.session.get("username") != req['username']:
-        #     request.session.flush()
-        #     return JsonResponse({'status_code': 0})
-
-        for question in questions:
-            num = 0
-            for question_dict in question_list:
-                try:
-                    question_dict['question_id'] = question_dict['question_id']
-                except:
-                    question_dict['question_id'] = 0
-                if question_dict['question_id'] == question.question_id:
-                    # 旧问题在新问题中有 更新问题
-                    question_dict_to_question(question, question_dict)
-                    num = 1
-                    break
-
-            if num == 0:
-                question.delete()
-        for question_dict in question_list:
-
-            try:
-                question_dict['question_id'] = question_dict['question_id']
-            except:
-                question_dict['question_id'] = 0
-            refer = ''
-            point = 0
-            isVote = False
-            if req['type'] == '2':
-                refer = question_dict['refer']
-                point = question_dict['point']
-                print("this question point  = " + str(question_dict['point']))
-
-            elif req['type'] == '3':
-                isVote = question_dict['isVote']
-
-            if question_dict['question_id'] == 0:
-                try:
-                    last_question = question_dict['last_question']
-                    last_option = question_dict['last_option']
-                    question_id = save_question_by_order(survey, last_question)
-                    last_question_obj = Question.objects.get(question_id=question_id)
-                    # last_question = last_question_obj.question_id
-                    # last_option = save_option_by_order(last_question_obj,last_option)
-                    last_option = question_dict['last_option']
-                except:
-                    last_question = 0
-                    last_option = 0
-                try:
-                    imgList = question_dict['imgList']
-                    image_url = ""
-                    for img in imgList:
-                        image_url += img['url'] + KEY_STR
-                    print('img save ',image_url)
-
-                except:
-                    image_url = ''
-                try:
-                    videoList = question_dict['videoList']
-                    video_url = ""
-                    for video in videoList:
-                        video_url += video['url'] + KEY_STR
-                except:
-                    video_url = ''
-                create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
-                                        , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
-                                        score=question_dict['score'],
-                                        options=question_dict['options'],
-                                        sequence=question_dict['id'], refer=refer, point=point, isVote=isVote,
-                                        last_question=last_question, last_option=last_option,image_url=image_url,video_url=video_url
-                                        )
-                # 添加问题
-
-        question_num = 0
-
-        survey.save()
-        question_list = Question.objects.filter(survey_id=survey)
-        for question in question_list:
-            question_num += 1
-        survey.question_num = question_num
-        print("保存成功，该问卷的问题数目为：" + str(question_num))
-        survey.save()
 
         return JsonResponse(response)
     else:
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
+def save_qn_func(req,qn_id):
+
+    survey = Survey.objects.get(survey_id=qn_id)
+    survey.username = req['username']
+    survey.title = req['title']
+    questions = Question.objects.filter(survey_id=survey)
+    try:
+        survey.max_recycling = req['max_recycling']
+    except:
+        pass
+    print("finished_time = ", req['finished_time'])
+    if survey.title == '':
+        survey.title = "默认标题"
+    survey.description = req['description']
+    if survey.description == '':
+        survey.description = "这里是问卷说明信息，您可以在此处编写关于本问卷的简介，帮助填写者了解这份问卷。"
+    survey.type = req['type']
+
+    try:
+        req['finished_time'] = req['finished_time']
+        print("问卷截止时间为 " + req['finished_time'])
+
+        if req['finished_time'] != '':
+            try:
+                survey.finished_time =  datetime.datetime.strptime(req['finished_time'], '%Y-%m-%d %H:%M:%S')
+                print('save success 11111')
+            except:
+                survey.finished_time = req['finished_time']
+        survey.save()
+        print('finished_time' ,survey.finished_time)
+        print("survey finished_time save success")
+        if survey.finished_time - datetime.datetime.now() > datetime.timedelta(seconds=1):
+            survey.is_finished = False
+    except:
+        pass
+
+    if req['type'] == '2':
+        # 如果问卷是考试问卷
+        # TODO 正常发问卷的截止时间
+        # survey.finished_time = req['finished_time']
+        survey.description = "这里是一份考卷，您可以在此处编写关于本考卷的简介，帮助考生了解这份考卷"
+
+    survey.save()
+    question_list = req['questions']
+
+    #TODO
+    # if request.session.get("username") != req['username']:
+    #     request.session.flush()
+    #     return JsonResponse({'status_code': 0})
+
+    for question in questions:
+        num = 0
+        for question_dict in question_list:
+            try:
+                question_dict['question_id'] = question_dict['question_id']
+            except:
+                question_dict['question_id'] = 0
+
+            if question_dict['question_id'] == question.question_id:
+                # 旧问题在新问题中有 更新问题
+                question_dict_to_question(question, question_dict)
+                num = 1
+                break
+
+        if num == 0:
+            question.delete()
+    for question_dict in question_list:
+
+        try:
+            question_dict['question_id'] = question_dict['question_id']
+        except:
+            question_dict['question_id'] = 0
+        refer = ''
+        point = 0
+        isVote = False
+        if req['type'] == '2':
+            refer = question_dict['refer']
+            point = question_dict['point']
+            print("this question point  = " + str(question_dict['point']))
+
+        elif req['type'] == '3':
+            isVote = question_dict['isVote']
+
+        if question_dict['question_id'] == 0:
+            try:
+                last_question = question_dict['last_question']
+                last_option = question_dict['last_option']
+                question_id = save_question_by_order(survey, last_question)
+                last_question_obj = Question.objects.get(question_id=question_id)
+                # last_question = last_question_obj.question_id
+                # last_option = save_option_by_order(last_question_obj,last_option)
+                last_option = question_dict['last_option']
+            except:
+                last_question = 0
+                last_option = 0
+            try:
+                imgList = question_dict['imgList']
+                image_url = ""
+                for img in imgList:
+                    image_url += img['url'] + KEY_STR
+                print('img save ',image_url)
+            except:
+                image_url = ''
+            try:
+                videoList = question_dict['videoList']
+                video_url = ""
+                for video in videoList:
+                    video_url += video['url'] + KEY_STR
+            except:
+                video_url = ''
+            create_question_in_save(question_dict['title'], question_dict['description'], question_dict['must']
+                                    , question_dict['type'], qn_id=req['qn_id'], raw=question_dict['row'],
+                                    score=question_dict['score'],
+                                    options=question_dict['options'],
+                                    sequence=question_dict['id'], refer=refer, point=point, isVote=isVote,
+                                    last_question=last_question, last_option=last_option,image_url=image_url,video_url=video_url
+                                    )
+            # 添加问题
+
+    question_num = 0
+
+    survey.save()
+    question_list = Question.objects.filter(survey_id=survey)
+    for question in question_list:
+        question_num += 1
+    survey.question_num = question_num
+    print("保存成功，该问卷的问题数目为：" + str(question_num))
+    survey.save()
+    return 1
+
+@csrf_exempt
+def save_and_deploy(request):
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        req = json.loads(request.body)
+        qn_id = req['qn_id']
+        try:
+            survey = Survey.objects.get(survey_id=qn_id)
+        except:
+            response = {'status_code': 3, 'message': '问卷不存在'}
+            return JsonResponse(response)
+        save_qn_func(req,qn_id)
+        code = hash_code(survey.username, str(qn_id))
+        # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        end_info = code[:20].upper()
+        while Survey.objects.filter(share_url=end_info):
+            code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+            end_info = code[:20].upper()
+
+        survey.share_url = end_info
+        survey.is_released = True
+        survey.release_time = datetime.datetime.now()
+        survey.save()
+        response['code'] = end_info
+        return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': 'invalid http method'}
+        return JsonResponse(response)
 
 @csrf_exempt
 def get_answer_from_submit_by_code(request):
