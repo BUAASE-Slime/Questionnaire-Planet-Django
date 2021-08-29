@@ -160,6 +160,7 @@ def get_qn_data(qn_id):
         temp['id'] = item.sequence  # 按照前端的题目顺序
         temp['options'] = [{'id': 1, 'title': ""}]
         temp['answer'] = item.right_answer
+        temp['right_answer'] = item.right_answer
         temp['isVote'] = item.isVote
         # question = Question.objects.get(survey_id=survey,sequence=item.last_question)
         temp['last_question'] = item.last_question
@@ -1355,6 +1356,7 @@ def get_answer_from_submit(request):
             qn = submit.survey_id
             qn_dict = get_qn_data(qn.survey_id)
             questions = qn_dict['questions']
+            response['title'] = qn.title
             response['questions'] = questions
             response['description'] = qn.description
             print(questions)
@@ -1390,6 +1392,7 @@ def get_answer_from_submit(request):
                 for submit_obj in submit_rank_list:
                     if submit_obj.submit_id == submit.submit_id:
                         response['rank'] = rank
+
                     rank += 1
             for answer in answer_list:
                 item = {}
@@ -1827,7 +1830,7 @@ def submit_reporter(request):
             id = survey_form.cleaned_data.get('qn_id')
             survey = Survey.objects.get(survey_id=id)
             print("用户请求查看问卷 " + str(id) + " 的数据")
-            question_list = Question.objects.filter(survey_id=id)
+            question_list = Question.objects.filter(survey_id=id).order_by("sequence")
             questions = []
             for question in question_list:
                 item = {}
