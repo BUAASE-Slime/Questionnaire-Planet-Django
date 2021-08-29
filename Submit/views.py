@@ -1171,6 +1171,12 @@ def save_qn_keep_history(request):
         survey = Survey.objects.get(survey_id=qn_id)
         survey.username = req['username']
         survey.title = req['title']
+
+        try:
+            survey.max_recycling = req['max_recycling']
+        except:
+            pass
+
         if survey.title == '':
             survey.title = "默认标题"
         survey.description = req['description']
