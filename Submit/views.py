@@ -138,7 +138,8 @@ def get_qn_data(qn_id):
     response['excel_url'] = survey.excel_url
     response['recycling_num'] = survey.recycling_num
     response['max_recycling'] = survey.max_recycling
-    response['is_logic'] = survey.is_logic
+
+    response['is_logic'] = maintain_is_logic(qn_id)
 
 
     question_list = Question.objects.filter(survey_id=qn_id).order_by('sequence')
@@ -1960,3 +1961,14 @@ def get_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')  # 这里获得代理ip
     return JsonResponse({'ip': ip})
+
+def maintain_is_logic(qn_id):
+    qn = Survey.objects.get(survey_id=qn_id)
+    is_logic = False
+    questions = Question.objects.filter(survey_id=qn)
+    for question in questions:
+        if question.last_option >0 or question.last_option >0:
+            is_logic = True
+    qn.is_logic = is_logic
+    qn.save()
+    return is_logic
