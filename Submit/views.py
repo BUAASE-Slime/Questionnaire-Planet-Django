@@ -444,7 +444,8 @@ def create_qn(request):
                                         score=question_dict['score'],
                                         options=question_dict['options'],
                                         sequence=question_dict['id'], refer=refer, point=point, isVote=isVote,
-                                        last_question=last_question, last_option=last_option
+                                        last_question=last_question, last_option=last_option,
+                                        image_url='', video_url=''
                                         )
                 # 添加问题
             question_num = 0
@@ -1520,6 +1521,7 @@ def exam_submit_report(submit,response):
 def get_all_submit_data(qn_id,response,type):
     qn = Survey.objects.get(survey_id=qn_id)
     question_sum = qn.question_num
+    response['type'] = qn.type
     print(question_sum)
     if type == 'exam':
         submit_list = Submit.objects.filter(survey_id=qn.survey_id).order_by('-score')
