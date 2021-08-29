@@ -4,6 +4,7 @@ from .views import *
 from .no_use_func import *
 from exam.views import save_exam_answer, save_exam_answer_by_code
 from vote.views import *
+# from .schedules import timing_task
 urlpatterns = [
 
     path('delete/qn/recover',recover_survey_from_delete),
@@ -53,4 +54,6 @@ urlpatterns = [
 
     path('get/ip', get_ip),
     path('get/exam/rank', get_exam_rank),
+
+    # path('timing/task',timing_task)
 ]
