@@ -73,7 +73,7 @@ def get_list(request):
         if is_released == 1 or is_released == '1':
             survey_list = survey_list.filter(is_released=True)
         if is_released == 0 or is_released == '0':
-            print(1)
+
             survey_list = survey_list.filter(is_released=False)
         if is_collected:
             survey_list = survey_list.filter(is_collected=is_collected)
