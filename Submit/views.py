@@ -993,7 +993,7 @@ def duplicate_qn(request):
                                         type=question.type, survey_id=new_qn, right_answer=question.right_answer,
                                         point=question.point,has_image=question.has_image,has_video=question.has_video,
                                         isVote=question.isVote,is_shown=question.is_shown,last_question=question.last_question,
-                                        last_option=question.last_option,image=question.image,video=question.video)
+                                        last_option=question.last_option,image_url=question.image_url,video_url=question.video_url)
                 new_question.save()
                 options = Option.objects.filter(question_id=question)
 
