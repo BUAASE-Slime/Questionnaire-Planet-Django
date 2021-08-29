@@ -362,6 +362,9 @@ def get_code(request):
 
         if survey.is_released:
             return JsonResponse({'status_code': 406})
+        if survey.share_url != '':
+            data = {'code': survey.share_url, 'status_code': 200}
+            return data
 
         # 生成问卷码
         code = hash_code(survey.username, str(survey_id))
