@@ -29,6 +29,7 @@ def ret_vote_answer(request):
                 response = {'status_code': -1, 'message': '问卷不存在'}
                 return JsonResponse(response)
 
+
             # username = request.session.get('username')
             # if survey.username != username:
             #     return JsonResponse({'status_code': 0})
@@ -94,9 +95,13 @@ def ret_vote_answer_by_code(request):
             if qn.is_released is False or qn.is_deleted is True:
                 return JsonResponse({'status_code': 3})
 
-            # username = request.session.get('username')
+
+
+            username = request.session.get('username')
             # if survey.username != username:
             #     return JsonResponse({'status_code': 0})
+            submit = Submit.objects.get(username=username,survey_id =qn)
+            answer_submit_list = Answer.objects.filter(submit_id=submit)
             question_list = Question.objects.filter(survey_id=qn, isVote=True)
             questions = []
             for question in question_list:
@@ -114,6 +119,9 @@ def ret_vote_answer_by_code(request):
                 max_num = 0
                 options = []
                 answer_list = Answer.objects.filter(question_id=question)
+                answer_submit = Answer.objects.get(question_id = question,submit_id=submit)
+                from Qn.views import KEY_STR
+                answer_content_list = answer_submit.answer.split(KEY_STR)
                 for option in option_list:
                     num = 0
                     for answer in answer_list:
@@ -124,8 +132,12 @@ def ret_vote_answer_by_code(request):
                     dict = {
                         'title': option.content,
                         'id': option.content,
-                        'num': num
+                        'num': num,
+                        'is_selected': False
                     }
+                    if option.content in answer_content_list:
+                        dict['is_selected'] = True
+
                     options.append(dict)
 
                 item['options'] = options
@@ -133,7 +145,7 @@ def ret_vote_answer_by_code(request):
                 questions.append(item)
 
             response['questions'] = questions
-
+            print(response)
             return JsonResponse(response)
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
