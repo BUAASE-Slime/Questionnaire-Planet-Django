@@ -2,7 +2,7 @@ from django.conf.urls.static import static
 from django.urls import path
 from .views import *
 from .no_use_func import *
-from exam.views import save_exam_answer, save_exam_answer_by_code
+from exam.views import  save_exam_answer_by_code
 from vote.views import *
 # from .schedules import timing_task
 urlpatterns = [
@@ -26,7 +26,7 @@ urlpatterns = [
     path('save/qn',save_qn),
     path('save/qn_keep/history',save_qn_keep_history),
     path('save/qn/deploy',save_and_deploy),
-    path('save/exam/paper',save_exam_answer),
+    # path('save/exam/paper',save_exam_answer),
     path('save/exam/paper/by/code', save_exam_answer_by_code),
     path('deploy_qn',deploy_qn),
     path('pause_qn',pause_qn),
@@ -50,11 +50,10 @@ urlpatterns = [
     path('get/qn/question/analysis',get_qn_question),
     path('get/qn/stat_analysis',submit_reporter),
 
-    path('get/vote/current_situation',ret_vote_answer),
+    # path('get/vote/current_situation',ret_vote_answer),
     path('get/vote/current_situation/from/code', ret_vote_answer_by_code),
 
     path('get/ip', get_ip),
-    path('get/exam/rank', get_exam_rank),
+    # path('get/exam/rank', get_exam_rank),
 
-    # path('timing/task',timing_task)
 ]

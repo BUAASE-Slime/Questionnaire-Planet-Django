@@ -10,7 +10,7 @@ import json
 
 
 
-
+# 前两天某后端指ly自己闷头写的API但是却发现没有作用，留在这里
 
 @csrf_exempt
 def create_question(request):
@@ -175,3 +175,29 @@ def create_question(request):
         response = {'status_code': -2, 'message': 'invalid http method'}
         return JsonResponse(response)
 
+@csrf_exempt
+def get_exam_rank(request):
+    # 前端组件可以自行对成绩进行排序，无需后端发送
+    response = {'status_code': 1, 'message': 'success'}
+    if request.method == 'POST':
+        survey_form = SurveyIdForm(request.POST)
+        if survey_form.is_valid():
+            id = survey_form.cleaned_data.get('qn_id')
+            try:
+                qn = Survey.objects.get(survey_id=id)
+            except:
+                response = {'status_code': 2, 'message': '问卷不存在'}
+                return JsonResponse(response)
+            # username = qn.username
+            # if request.session['username'] != username:
+            #     response = {'status_code': 0, 'message': '没有访问权限'}
+            #     return JsonResponse(response)
+            response = get_all_submit_data(id,response,'exam')
+
+            return JsonResponse(response)
+        else:
+            response = {'status_code': -1, 'message': 'invalid form'}
+            return JsonResponse(response)
+    else:
+        response = {'status_code': -2, 'message': '请求错误'}
+        return JsonResponse(response)
