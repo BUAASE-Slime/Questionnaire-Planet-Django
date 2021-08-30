@@ -570,6 +570,7 @@ def save_qn_answer(request):
                 if username:
                     answer.username = username
                 answer.save()
+        response['submit_id'] = submit.submit_id
 
         return JsonResponse(response)
     else:
