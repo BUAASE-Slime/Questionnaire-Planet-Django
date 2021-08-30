@@ -1973,7 +1973,7 @@ def submit_reporter(request):
 
 
 def finish_qn(qn_id):
-    survey = Survey.objects.get(survey_id=id)
+    survey = Survey.objects.get(survey_id=qn_id)
     survey.is_finished = True
     survey.is_released = False
     survey.save()
