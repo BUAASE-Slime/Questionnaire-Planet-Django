@@ -103,6 +103,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'djangoProject.wsgi.application'
 
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# 推出浏览器session失效，但是好像有问题
 # Database
 # https://docs.djangoproject.com/en/3.2/ref/settings/#databases
 
