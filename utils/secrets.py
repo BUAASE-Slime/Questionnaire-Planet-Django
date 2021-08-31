@@ -9,10 +9,10 @@ class Secrets:
     class DataBase:
         # database information
 
-        host = '82.156.217.192'
+        host = 'xxxxx'
         user = 'root'
-        passwd = 'BUAAse43'  # 修改为您本地或远程的 mysql数据库信息
-        db = 'pt'
+        passwd = 'xxxxx'  # 修改为您本地或远程的 mysql数据库信息
+        db = 'xxxxx'
 
     class Host:  # 修改为django允许运行的网址
         allowedHost = ['localhost', '127.0.0.1', 'xxxxx']
