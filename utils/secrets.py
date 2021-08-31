@@ -1,10 +1,10 @@
 
 class Secrets:
     class Email:
-        emailHost = 'smtp.126.com'
+        emailHost = 'xxxxx'
         emailPort = 25
-        emailAddr = 'zewancc@126.com'
-        emailPasswd = 'IFFYHIMFEDLICRUO'  # 邮箱 SMTP 授权码，此处为虚拟，须修改
+        emailAddr = 'xxxxx'
+        emailPasswd = 'xxxxx'# 邮箱 SMTP 授权码，此处为虚拟，须修改
 
     class DataBase:
         # database information
@@ -15,11 +15,10 @@ class Secrets:
         db = 'pt'
 
     class Host:  # 修改为django允许运行的网址
-        allowedHost = ['localhost', '127.0.0.1', 'zewan.cc']
+        allowedHost = ['localhost', '127.0.0.1', 'xxxxx']
 
     class RootUrl:
         webFront = 'http://127.0.0.1:8080'
-        # webFront = 'https://zewan.cc'
-        # webBack = 'https://zewan.cc/api/qs'
+
         # webBack = 'http://127.0.0.1:8000'
         webBack = 'http://127.0.0.1:8080/api/api/qs'

@@ -5,6 +5,7 @@ from docx.enum.style import WD_STYLE_TYPE
 from docx.oxml.ns import qn
 from docx import *
 from io import BytesIO
+from django.views.decorators.csrf import csrf_exempt
 
 import djangoProject.settings
 def qn_to_docx(qn_id):

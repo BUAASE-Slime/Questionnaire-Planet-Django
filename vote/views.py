@@ -34,7 +34,6 @@ def ret_vote_answer_by_code(request):
                 return JsonResponse({'status_code': 3})
 
 
-
             username = request.session.get('username')
             # if survey.username != username:
             #     return JsonResponse({'status_code': 0})

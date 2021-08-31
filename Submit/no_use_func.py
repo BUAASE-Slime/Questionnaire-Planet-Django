@@ -201,3 +201,22 @@ def get_exam_rank(request):
     else:
         response = {'status_code': -2, 'message': '请求错误'}
         return JsonResponse(response)
+
+def save_option_by_order(question, option_order):
+    option_list = Option.objects.filter(question_id=question)
+    i = 1
+    for option in option_list:
+        if i == option_order:
+            return option.option_id
+        i += 1
+    return 0
+
+
+def save_question_by_order(qn, question_order):
+    i = 1
+    question_list = Question.objects.filter(survey_id=qn)
+    for question in question_list:
+        if i == question_order:
+            return question.question_id
+        i += 1
+    return 0

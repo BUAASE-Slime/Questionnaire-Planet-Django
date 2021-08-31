@@ -14,7 +14,7 @@ urlpatterns = [
     # 彻底删除问卷
     path('delete/qn/empty',empty_the_recycle_bin),
     # 清空回收站
-    path('delete/question',delete_question),
+    # path('delete/question',delete_question),
     #单一删除问题
     # path('delete/option',delete_option),
     # 单一删除选项
@@ -28,9 +28,7 @@ urlpatterns = [
 #获取问卷全部信息但是仅供答卷填写
     path('create/qn',create_qn),
     #创建问卷
-    path('create/question',create_question),
-    #创建问题
-    path('save/qn',save_qn),
+
     #保存问卷但删除问题
     path('save/qn_keep/history',save_qn_keep_history),
     #保存问卷
@@ -43,7 +41,7 @@ urlpatterns = [
     #发布问卷
     path('pause_qn',pause_qn),
     #暂停问卷
-    path('export/docx',TestDocument),
+    path('export/docx',create_docx),
     #导出word
     path('export/pdf',pdf_document),
     #导出pdf
@@ -63,7 +61,7 @@ urlpatterns = [
     path('cross/analysis',cross_analysis),
     #交叉分析
     path('get/qn/question/analysis',get_qn_question),
-    #对问卷中特定问题吻戏问题的
+    #对问卷中特定问题分析的
     path('get/qn/stat_analysis',submit_reporter),
     #查看答卷
     # path('get/vote/current_situation',ret_vote_answer),
