@@ -26,9 +26,6 @@ class OptionRecyleNumError(BaseException):
         return "您报名的选项回收数目为： %d, 已达到最大回收量" % self.num
 
 
-
-
-
 @csrf_exempt
 @transaction.atomic
 # 事务处理，加悲观锁，并模拟数据库回滚操作
