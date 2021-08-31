@@ -4,7 +4,7 @@ from  docx.oxml.ns import  qn
 from docx import *
 import os,sys
 import subprocess
-
+#测试linux中的导出PDF
 from docx2pdf import convert
 def doc2pdf_linux(docPath, pdfPath):
     """
@@ -21,6 +21,7 @@ def doc2pdf_linux(docPath, pdfPath):
     if stderr:
         raise subprocess.SubprocessError(stderr)
 
+#测试转换时间
 import datetime
 
 # convert(os.getcwd()+"\\1.docx",os.getcwd()+"\\1.pdf")

@@ -9,7 +9,6 @@ from django.views.decorators.csrf import csrf_exempt
 import djangoProject.settings
 from Qn.form import *
 from .export import *
-# Create your views here.
 from .forms import *
 
 
@@ -162,13 +161,10 @@ def get_qn_data(qn_id):
         temp['options'] = [{'id': 1, 'title': ""}]
         temp['answer'] = item.right_answer
         temp['right_answer'] = item.right_answer
+
         temp['isVote'] = item.isVote
-        # question = Question.objects.get(survey_id=survey,sequence=item.last_question)
         temp['last_question'] = item.last_question
         temp['last_option'] = item.last_option
-        # if item.last_question != 0:
-        #     last_option_obj = Option.objects.get(option_id=item.last_option)
-        #     temp['last_option'] = last_option_obj.order
         temp['is_shown'] = item.is_shown
         temp['videoList'] = []
         temp['imgList'] = []
@@ -486,7 +482,6 @@ def create_qn(request):
         return JsonResponse(response)
 
 
-@csrf_exempt
 def create_option(question, content, sequence, has_num_limit, num_limit, remain_num):
     option = Option()
     option.content = content
@@ -642,7 +637,7 @@ from docx import *
 
 
 @csrf_exempt
-def TestDocument(request):
+def create_docx(request):
     response = {'status_code': 1, 'message': 'success'}
     if request.method == 'POST':
         survey_form = SurveyIdForm(request.POST)
@@ -666,13 +661,11 @@ def TestDocument(request):
                 document, f, docx_title, _ = qn_to_docx(id)
             response['filename'] = docx_title
             response['docx_url'] = djangoProject.settings.WEB_ROOT + "/media/Document/" + docx_title
-            # TODO: 根据实时文件位置设置url
+            
             survey.docx_url = response['docx_url']
             survey.save()
             response['b64data'] = base64.b64encode(f.getvalue()).decode()
             # print(f.getvalue())
-            # print(response['Content-Length'])
-
             return JsonResponse(response)
 
         else:
@@ -978,10 +971,7 @@ def save_qn_func(req,qn_id):
             try:
                 last_question = question_dict['last_question']
                 last_option = question_dict['last_option']
-                question_id = save_question_by_order(survey, last_question)
-                last_question_obj = Question.objects.get(question_id=question_id)
-                # last_question = last_question_obj.question_id
-                # last_option = save_option_by_order(last_question_obj,last_option)
+
                 last_option = question_dict['last_option']
             except:
                 last_question = 0
@@ -1546,7 +1536,6 @@ def get_qn_question(request):
 
             return JsonResponse(response)
 
-
         else:
             response = {'status_code': -1, 'message': 'invalid form'}
             return JsonResponse(response)
@@ -1682,25 +1671,6 @@ def dispose_qn_correlate_question(qn_id):
             question.is_shown = False
         question.save()
 
-
-def save_option_by_order(question, option_order):
-    option_list = Option.objects.filter(question_id=question)
-    i = 1
-    for option in option_list:
-        if i == option_order:
-            return option.option_id
-        i += 1
-    return 0
-
-
-def save_question_by_order(qn, question_order):
-    i = 1
-    question_list = Question.objects.filter(survey_id=qn)
-    for question in question_list:
-        if i == question_order:
-            return question.question_id
-        i += 1
-    return 0
 
 
 @csrf_exempt

@@ -115,9 +115,6 @@ def all_submittion_count(request):
 
 
 
-
-
-
 @csrf_exempt
 def get_answer(request):
     # 检验是否登录
@@ -251,7 +248,6 @@ def get_code(request):
             data = {'code': survey.share_url, 'status_code': 200}
             return data
 
-
         # 生成问卷码
         code = hash_code(survey.username, str(survey_id))
         # code = hash_code(code, datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
@@ -271,7 +267,6 @@ def get_code(request):
 
     else:
         return JsonResponse({'status_code': 404})
-
 
 @csrf_exempt
 def get_code_existed(request):
@@ -298,7 +293,6 @@ def get_code_existed(request):
 
     else:
         return JsonResponse({'status_code': 2})
-
 
 
 @csrf_exempt
