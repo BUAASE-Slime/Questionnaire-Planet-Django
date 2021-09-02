@@ -1268,7 +1268,7 @@ def delete_submit(request):
             # for answer in answer_list:
             #     answer.delete()
             # 数据库是级联删除的，删除了submit 带有这个外键的自动珊瑚
-            submit.delete()
+
             qn = submit.survey_id
             qn.recycling_num -= 1
             qn.save()
@@ -1276,7 +1276,7 @@ def delete_submit(request):
             answers = Answer.objects.filter(submit_id=submit)
             questions = Question.objects.filter(survey_id=qn)
             for question in questions:
-                options = Option.objects.get(question_id=question)
+                options = Option.objects.filter(question_id=question)
                 for option in options:
                     for answer in answers:
                         this_answer_list = answer.answer.split(KEY_STR)
@@ -1284,7 +1284,7 @@ def delete_submit(request):
                             option.remain_num += 1
                     option.save()
                     option.save()
-
+            submit.delete()
             return JsonResponse(response)
 
         else:

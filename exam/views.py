@@ -40,6 +40,9 @@ def save_exam_answer_by_code(request):
         submit.save()
         all_score = 0
         for answer_dict in answer_list:
+            print(answer_dict)
+            if answer_dict['ans'] is None or answer_dict['ans'] == '':
+                continue
             question = Question.objects.get(question_id=answer_dict['question_id'])
             answer = Answer(answer=answer_dict['answer'],username=username,
                             type = answer_dict['type'],question_id=question,submit_id=submit,
