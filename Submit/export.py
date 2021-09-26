@@ -348,10 +348,6 @@ def paper_to_docx(qn_id): # 考试问卷导出word
     document.save(docx_path + docx_title)
 
     return document, f, docx_title, docx_path
-
-import xlwt
-# 考试答卷结果导出excel
-from Qn.views import KEY_STR
 def write_exam_to_excel(qn_id):
     qn = Survey.objects.get(survey_id=qn_id)
     submit_list = Submit.objects.filter(survey_id=qn)
