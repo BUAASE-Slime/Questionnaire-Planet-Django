@@ -2,7 +2,7 @@
 
 [![python3.8](https://img.shields.io/badge/python-%3E%3D3.8-brightgreen)](https://www.python.org/)  [![django3.2](https://img.shields.io/badge/django-3.0-blue)](https://docs.djangoproject.com/en/3.2/releases/3.2/)
 
-> 北航 1921 软件工程暑期实践 
+> 北航 1921 软件工程暑期实践 满分项目 ~~万一有更多star呢~~
 
 前端：[https://github.com/ZewanHuang/Questionnaire-Planet](https://github.com/ZewanHuang/Questionnaire-Planet)
 
