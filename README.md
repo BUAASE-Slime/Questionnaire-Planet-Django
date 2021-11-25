@@ -39,7 +39,7 @@ pip install -r requirements.txt
 
 > 须结合 [前端说明](https://github.com/ZewanHuang/Online-Publish-Django) 进行配置
 
-运行项目前，请根据文件内容提示修改 **utils/secrets.py **，其中包含前端路由 `webFront`、后端路由 `webBack`，数据库基本信息 `DataBase`  和基本邮箱信息`Email`。 如需连接其他类型的数据库也请对应修改`utils/secrets.py `的内容
+运行项目前，请根据文件内容提示修改 **utils/secrets.py**，其中包含前端路由 `webFront`、后端路由 `webBack`，数据库基本信息 `DataBase`  和基本邮箱信息`Email`。 如需连接其他类型的数据库也请对应修改`utils/secrets.py `的内容
 
 而后使用`python manage.py makemigrations`   和 `python manage.py migrate`  生成对应数据库文件
 
