@@ -6,6 +6,7 @@ from docx.oxml.ns import qn
 from docx import *
 from io import BytesIO
 from django.views.decorators.csrf import csrf_exempt
+from Qn.form import SurveyIdForm
 
 import djangoProject.settings
 def qn_to_docx(qn_id):
@@ -80,6 +81,7 @@ def qn_to_docx(qn_id):
     # document.save(save_path)
 
     docx_path = djangoProject.settings.MEDIA_ROOT + "\Document\\"
+    from .views import IS_LINUX
     if IS_LINUX:
         docx_path = djangoProject.settings.MEDIA_ROOT + "/Document/"
 
