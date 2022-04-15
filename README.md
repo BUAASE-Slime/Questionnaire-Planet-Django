@@ -29,11 +29,21 @@ Python 3.8 及以上
 
 Django 3.0 及以上
 
-安装第三方依赖库请在项目根目录下使用以下命令安装
+安装第三方依赖库,请根据操作系统类型在项目根目录下使用以下命令安装
 
 ```
-pip install -r requirements.txt
+pip install -r requirements.txt 
+<!-- windows -->
+pip install -r requirements_linux.txt 
+<!-- linux -->
 ```
+此外，若您想将此项目部署至linux，还需再linux上安装`Libreoffice`，并安装宋体字体，以问卷导出pdf使用。否则使用相应功能会出现问题。本项目中使用`Libreoffice`的位置为`/Submit/export.py/doc2pdf_linux`中依此命令导出pdf，若您安装的Libreoffice 版本不为7.0 也请对应修改版本号。而windwos与linux所需依赖不同也就在pdf导出上面，其余全部相同。
+
+```powershell
+cmd = 'libreoffice7.0 --headless --invisible  --convert-to pdf:writer_pdf_Export'.split() + [docPath] + ['--outdir'] + [pdfPath]
+```
+
+
 
 ## 如何使用
 
@@ -67,3 +77,10 @@ pip install -r requirements.txt
 
 ![statistic](https://github.com/ZewanHuang/Questionnaire-Planet/blob/master/src/assets/images/statistic.png)
 
+
+
+# 其他
+
+
+
+由于此项目在开发后进行了一次**未经测试**的大规模项目结构重构，实际运行时可能会遇到一些依赖问题，欢迎在遇到问题时使用Email或Issue联系我们。
