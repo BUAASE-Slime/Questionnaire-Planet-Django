@@ -84,3 +84,6 @@ cmd = 'libreoffice7.0 --headless --invisible  --convert-to pdf:writer_pdf_Export
 
 
 由于此项目在开发后进行了一次**未经测试**的大规模项目结构重构，实际运行时可能会遇到一些依赖问题，欢迎在遇到问题时使用Email或Issue联系我们。
+
+# Star 趋势
+https://star-history.com/#BUAASE-Slime/Questionnaire-Planet-Django&Date
