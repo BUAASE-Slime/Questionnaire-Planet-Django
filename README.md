@@ -85,5 +85,6 @@ cmd = 'libreoffice7.0 --headless --invisible  --convert-to pdf:writer_pdf_Export
 
 由于此项目在开发后进行了一次**未经测试**的大规模项目结构重构，实际运行时可能会遇到一些依赖问题，欢迎在遇到问题时使用Email或Issue联系我们。
 
-# Star 趋势
-<iframe style="width:100%;height:auto;min-width:600px;min-height:400px;" src="https://star-history.com/embed?secret=Z2hwX0lybnI2WnpmN25KTTI5cVFGV0pNRTBnVkVuV0FzdzRFa0xOQw==#BUAASE-Slime/Questionnaire-Planet-Django&Date" frameBorder="0"></iframe>
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=BUAASE-Slime/Questionnaire-Planet-Django&type=Date)](https://star-history.com/#BUAASE-Slime/Questionnaire-Planet-Django&Date)
